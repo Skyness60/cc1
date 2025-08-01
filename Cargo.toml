@@ -17,6 +17,9 @@ inkwell = { version = "0.4", features = ["llvm14-0"] }
 # Error management
 thiserror = "2.0.12"
 
+# Colors for terminal output
+colored = "3.0"
+
 [build-dependencies]
 
 [profile.release]
