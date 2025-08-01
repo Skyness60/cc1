@@ -8,12 +8,20 @@ RUN apt update && apt install -y \
     make \
     && rm -rf /var/lib/apt/lists/*
 
+# Pré-copie des fichiers de dépendances uniquement
 WORKDIR /usr/src/cc1
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+RUN rm -rf src
+
+# Copie du vrai code source
 COPY . .
 
+# Build final
 RUN cargo build --release
 
-# Copy the binary to root for easy extraction
+# Copier le binaire
 RUN cp target/release/cc1 /cc1
 
 CMD ["bash"]

@@ -1,19 +1,17 @@
 PROJECT_NAME := cc1
 DOCKER_IMG := cc1
 
-# Build and extract the cc1 executable in one command
-all:
+SOURCES := $(shell find src -type f -name "*.rs" 2>/dev/null || echo "src/main.rs")
+DEPS := Dockerfile Cargo.toml Cargo.lock $(SOURCES)
+
+cc1: $(DEPS)
 	docker build -t $(DOCKER_IMG) .
 	docker run --rm -v "$(PWD)":/host $(DOCKER_IMG) cp /cc1 /host/cc1
 
-# Run with auto-build
-run:
-	docker run --rm -it -v "$(PWD)":/usr/src/$(PROJECT_NAME) $(DOCKER_IMG)
-
-# Clean
 clean:
-	docker run --rm -it -v "$(PWD)":/usr/src/$(PROJECT_NAME) $(DOCKER_IMG) \
-		cargo clean
+	docker rmi $(DOCKER_IMG) || true
 	rm -f cc1
 
-.PHONY: all run exec clean
+re: clean cc1
+
+.PHONY: cc1 clean
