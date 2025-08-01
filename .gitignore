@@ -1,0 +1,26 @@
+# Rust build artifacts
+/target/
+/cc1
+
+# Cargo package files
+Cargo.lock
+
+# IDE/editor files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.idea/
+.vscode/
+
+# Docker artifacts
+*.tar
+
+# Logs
+*.log
+
+# By-products of 'make clean'
+cc1
+
+# Misc
+.DS_Store
