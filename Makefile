@@ -28,6 +28,10 @@ clean:
 	@rm -f cc1
 	@echo "$(GREEN_BOLD)✅ Cleanup complete!$(RESET)"
 
+up:
+	docker build -t $(DOCKER_IMG) .
+	docker run --rm -v "$(PWD)":/host $(DOCKER_IMG) cp /cc1 /host/cc1
+
 
 re: clean cc1
 
