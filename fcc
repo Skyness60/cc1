@@ -1,0 +1,386 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# fcc: Forty-two Compiler Collection driver
+
+# Pipeline (default): clang -E -std=c89 -> cc1 -> llc -> as -> clang (link)
+# Fallback (if --use-internal-pp): cc1 internal preprocessor -> cc1 -> llc -> as -> clang (link)
+# Optional fallback (if --allow-clang-ir): use clang -x ir when llc/as are unavailable
+
+show_help() {
+  cat <<EOF
+fcc — Forty-two Compiler Collection driver
+
+SYNOPSIS
+  fcc [options] <infile.c|->
+
+DESCRIPTION
+  fcc is a compiler driver that orchestrates the full toolchain:
+    1) Preprocess:  clang -E -std=c89 (C89 compliant preprocessing)
+    2) Compile:     cc1 (C89 -> LLVM IR)  
+    3) Lower:       llc (LLVM IR -> assembly)
+    4) Assemble:    as  (assembly -> object)
+    5) Link:        clang -m32|-m64 (object -> executable)
+  The default mode is to link and produce an executable. Use -c or -S to stop earlier,
+  or -E to only preprocess.
+
+OPTIONS
+  -o <outfile>      Output file (default: a.out; for -c/-S defaults to <in>.o/.s; for -E, defaults to stdout). Use '-' for stdout.
+  -m32|-m64         Target arch (default: -m32)
+  -g                Enable debug info (passed to cc1)
+  -std=<v>          Language standard for preprocessing (c89|c90|ansi; default: c89)
+  -O <n>            Optimization level (forwarded to llc/clang as -O<n>)
+  -ffreestanding    Provide minimal builtin/type/attribute defines to tolerate system headers (maps __builtin_va_list, strips __attribute__/__asm__ etc.)
+  --use-internal-pp Use cc1 internal preprocessor instead of clang -E
+  
+  Preprocessor options (forwarded to clang -E by default):
+    -I <dir>        Add include path
+    -isystem <dir>  Add system include path
+    -include <hdr>  Force include header before processing
+    -D <mac>=<v>    Define macro
+    -U <mac>        Undefine macro
+    -Wp,<opts>      Pass options to the preprocessor
+    -M, -MM         Generate dependencies to stdout and exit
+    -MD, -MMD       Generate dependencies side file during compilation
+    -MF <file>      Dependency output file
+    -MG, -MP        Treat missing headers as generated / add phony targets
+    -MT <t>, -MQ <t>  Dependency target
+
+  Compiler/Assembler/Linker passthrough:
+    -Wc,<opts>      Pass comma-separated opts to cc1
+    -Wa,<opts>      Pass comma-separated opts to as (and clang in IR fallback)
+    -Wl,<opts>      Pass options to the linker
+    -L <dir>        Add linker search path
+    -l <lib>        Link with library
+    -s              Strip symbols at link time
+    -nostdlib       Do not use standard system startup or libraries
+    -nostartfiles   Do not use standard system startup files
+    -nodefaultlibs  Do not use standard system libraries
+    -static         Link statically
+    -pthread        Enable pthreads (linker flag)
+
+  Modes:
+    -c               Compile only (emit object)
+    -S               Compile to assembly
+    -E               Preprocess only
+
+  Misc:
+    -v               Verbose: print executed commands
+    --allow-clang-ir Allow using clang to lower/assemble IR when llc/as are missing
+    -h, --help       Show this help
+    --               End of options
+
+  Note: All c17 POSIX options implemented except -B -G -R (as specified in the subject).
+
+OPERANDS
+  <infile.c>        Input C source file. Use '-' to read from standard input.
+
+STDIN
+  Read when the operand is '-'. Forwarded to the preprocessor.
+
+INPUT FILES
+  C89 source code. Preprocessing is performed by clang -E by default unless --use-internal-pp is specified.
+
+STDOUT
+  With -E and without -o, the preprocessed source is written to standard output.
+  With -o - in -S/-c modes, assembly/object is written to standard output.
+
+STDERR
+  Diagnostics from fcc and underlying tools are written to standard error. With -v, invoked commands are echoed.
+
+EXIT STATUS
+  0 on success; non-zero on any error from the driver or underlying tools.
+EOF
+}
+
+ARCH="-m32"
+DEBUG=""
+OUT="a.out"
+INFILE=""
+MODE="link"   # link|obj|asm|pp
+PP_ARGS=()
+LLC_ARGS=()
+LD_ARGS=()
+AS_ARGS=()
+WA_CLANG_ARGS=()
+CC1_ARGS=()
+ALLOW_CLANG_IR=0
+USE_INTERNAL_PP=0
+STD="c89"
+VERBOSE=0
+FREESTANDING=0
+# Dependency-generation tracking
+M_SEEN=0
+MD_SEEN=0
+# Track if -o was explicitly provided
+OUT_SPECIFIED=0
+
+# Parse args
+ARGS=($@)
+idx=0
+stop_opts=0
+while [[ $idx -lt ${#ARGS[@]} ]]; do
+  a="${ARGS[$idx]}"
+  if [[ $stop_opts -eq 1 ]]; then
+    if [[ -z "$INFILE" ]]; then INFILE="$a"; else echo "fcc: multiple input files not supported" >&2; exit 1; fi
+    idx=$((idx+1)); continue
+  fi
+  case "$a" in
+    -h|--help) show_help; exit 0;;
+    --) stop_opts=1; idx=$((idx+1));;
+    -m32|-m64) ARCH="$a"; idx=$((idx+1));;
+    -g) DEBUG="-g"; idx=$((idx+1));;
+    -v) VERBOSE=1; idx=$((idx+1));;
+    -ffreestanding) FREESTANDING=1; idx=$((idx+1));;
+    --use-internal-pp) USE_INTERNAL_PP=1; idx=$((idx+1));;
+    -o)
+      if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -o needs an argument" >&2; exit 1; fi
+      OUT_SPECIFIED=1
+      OUT="${ARGS[$((idx+1))]}"; idx=$((idx+2));;
+    -I*|-isystem*)
+      if [[ "$a" =~ ^-I.+ ]]; then
+        # -Ipath format
+        PP_ARGS+=("$a"); idx=$((idx+1))
+      elif [[ "$a" =~ ^-isystem.+ ]]; then
+        # -isystempath format
+        PP_ARGS+=("$a"); idx=$((idx+1))
+      elif [[ "$a" == "-I" ]]; then
+        # -I path format
+        if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -I needs an argument" >&2; exit 1; fi
+        PP_ARGS+=("-I" "${ARGS[$((idx+1))]}"); idx=$((idx+2))
+      elif [[ "$a" == "-isystem" ]]; then
+        # -isystem path format
+        if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -isystem needs an argument" >&2; exit 1; fi
+        PP_ARGS+=("-isystem" "${ARGS[$((idx+1))]}"); idx=$((idx+2))
+      fi;;
+    -include)
+      if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -include needs an argument" >&2; exit 1; fi
+      PP_ARGS+=("-include" "${ARGS[$((idx+1))]}"); idx=$((idx+2));;
+    -D*|-U*)
+      if [[ "$a" =~ ^-[DU].+ ]]; then
+        # -DNAME=VALUE or -UNAME format
+        PP_ARGS+=("$a"); idx=$((idx+1))
+      else
+        # -D NAME or -U NAME format
+        if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: $a needs an argument" >&2; exit 1; fi
+        PP_ARGS+=("$a" "${ARGS[$((idx+1))]}"); idx=$((idx+2))
+      fi;;
+    -Wp,*)
+      PP_ARGS+=("$a"); idx=$((idx+1));;
+    -Wc,*)
+      wc_opts="${a#-Wc,}"; IFS=',' read -ra _wc <<< "$wc_opts"; CC1_ARGS+=("${_wc[@]}"); unset IFS; idx=$((idx+1));;
+    -Wa,*)
+      WA_CLANG_ARGS+=("$a"); wa_opts="${a#-Wa,}"; IFS=',' read -ra _wa <<< "$wa_opts"; AS_ARGS+=("${_wa[@]}"); unset IFS; idx=$((idx+1));;
+    -M|-MM|-MD|-MMD|-MG|-MP)
+      PP_ARGS+=("$a");
+      [[ "$a" == "-M" || "$a" == "-MM" ]] && M_SEEN=1
+      [[ "$a" == "-MD" || "$a" == "-MMD" ]] && MD_SEEN=1
+      idx=$((idx+1));;
+    -MF|-MT|-MQ)
+      if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: $a needs an argument" >&2; exit 1; fi
+      PP_ARGS+=("$a" "${ARGS[$((idx+1))]}"); idx=$((idx+2));;
+    -MF*|-MT*|-MQ*)
+      PP_ARGS+=("$a"); idx=$((idx+1));;
+    -L)
+      if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -L needs an argument" >&2; exit 1; fi
+      LD_ARGS+=("-L" "${ARGS[$((idx+1))]}"); idx=$((idx+2));;
+    -l)
+      if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -l needs an argument" >&2; exit 1; fi
+      LD_ARGS+=("-l" "${ARGS[$((idx+1))]}"); idx=$((idx+2));;
+    -s)
+      LD_ARGS+=("-s"); idx=$((idx+1));;
+    -O)
+      if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -O needs a level" >&2; exit 1; fi
+      LLC_ARGS+=("-O${ARGS[$((idx+1))]}"); idx=$((idx+2));;
+    -std=*)
+      STD="${a#-std=}"; idx=$((idx+1));;
+    -c) MODE="obj"; idx=$((idx+1));;
+    -S) MODE="asm"; idx=$((idx+1));;
+    -E) MODE="pp"; idx=$((idx+1));;
+    -nostdlib|-nodefaultlibs|-nostartfiles|-static|-pthread)
+      LD_ARGS+=("$a"); idx=$((idx+1));;
+    -Wl,*)
+      LD_ARGS+=("$a"); idx=$((idx+1));;
+    --allow-clang-ir) ALLOW_CLANG_IR=1; idx=$((idx+1));;
+    -*) 
+      if [[ "$a" == "-" ]]; then
+        # stdin input file
+        if [[ -z "$INFILE" ]]; then INFILE="$a"; else echo "fcc: multiple input files not supported" >&2; exit 1; fi
+        idx=$((idx+1))
+      else
+        echo "fcc: unknown option: $a" >&2; exit 1
+      fi;;
+    *)
+      if [[ -z "$INFILE" ]]; then INFILE="$a"; else echo "fcc: multiple input files not supported" >&2; exit 1; fi
+      idx=$((idx+1));;
+  esac
+done
+
+[[ -n "$INFILE" ]] || { echo "fcc: error: no input" >&2; exit 1; }
+
+# Compute sensible default outputs if -o was not specified
+if [[ $OUT_SPECIFIED -eq 0 ]]; then
+  if [[ "$MODE" == "obj" ]]; then
+    if [[ "$INFILE" == "-" ]]; then OUT="-"; else base="${INFILE##*/}"; base="${base%.*}"; OUT="${base}.o"; fi
+  elif [[ "$MODE" == "asm" ]]; then
+    if [[ "$INFILE" == "-" ]]; then OUT="-"; else base="${INFILE##*/}"; base="${base%.*}"; OUT="${base}.s"; fi
+  fi
+fi
+
+# Verbose tracing
+if [[ $VERBOSE -eq 1 ]]; then set -x; fi
+
+# Validate/normalize standard
+case "$STD" in
+  c89|c90|ansi) :;;
+  *) echo "fcc: warning: unsupported -std=$STD; forcing -std=c89 for preprocessing" >&2; STD="c89";;
+esac
+
+# Always use nostdinc for C89 compliance and our minimal headers
+PP_ARGS+=(
+  "-nostdinc"
+  "-I" "$(pwd)/tools/include"
+  "-D" "__attribute__(...)="
+  "-D" "__asm__(...)="
+  "-D" "__inline__="
+  "-D" "__inline="
+  "-D" "__restrict__="
+  "-D" "__restrict="
+  "-D" "__extension__="
+  "-D" "__volatile__="
+)
+
+# Inject additional freestanding-friendly defines if requested
+if [[ $FREESTANDING -eq 1 ]]; then
+  PP_ARGS+=(
+    "-D" "__STDC_HOSTED__=0"
+  )
+else
+  PP_ARGS+=(
+    "-D" "__STDC_HOSTED__=1"
+  )
+fi
+
+# If pure dependency generation requested (-M/-MM without -MD/-MMD), run it and exit
+if [[ $M_SEEN -eq 1 && $MD_SEEN -eq 0 ]]; then
+  pp_lang=()
+  if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
+  clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE"
+  exit 0
+fi
+
+# Choose cc1 binary (prefer local build over installed)
+if [[ -x target/debug/cc1 ]]; then
+  CC1_BIN="target/debug/cc1"
+elif [[ -x ./cc1 ]]; then
+  CC1_BIN="./cc1"
+elif command -v cc1 >/dev/null 2>&1; then
+  CC1_BIN="$(command -v cc1)"
+else
+  echo "fcc: error: cc1 not found" >&2; exit 1
+fi
+
+# Preprocess step (always before cc1)
+if [[ "$MODE" == "pp" ]]; then
+      # For -c and final compilation, need to preprocess first
+    if [[ $USE_INTERNAL_PP -eq 1 ]]; then
+      # Use cc1 internal preprocessor
+      PPTEMP=$(mktemp)
+      ./cc1 --preprocess-only "$INFILE" -o "$PPTEMP"
+    else
+      # Use clang -E -std=c89 to preprocess
+      PPTEMP=$(mktemp)
+      pp_lang=()
+      if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
+      clang -E -P -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$PPTEMP"
+    fi
+  exit 0
+fi
+
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+CPP_OUT="$TMPDIR/out.i"
+IR_OUT="$TMPDIR/out.ll"
+IR_USE="$TMPDIR/out_use.ll"
+ASM_OUT="$TMPDIR/out.s"
+OBJ_OUT="$TMPDIR/out.o"
+
+# 0) Preprocess
+# Preprocessing step
+if [[ $USE_INTERNAL_PP -eq 1 ]]; then
+  # Use cc1 internal preprocessor - copy input to temp file first if stdin
+  if [[ "$INFILE" == "-" ]]; then
+    cat > "$CPP_OUT.raw"
+    ./cc1 --preprocess-only "$CPP_OUT.raw" -o "$CPP_OUT"
+  else
+    ./cc1 --preprocess-only "$INFILE" -o "$CPP_OUT"
+  fi
+else
+  pp_lang=()
+  if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
+  clang -E -P -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$CPP_OUT"
+fi
+
+# 1) C -> LLVM IR (cc1)
+cc1_arch="$ARCH"
+if [[ "$ARCH" == "-m32" ]]; then cc1_arch="-m32"; else cc1_arch="-m64"; fi
+# Write IR via stdout redirection to be robust
+"$CC1_BIN" "$CPP_OUT" $cc1_arch $DEBUG "${CC1_ARGS[@]}" -o - > "$IR_OUT"
+
+# Strip any datalayout to avoid alignment issues across LLVM/targets
+if grep -q "^target datalayout" "$IR_OUT"; then
+  sed '/^target datalayout/d' "$IR_OUT" > "$IR_USE"
+else
+  cp "$IR_OUT" "$IR_USE"
+fi
+
+# Tool availability
+HAS_LLC=0; if command -v llc >/dev/null 2>&1; then HAS_LLC=1; fi
+HAS_AS=0; if command -v as  >/dev/null 2>&1; then HAS_AS=1; fi
+
+# 2) Lower IR to assembly or object
+if [[ "$MODE" == "asm" ]]; then
+  if [[ $HAS_LLC -eq 1 ]]; then
+    llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
+  elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
+    # Use clang to produce assembly directly from IR
+    clang $ARCH "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -S -x ir "$IR_USE" -o "$ASM_OUT"
+  else
+    echo "fcc: error: llc not found. Install LLVM (llc) or pass --allow-clang-ir" >&2; exit 1
+  fi
+else
+  if [[ $HAS_LLC -eq 1 && $HAS_AS -eq 1 ]]; then
+    # LLVM IR -> ASM via llc
+    llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
+    # ASM -> OBJ via as
+    if [[ "$ARCH" == "-m32" ]]; then
+      as --32 "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
+    else
+      as "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
+    fi
+  elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
+    # Compile IR to object directly with clang
+    clang $ARCH "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -c -x ir "$IR_USE" -o "$OBJ_OUT"
+  else
+    missing=()
+    [[ $HAS_LLC -eq 1 ]] || missing+=("llc")
+    [[ $HAS_AS  -eq 1 ]] || missing+=("as")
+    echo "fcc: error: missing tool(s): ${missing[*]}. Install them or pass --allow-clang-ir" >&2; exit 1
+  fi
+fi
+
+# 3) Link or emit final output
+case "$MODE" in
+  obj)
+    if [[ "$OUT" == "-" ]]; then cat "$OBJ_OUT"; else mv "$OBJ_OUT" "$OUT"; fi;;
+  asm)
+    if [[ "$OUT" == "-" ]]; then cat "$ASM_OUT"; else mv "$ASM_OUT" "$OUT"; fi;;
+  link)
+    if [[ "$ARCH" == "-m32" ]]; then
+      clang -m32 -no-pie "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+    else
+      clang -m64 "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+    fi;;
+  *) echo "fcc: internal error (mode)" >&2; exit 1;;
+esac
