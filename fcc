@@ -4,7 +4,7 @@ set -euo pipefail
 # fcc: Forty-two Compiler Collection driver
 
 # Pipeline (default): clang -E -std=c89 -> cc1 -> llc -> as -> clang (link)
-# Fallback (if --use-internal-pp): cc1 internal preprocessor -> cc1 -> llc -> as -> clang (link)
+# Fallback (if --use-cc1-pp): cc1 internal preprocessor -> cc1 -> llc -> as -> clang (link)
 # Optional fallback (if --allow-clang-ir): use clang -x ir when llc/as are unavailable
 
 show_help() {
@@ -16,7 +16,7 @@ SYNOPSIS
 
 DESCRIPTION
   fcc is a compiler driver that orchestrates the full toolchain:
-    1) Preprocess:  clang -E -std=c89 (C89 compliant preprocessing)
+    1) Preprocess:  clang -E -std=c89 (C preprocessing)
     2) Compile:     cc1 (C89 -> LLVM IR)  
     3) Lower:       llc (LLVM IR -> assembly)
     4) Assemble:    as  (assembly -> object)
@@ -31,7 +31,7 @@ OPTIONS
   -std=<v>          Language standard for preprocessing (c89|c90|ansi; default: c89)
   -O <n>            Optimization level (forwarded to llc/clang as -O<n>)
   -ffreestanding    Provide minimal builtin/type/attribute defines to tolerate system headers (maps __builtin_va_list, strips __attribute__/__asm__ etc.)
-  --use-internal-pp Use cc1 internal preprocessor instead of clang -E
+  --use-cc1-pp      Use cc1 internal preprocessor instead of clang -E (fallback)
   
   Preprocessor options (forwarded to clang -E by default):
     -I <dir>        Add include path
@@ -79,7 +79,7 @@ STDIN
   Read when the operand is '-'. Forwarded to the preprocessor.
 
 INPUT FILES
-  C89 source code. Preprocessing is performed by clang -E by default unless --use-internal-pp is specified.
+  C89 source code. Preprocessing is performed by clang -E -std=c89 by default unless --use-cc1-pp is specified.
 
 STDOUT
   With -E and without -o, the preprocessed source is written to standard output.
@@ -132,7 +132,7 @@ while [[ $idx -lt ${#ARGS[@]} ]]; do
     -g) DEBUG="-g"; idx=$((idx+1));;
     -v) VERBOSE=1; idx=$((idx+1));;
     -ffreestanding) FREESTANDING=1; idx=$((idx+1));;
-    --use-internal-pp) USE_INTERNAL_PP=1; idx=$((idx+1));;
+        --use-cc1-pp) USE_INTERNAL_PP=1; idx=$((idx+1));;
     -o)
       if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -o needs an argument" >&2; exit 1; fi
       OUT_SPECIFIED=1
@@ -224,6 +224,8 @@ if [[ $OUT_SPECIFIED -eq 0 ]]; then
     if [[ "$INFILE" == "-" ]]; then OUT="-"; else base="${INFILE##*/}"; base="${base%.*}"; OUT="${base}.o"; fi
   elif [[ "$MODE" == "asm" ]]; then
     if [[ "$INFILE" == "-" ]]; then OUT="-"; else base="${INFILE##*/}"; base="${base%.*}"; OUT="${base}.s"; fi
+  elif [[ "$MODE" == "pp" ]]; then
+    OUT="-"  # Default to stdout for preprocessing
   fi
 fi
 
@@ -270,10 +272,23 @@ if [[ $M_SEEN -eq 1 && $MD_SEEN -eq 0 ]]; then
 fi
 
 # Choose cc1 binary (prefer local build over installed)
-if [[ -x target/debug/cc1 ]]; then
+# Get the directory where this script is located
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+if [[ -x "$SCRIPT_DIR/target/release/cc1" ]]; then
+  CC1_BIN="$SCRIPT_DIR/target/release/cc1"
+elif [[ -x "$SCRIPT_DIR/target/debug/cc1" ]]; then
+  CC1_BIN="$SCRIPT_DIR/target/debug/cc1"
+elif [[ -x "$SCRIPT_DIR/cc1" ]]; then
+  CC1_BIN="$SCRIPT_DIR/cc1"
+elif [[ -x target/release/cc1 ]]; then
+  CC1_BIN="target/release/cc1"
+elif [[ -x target/debug/cc1 ]]; then
   CC1_BIN="target/debug/cc1"
-elif [[ -x ./cc1 ]]; then
-  CC1_BIN="./cc1"
+elif [[ -x cc1 ]]; then
+  CC1_BIN="cc1"
+elif [[ -x ../../cc1 ]]; then
+  CC1_BIN="../../cc1"
 elif command -v cc1 >/dev/null 2>&1; then
   CC1_BIN="$(command -v cc1)"
 else
@@ -282,18 +297,24 @@ fi
 
 # Preprocess step (always before cc1)
 if [[ "$MODE" == "pp" ]]; then
-      # For -c and final compilation, need to preprocess first
-    if [[ $USE_INTERNAL_PP -eq 1 ]]; then
-      # Use cc1 internal preprocessor
-      PPTEMP=$(mktemp)
-      ./cc1 --preprocess-only "$INFILE" -o "$PPTEMP"
+  # Preprocess-only mode (-E): output preprocessed source
+  if [[ $USE_INTERNAL_PP -eq 1 ]]; then
+    # Use cc1 internal preprocessor
+    if [[ "$OUT" == "-" ]]; then
+      "$CC1_BIN" --preprocess-only "$INFILE"
     else
-      # Use clang -E -std=c89 to preprocess
-      PPTEMP=$(mktemp)
-      pp_lang=()
-      if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
-      clang -E -P -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$PPTEMP"
+      "$CC1_BIN" --preprocess-only "$INFILE" -o "$OUT"
     fi
+  else
+    # Use clang -E -std=c89 to preprocess (DEFAULT)
+    pp_lang=()
+    if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
+    if [[ "$OUT" == "-" ]]; then
+      clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE"
+    else
+      clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$OUT"
+    fi
+  fi
   exit 0
 fi
 
@@ -307,16 +328,27 @@ ASM_OUT="$TMPDIR/out.s"
 OBJ_OUT="$TMPDIR/out.o"
 
 # 0) Preprocess
-# Preprocessing step
+# Preprocessing step - use clang -E by default as required by subject
+# But allow cc1 internal preprocessor with --use-cc1-pp option
+has_pp_options=0
+for arg in "${PP_ARGS[@]}"; do
+  if [[ "$arg" =~ ^-[IDU] ]] || [[ "$arg" == "-include" ]] || [[ "$arg" == "-isystem" ]]; then
+    has_pp_options=1
+    break
+  fi
+done
+
 if [[ $USE_INTERNAL_PP -eq 1 ]]; then
-  # Use cc1 internal preprocessor - copy input to temp file first if stdin
+  # Use cc1 internal preprocessor when explicitly requested
   if [[ "$INFILE" == "-" ]]; then
     cat > "$CPP_OUT.raw"
-    ./cc1 --preprocess-only "$CPP_OUT.raw" -o "$CPP_OUT"
+    "$CC1_BIN" --preprocess-only "$CPP_OUT.raw" -o "$CPP_OUT"
+    rm -f "$CPP_OUT.raw"
   else
-    ./cc1 --preprocess-only "$INFILE" -o "$CPP_OUT"
+    "$CC1_BIN" --preprocess-only "$INFILE" -o "$CPP_OUT"
   fi
 else
+  # Use clang preprocessor (DEFAULT as per subject specification)
   pp_lang=()
   if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
   clang -E -P -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$CPP_OUT"

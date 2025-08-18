@@ -10,15 +10,6 @@ use std::io::{self, Write, Read};
 
 fn usage() { 
     eprintln!("usage: cc1 infile [-o outfile]");
-    eprintln!();
-    eprintln!("Options (development):");
-    eprintln!("  -m32|-m64           Target architecture (default: -m32)");
-    eprintln!("  -g                  Enable debug info");
-    eprintln!("  --lex-only          Lexical analysis only");
-    eprintln!("  --parse-expr        Parse expressions only");
-    eprintln!("  --parse-tu          Parse translation unit only"); 
-    eprintln!("  --sem               Semantic analysis only");
-    eprintln!("  --preprocess-only   Preprocessing only (internal preprocessor)");
 }
 
 fn main() {
@@ -35,6 +26,11 @@ fn main() {
     let mut preprocess_only_mode = false;
     let mut arch_opt: Option<front::semantics::Arch> = None;
     let mut debug_info = false;
+    let mut continue_on_error = false;
+    let mut max_errors = 10;
+    let mut defines = std::collections::HashMap::new();
+    let mut undefines = std::collections::HashSet::new();
+    let mut include_dirs = Vec::new();
 
     let mut i = 0;
     while i < args.len() {
@@ -47,10 +43,79 @@ fn main() {
             "-m32" => { arch_opt = Some(front::semantics::Arch::I386); i += 1; }
             "-m64" => { arch_opt = Some(front::semantics::Arch::X86_64); i += 1; }
             "-g" => { debug_info = true; i += 1; }
-            "-o" => { if i + 1 >= args.len() { eprintln!("cc1: error: -o requires a value"); std::process::exit(1);} outfile = Some(args[i+1].clone()); i += 2; }
+            "--continue-on-error" => { continue_on_error = true; i += 1; }
+            "-o" => { 
+                if i + 1 >= args.len() { 
+                    eprintln!("cc1: error: -o requires a value"); 
+                    std::process::exit(1);
+                } 
+                outfile = Some(args[i+1].clone()); 
+                i += 2; 
+            }
+            s if s.starts_with("--max-errors=") => {
+                if let Ok(n) = s[13..].parse::<usize>() {
+                    max_errors = n;
+                } else {
+                    eprintln!("cc1: error: invalid value for --max-errors");
+                    std::process::exit(1);
+                }
+                i += 1;
+            }
+            s if s.starts_with("-D") => {
+                let define_str = &s[2..];
+                if define_str.is_empty() && i + 1 < args.len() {
+                    i += 1;
+                    let define_str = &args[i];
+                    parse_define_option(define_str, &mut defines);
+                } else {
+                    parse_define_option(define_str, &mut defines);
+                }
+                i += 1;
+            }
+            s if s.starts_with("-U") => {
+                let undef_str = &s[2..];
+                if undef_str.is_empty() && i + 1 < args.len() {
+                    i += 1;
+                    undefines.insert(args[i].clone());
+                } else {
+                    undefines.insert(undef_str.to_string());
+                }
+                i += 1;
+            }
+            s if s.starts_with("-I") => {
+                let include_str = &s[2..];
+                if include_str.is_empty() && i + 1 < args.len() {
+                    i += 1;
+                    include_dirs.push(args[i].clone());
+                } else {
+                    include_dirs.push(include_str.to_string());
+                }
+                i += 1;
+            }
             s if s.starts_with("-o") => { outfile = Some(s[2..].to_string()); i += 1; }
-            s if s.starts_with('-') && s != "-" => { eprintln!("cc1: error: unknown option: {}", s); std::process::exit(1);} 
-            s => { if infile.is_some() { eprintln!("cc1: error: multiple input files not supported"); std::process::exit(1);} infile = Some(s.to_string()); i += 1; }
+            s if s.starts_with('-') && s != "-" => { 
+                eprintln!("cc1: error: unknown option: {}", s); 
+                std::process::exit(1);
+            } 
+            s => { 
+                if infile.is_some() { 
+                    eprintln!("cc1: error: multiple input files not supported"); 
+                    std::process::exit(1);
+                } 
+                infile = Some(s.to_string()); 
+                i += 1; 
+            }
+        }
+    }
+
+    // Helper function for parsing -D options
+    fn parse_define_option(define_str: &str, defines: &mut std::collections::HashMap<String, preproc::MacroValue>) {
+        if let Some(eq_pos) = define_str.find('=') {
+            let name = define_str[..eq_pos].to_string();
+            let value = define_str[eq_pos + 1..].to_string();
+            defines.insert(name, preproc::MacroValue::Simple(value));
+        } else {
+            defines.insert(define_str.to_string(), preproc::MacroValue::Simple("1".to_string()));
         }
     }
 
@@ -86,12 +151,23 @@ fn main() {
         }
     }
 
-    // Basic internal preprocessor: trigraphs, line splices, comment removal (phases 1–3/4)
-    let psource = match preproc::basic_preprocess(&source) {
-        Ok(s) => s,
-        Err(err) => {
-            eprintln!("{}:1:1: error: {}", infile, err);
-            std::process::exit(1);
+    // Enhanced preprocessor with command-line defines and include paths
+    let psource = if !defines.is_empty() || !include_dirs.is_empty() {
+        let mut adv_preprocessor = preproc::AdvancedPreprocessor::new(defines.clone(), include_dirs.clone());
+        match adv_preprocessor.full_preprocess(&source) {
+            Ok(s) => s,
+            Err(err) => {
+                eprintln!("{}:1:1: error: {}", infile, err);
+                std::process::exit(1);
+            }
+        }
+    } else {
+        match preproc::basic_preprocess(&source) {
+            Ok(s) => s,
+            Err(err) => {
+                eprintln!("{}:1:1: error: {}", infile, err);
+                std::process::exit(1);
+            }
         }
     };
 
@@ -157,8 +233,15 @@ fn main() {
         return;
     }
 
-    // Default: parse TU and emit LLVM IR
-    let mut p = front::parser::Parser::new(&psource, &infile);
+    // Default: parse TU and emit LLVM IR with error recovery
+    let error_recovery = front::parser::ErrorRecovery::new(continue_on_error, max_errors);
+    let mut p = match front::parser::Parser::new_with_recovery(&psource, &infile, error_recovery) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("{}:1:1: error: {}", infile, e);
+            std::process::exit(1);
+        }
+    };
     match p.parse_translation_unit() {
         Ok(tu) => {
             let arch = arch_opt.unwrap_or(front::semantics::Arch::I386);
@@ -166,6 +249,12 @@ fn main() {
             let _ = debug_info; // reserved for future DI metadata emission
             writeln!(out, "{}", m.text).ok();
         }
-        Err(err) => { eprintln!("{}:{}:{}: error: {}", infile, err.span.line, err.span.col, err.msg); std::process::exit(1); }
+        Err(err) => { 
+            eprintln!("{}:{}:{}: error: {}", infile, err.span.line, err.span.col, err.msg); 
+            if continue_on_error && p.has_recovered_errors() {
+                eprintln!("Compilation terminée avec erreurs récupérables.");
+            }
+            std::process::exit(1); 
+        }
     }
 }

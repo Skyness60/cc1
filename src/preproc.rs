@@ -17,8 +17,63 @@ pub enum MacroValue {
     FunctionLike { params: Vec<String>, body: String },
 }
 
+/// Advanced preprocessor with full C89 support
+pub struct AdvancedPreprocessor {
+    defines: HashMap<String, MacroValue>,
+    include_dirs: Vec<String>,
+    include_stack: Vec<PathBuf>,
+}
+
+impl AdvancedPreprocessor {
+    pub fn new(defines: HashMap<String, MacroValue>, include_dirs: Vec<String>) -> Self {
+        let mut preprocessor = AdvancedPreprocessor {
+            defines,
+            include_dirs,
+            include_stack: Vec::new(),
+        };
+        
+        // Add standard predefined macros
+        preprocessor.defines.insert("__STDC__".to_string(), MacroValue::Simple("1".to_string()));
+        preprocessor.defines.insert("__STDC_VERSION__".to_string(), MacroValue::Simple("199409L".to_string()));
+        
+        // Add common platform defines
+        #[cfg(target_arch = "x86_64")]
+        preprocessor.defines.insert("__x86_64__".to_string(), MacroValue::Simple("1".to_string()));
+        #[cfg(target_arch = "x86")]
+        preprocessor.defines.insert("__i386__".to_string(), MacroValue::Simple("1".to_string()));
+        #[cfg(target_os = "linux")]
+        preprocessor.defines.insert("__linux__".to_string(), MacroValue::Simple("1".to_string()));
+        
+        preprocessor
+    }
+    
+    pub fn preprocess(&mut self, source: &str) -> Result<String, String> {
+        full_preprocess(source, &mut self.defines, &mut self.include_stack)
+    }
+    
+    pub fn full_preprocess(&mut self, source: &str) -> Result<String, String> {
+        self.preprocess(source)
+    }
+    
+    /// Add include directory
+    pub fn add_include_dir(&mut self, dir: String) {
+        self.include_dirs.push(dir);
+    }
+    
+    /// Define macro
+    pub fn define_macro(&mut self, name: String, value: MacroValue) {
+        self.defines.insert(name, value);
+    }
+    
+    /// Undefine macro
+    pub fn undefine_macro(&mut self, name: &str) {
+        self.defines.remove(name);
+    }
+}
+
 pub fn basic_preprocess(source: &str) -> Result<String, String> {
-    full_preprocess(source, &mut HashMap::new(), &mut Vec::new())
+    let mut preprocessor = AdvancedPreprocessor::new(HashMap::new(), Vec::new());
+    preprocessor.preprocess(source)
 }
 
 pub fn full_preprocess(source: &str, defines: &mut HashMap<String, MacroValue>, include_stack: &mut Vec<PathBuf>) -> Result<String, String> {

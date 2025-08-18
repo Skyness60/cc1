@@ -7,9 +7,12 @@
 *.s
 *.o
 *.out
-hello64
+*.exe
+*_exe
+*_output
+*_fixed
+*_verbose
 a.out
-test_binary
 
 # Cargo package files
 Cargo.lock
@@ -23,7 +26,6 @@ Cargo.lock
 .DS_Store
 Thumbs.db
 *.bak
-*.tmp
 *.idea/
 .vscode/
 
@@ -32,9 +34,6 @@ Thumbs.db
 
 # Logs
 *.log
-
-# By-products of 'make clean'
-cc1
 
 # Misc
 .DS_Store

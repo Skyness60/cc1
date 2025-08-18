@@ -1,6 +1,6 @@
-# cc1 — Compilateur C89 strict
+# cc1 — Compilateur C89 complet
 
-cc1 est un compilateur C89 complet avec lexer, parser, analyse sémantique et génération LLVM IR, pensé pour être strict et conforme au standard. Il s'intègre dans une toolchain via le driver `fcc`.
+cc1 est un compilateur C89 complet avec lexer, parser, analyse sémantique, préprocesseur interne et génération LLVM IR, pensé pour être strict et conforme au standard C89. Il s'intègre dans une toolchain complète via le driver `fcc`.
 
 ## Synopsis
 
@@ -52,7 +52,7 @@ Le compilateur s'utilise principalement via son driver `fcc` qui orchestre la to
 - Entrée depuis stdin supportée via l'opérande `-`
 - Options POSIX c17 implémentées (sauf `-B -G -R`). Voir `./fcc --help` pour les sections: SYNOPSIS, DESCRIPTION, OPTIONS, OPERANDS, STDIN, INPUT FILES, STDOUT, STDERR, EXIT STATUS
 - Pipeline exacte: `cc1` (préprocesseur interne) → `cc1` (LLVM IR) → `llc` → `as -c` → `clang -m32 -no-pie`
-- Option `--use-clang-pp` pour utiliser `clang -E` au lieu du préprocesseur interne
+- Option `--use-clang-pp` pour basculer sur `clang -E` (fallback)
 
 ## Cibles et standard
 

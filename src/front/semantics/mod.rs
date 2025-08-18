@@ -606,6 +606,11 @@ impl<'a> SemanticAnalyzer<'a> {
                         if !ok { if matches!(rty, CType::Pointer { .. }) && is_null_constant(e) { ok = true; } }
                         if !ok { self.ctx.diags.error(e.span(), "incompatible initializer type"); }
                     }
+                    Initializer::Designated { designators: _, init } => {
+                        // Pour l'instant, traiter comme initializer normal
+                        // TODO: Implémenter la vérification des designated initializers  
+                        self.check_initializer(&rty, init, span);
+                    }
                 }
             }
         }
@@ -715,6 +720,10 @@ impl<'a> SemanticAnalyzer<'a> {
             Initializer::List(list) => {
                 for it in list { self.require_const_initializer(it)?; }
                 Ok(())
+            }
+            Initializer::Designated { designators: _, init } => {
+                // Designated initializers need constant expressions
+                self.require_const_initializer(init)
             }
         }
     }

@@ -41,6 +41,16 @@ pub struct Param { pub name: Option<String>, pub ty: CType }
 pub enum Initializer {
     Expr(Expr),
     List(Vec<Initializer>),
+    Designated {
+        designators: Vec<Designator>,
+        init: Box<Initializer>,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum Designator {
+    Field(String),           // .field_name
+    Index(Box<Expr>),       // [expression]
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

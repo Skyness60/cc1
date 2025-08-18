@@ -39,27 +39,27 @@ impl<'a> Parser<'a> {
         if prec == Prec::Postfix { return self.parse_postfix(); }
         let mut lhs = self.parse_prec(prec.next())?;
         loop {
-            let t = match self.ts.peek(0) { Ok(t) => t.clone(), Err(e) => return Err(ParseError{ msg: e.msg, span: e.span }) };
+            let t = match self.ts.peek(0) { Ok(t) => t.clone(), Err(e) => return Err(ParseError::new(e.span , e.msg)) };
             let expr = match t.kind {
                 // , séquence
                 K::Comma if prec <= Prec::Comma => { 
-                    let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; 
+                    let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; 
                     let rhs = self.parse_prec(Prec::Comma.next())?; 
                     let span = join(lhs.span(), rhs.span()); 
                     Expr::Binary { op: BinaryOp::Comma, lhs: Box::new(lhs), rhs: Box::new(rhs), span } 
                 }
                 // ?: conditionnel
                 K::Question if prec <= Prec::Cond => {
-                    let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?;
                     let texpr = self.parse_expr()?;
-                    let _ = self.ts.expect_kind(K::Colon).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.expect_kind(K::Colon).map_err(|e| ParseError::new(e.span , e.msg))?;
                     let eexpr = self.parse_prec(Prec::Cond)?;
                     let span = join(lhs.span(), eexpr.span());
                     Expr::Cond { c: Box::new(lhs), t: Box::new(texpr), e: Box::new(eexpr), span }
                 }
                 // Assignations
                 k @ (K::Assign | K::PlusAssign | K::MinusAssign | K::StarAssign | K::SlashAssign | K::PercentAssign | K::AmpAssign | K::PipeAssign | K::CaretAssign | K::ShlAssign | K::ShrAssign) if prec <= Prec::Assign => {
-                    let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?;
                     let rhs = self.parse_prec(Prec::Assign.next())?;
                     let span = join(lhs.span(), rhs.span());
                     let aop = match k {
@@ -109,34 +109,34 @@ impl<'a> Parser<'a> {
     fn parse_postfix(&mut self) -> PResult<Expr> {
         let mut expr = self.parse_unary()?;
         loop {
-            let t = match self.ts.peek(0) { Ok(t) => t.clone(), Err(e) => return Err(ParseError{ msg: e.msg, span: e.span }) };
+            let t = match self.ts.peek(0) { Ok(t) => t.clone(), Err(e) => return Err(ParseError::new(e.span , e.msg)) };
             expr = match t.kind {
                 K::LParen => { // call
-                    let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?;
                     let mut args = Vec::new();
-                    if !self.ts.check(K::RParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })? {
+                    if !self.ts.check(K::RParen).map_err(|e| ParseError::new(e.span , e.msg))? {
                         loop {
                             // Arguments are assignment-expressions (no top-level comma operator)
                             args.push(self.parse_prec(Prec::Assign)?);
-                            if self.ts.matches(K::Comma).map_err(|e| ParseError{ msg: e.msg, span: e.span })? { continue; }
+                            if self.ts.matches(K::Comma).map_err(|e| ParseError::new(e.span , e.msg))? { continue; }
                             break;
                         }
                     }
-                    let r = self.ts.expect_kind(K::RParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let r = self.ts.expect_kind(K::RParen).map_err(|e| ParseError::new(e.span , e.msg))?;
                     let span = join(expr.span(), r.span);
                     Expr::Call { callee: Box::new(expr), args, span }
                 }
                 K::LBracket => {
-                    let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?;
                     let idx = self.parse_expr()?;
-                    let r = self.ts.expect_kind(K::RBracket).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let r = self.ts.expect_kind(K::RBracket).map_err(|e| ParseError::new(e.span , e.msg))?;
                     let span = join(expr.span(), r.span);
                     Expr::Index { base: Box::new(expr), index: Box::new(idx), span }
                 }
-                K::Dot => { let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let (name, sp) = self.parse_ident()?; let span = join(expr.span(), sp); Expr::Member { base: Box::new(expr), field: name, span } }
-                K::Arrow => { let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let (name, sp) = self.parse_ident()?; let span = join(expr.span(), sp); Expr::PtrMember { base: Box::new(expr), field: name, span } }
-                K::Inc => { let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let span = join(expr.span(), t.span); Expr::PostInc { expr: Box::new(expr), span } }
-                K::Dec => { let _ = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let span = join(expr.span(), t.span); Expr::PostDec { expr: Box::new(expr), span } }
+                K::Dot => { let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let (name, sp) = self.parse_ident()?; let span = join(expr.span(), sp); Expr::Member { base: Box::new(expr), field: name, span } }
+                K::Arrow => { let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let (name, sp) = self.parse_ident()?; let span = join(expr.span(), sp); Expr::PtrMember { base: Box::new(expr), field: name, span } }
+                K::Inc => { let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let span = join(expr.span(), t.span); Expr::PostInc { expr: Box::new(expr), span } }
+                K::Dec => { let _ = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let span = join(expr.span(), t.span); Expr::PostDec { expr: Box::new(expr), span } }
                 _ => break,
             };
         }
@@ -144,19 +144,19 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_unary(&mut self) -> PResult<Expr> {
-        let t = match self.ts.peek(0) { Ok(t) => t.clone(), Err(e) => return Err(ParseError{ msg: e.msg, span: e.span }) };
+        let t = match self.ts.peek(0) { Ok(t) => t.clone(), Err(e) => return Err(ParseError::new(e.span , e.msg)) };
         match t.kind {
             // sizeof
             K::Sizeof => {
-                let tsz = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
-                if self.ts.matches(K::LParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })? {
+                let tsz = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?;
+                if self.ts.matches(K::LParen).map_err(|e| ParseError::new(e.span , e.msg))? {
                     if self.is_type_start()? {
                         let ty = self.parse_type_name()?;
-                        let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                        let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError::new(e.span , e.msg))?;
                         Ok(Expr::SizeOfType { ty, span: tsz.span })
                     } else {
                         let e = self.parse_expr()?;
-                        let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                        let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError::new(e.span , e.msg))?;
                         Ok(Expr::SizeOfExpr { expr: Box::new(e), span: tsz.span })
                     }
                 } else {
@@ -166,41 +166,41 @@ impl<'a> Parser<'a> {
             }
             // cast (type-name) unary
             K::LParen => {
-                let _lp = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; // consume '('
+                let _lp = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; // consume '('
                 if self.is_type_start()? {
                     let ty = self.parse_type_name()?;
-                    let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError::new(e.span , e.msg))?;
                     let e = self.parse_unary()?;
                     Ok(Expr::Cast { ty, expr: Box::new(e), span: _lp.span })
                 } else {
                     // grouped expression
                     let e = self.parse_expr()?;
-                    let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+                    let _ = self.ts.expect_kind(K::RParen).map_err(|e| ParseError::new(e.span , e.msg))?;
                     Ok(e)
                 }
             }
             // primaires
             K::Ident => { let (name, sp) = self.parse_ident()?; Ok(Expr::Ident(name, sp)) }
-            K::IntLit => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; Ok(Expr::IntLit(t.lexeme, t.span)) }
-            K::FloatLit => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; Ok(Expr::FloatLit(t.lexeme, t.span)) }
-            K::CharLit => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; Ok(Expr::CharLit(t.lexeme, t.span)) }
-            K::StrLit => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; Ok(Expr::StrLit(t.lexeme, t.span)) }
+            K::IntLit => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; Ok(Expr::IntLit(t.lexeme, t.span)) }
+            K::FloatLit => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; Ok(Expr::FloatLit(t.lexeme, t.span)) }
+            K::CharLit => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; Ok(Expr::CharLit(t.lexeme, t.span)) }
+            K::StrLit => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; Ok(Expr::StrLit(t.lexeme, t.span)) }
             // pré-unaires
-            K::Inc => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::PreInc { expr: Box::new(e), span: t.span }) }
-            K::Dec => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::PreDec { expr: Box::new(e), span: t.span }) }
-            K::Plus => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::Plus, expr: Box::new(e), span: t.span }) }
-            K::Minus => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::Minus, expr: Box::new(e), span: t.span }) }
-            K::Tilde => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::BitNot, expr: Box::new(e), span: t.span }) }
-            K::Not => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::LogNot, expr: Box::new(e), span: t.span }) }
-            K::Amp => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::AddrOf, expr: Box::new(e), span: t.span }) }
-            K::Star => { let t = self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::Deref, expr: Box::new(e), span: t.span }) }
-            _ => Err(ParseError { msg: "expression attendue".into(), span: t.span }),
+            K::Inc => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::PreInc { expr: Box::new(e), span: t.span }) }
+            K::Dec => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::PreDec { expr: Box::new(e), span: t.span }) }
+            K::Plus => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::Plus, expr: Box::new(e), span: t.span }) }
+            K::Minus => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::Minus, expr: Box::new(e), span: t.span }) }
+            K::Tilde => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::BitNot, expr: Box::new(e), span: t.span }) }
+            K::Not => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::LogNot, expr: Box::new(e), span: t.span }) }
+            K::Amp => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::AddrOf, expr: Box::new(e), span: t.span }) }
+            K::Star => { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; let e = self.parse_unary()?; Ok(Expr::Unary { op: UnaryOp::Deref, expr: Box::new(e), span: t.span }) }
+            _ => Err(ParseError::new(t.span , "expression attendue")),
         }
     }
 
     pub(crate) fn parse_ident(&mut self) -> PResult<(String, Span)> {
-        let t0 = self.ts.peek(0).map_err(|e| ParseError { msg: e.msg, span: e.span })?;
-        if t0.kind == K::Ident { let t = self.ts.bump().map_err(|e| ParseError { msg: e.msg, span: e.span })?; Ok((t.lexeme, t.span)) } else { Err(ParseError { msg: "identifiant attendu".into(), span: t0.span }) }
+        let t0 = self.ts.peek(0).map_err(|e| ParseError::new(e.span , e.msg))?;
+        if t0.kind == K::Ident { let t = self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?; Ok((t.lexeme, t.span)) } else { Err(ParseError::new(t0.span , "identifiant attendu")) }
     }
 }
 
@@ -208,7 +208,7 @@ fn join(a: Span, b: Span) -> Span { Span { lo: a.lo.min(b.lo), hi: a.hi.max(b.hi
 
 macro_rules! bin {
     ($self:ident, $lhs:ident, $prec:expr, $op:expr) => {{
-        let _ = $self.ts.bump().map_err(|e| ParseError{ msg: e.msg, span: e.span })?;
+        let _ = $self.ts.bump().map_err(|e| ParseError::new(e.span , e.msg))?;
         let rhs = $self.parse_prec(($prec).next())?;
         let span = join($lhs.span(), rhs.span());
         Expr::Binary { op: $op, lhs: Box::new($lhs), rhs: Box::new(rhs), span }

@@ -4,14 +4,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Toolchain for fcc pipeline: clang (pp+link), llvm (llc), binutils (as), 32-bit libs for -m32
 RUN apt update && apt install -y \
-    llvm-14 llvm-14-dev \
-    clang-14 \
-    binutils \
-    gcc-multilib libc6-dev-i386 \
-    make ca-certificates && \
-    ln -sf /usr/bin/llc-14 /usr/local/bin/llc && \
-    ln -sf /usr/bin/clang-14 /usr/local/bin/clang && \
-    ln -sf /usr/bin/clang-14 /usr/local/bin/cc && \
+    binutils gcc-multilib libc6-dev-i386 \
+    make ca-certificates \
+    llvm-19 llvm-19-dev clang-19 && \
+    ln -sf /usr/bin/llc-19 /usr/local/bin/llc && \
+    ln -sf /usr/bin/clang-19 /usr/local/bin/clang && \
+    ln -sf /usr/bin/clang-19 /usr/local/bin/cc && \
     rm -rf /var/lib/apt/lists/*
 
 # Pre-copy deps only
