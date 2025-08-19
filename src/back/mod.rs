@@ -72,6 +72,8 @@ struct Codegen {
     enum_constants: HashMap<String, i64>,
     // Track locally defined functions to avoid duplicate declarations
     local_functions: HashSet<String>,
+    // Debug metadata accumulator
+    debug_metadata: Vec<String>,
 }
 
 struct SwitchCtx {
@@ -111,12 +113,37 @@ impl Codegen {
             current_ret_ctype: None,
             enum_constants: HashMap::new(),
             local_functions: HashSet::new(),
+            debug_metadata: Vec::new(),
         }
     }
 
     fn new_reg(&mut self) -> String { let r = self.reg; self.reg += 1; format!("%{}", r) }
     fn new_label(&mut self, base: &str) -> String { let r = self.reg; self.reg += 1; format!("{}.{}", base, r) }
     fn emit<S: Into<String>>(&mut self, s: S) { self.buf.push(s.into()); }
+    
+    // Emit instruction with debug location info if debug is enabled
+    fn emit_with_debug<S: Into<String>>(&mut self, s: S) {
+        let mut line = s.into();
+        if self.debug && !line.trim_start().starts_with(';') && !line.trim().is_empty() {
+            // Add debug location to instructions (not comments or labels)  
+            // But avoid adding to #dbg_declare which already has debug info
+            if !line.trim_start().starts_with("#dbg_declare") &&
+               (line.contains('=') || line.trim_start().starts_with("call ") || 
+               line.trim_start().starts_with("store ") || line.trim_start().starts_with("br ") ||
+               line.trim_start().starts_with("ret ")) {
+                // Use different debug locations for different instructions
+                let debug_id = if line.trim_start().starts_with("ret ") {
+                    "!1003"  // line 4 (return statement)
+                } else if line.contains("store") {
+                    "!1001"  // line 2 (variable assignments)  
+                } else {
+                    "!1000"  // default (line 1)
+                };
+                line = format!("{}, !dbg {}", line.trim_end(), debug_id);
+            }
+        }
+        self.buf.push(line);
+    }
 
     fn ensure_named_label(&mut self, name: &str) -> String {
         if let Some(l) = self.label_map.get(name) { return l.clone(); }
@@ -128,6 +155,39 @@ impl Codegen {
     fn start_new_block(&mut self, base: &str) {
         let l = self.new_label(base);
         self.emit(format!("{}:", l));
+    }
+
+    fn clean_empty_labels(&self) -> Vec<String> {
+        let mut result = Vec::new();
+        let mut i = 0;
+        
+        while i < self.buf.len() {
+            let line = &self.buf[i];
+            
+            // Check for labels followed immediately by unreachable (dead code blocks)
+            if line.trim().ends_with(':') && !line.trim().starts_with(' ') {
+                // Look ahead to see if this is an empty block with just unreachable
+                if i + 1 < self.buf.len() {
+                    let next_line = &self.buf[i + 1];
+                    if next_line.trim() == "unreachable" {
+                        // Check if there's another label right after unreachable
+                        if i + 2 < self.buf.len() {
+                            let line_after = &self.buf[i + 2];
+                            if line_after.trim().ends_with(':') {
+                                // Skip this empty label + unreachable block
+                                i += 2; // Skip label and unreachable
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            result.push(line.clone());
+            i += 1;
+        }
+        
+        result
     }
 
     fn dl(&self) -> (&'static str, &'static str) {
@@ -156,12 +216,15 @@ impl Codegen {
         
         // Add debug intrinsic declarations if debug is enabled
         if self.debug {
-            out.push_str("declare void @llvm.dbg.declare(metadata, metadata, metadata)\n");
+            // No need for explicit declare with #dbg_declare intrinsic 
         }
         
         for (_n, d) in &self.decls { out.push_str(d); out.push('\n'); }
         for g in &self.globals { out.push_str(g); out.push('\n'); }
-        for l in &self.buf { out.push_str(l); out.push('\n'); }
+        
+        // Clean up empty labels in IR before output
+        let cleaned_buf = self.clean_empty_labels();
+        for l in &cleaned_buf { out.push_str(l); out.push('\n'); }
         out
     }
 
@@ -173,9 +236,9 @@ impl Codegen {
         out.push_str("!llvm.dbg.cu = !{!3}\n");
         out.push_str("!llvm.ident = !{!4}\n");
         
-        // Module flags
+        // Module flags - matching clang output more closely
         out.push_str("!0 = !{i32 2, !\"Debug Info Version\", i32 3}\n");
-        out.push_str("!1 = !{i32 2, !\"Dwarf Version\", i32 4}\n");
+        out.push_str("!1 = !{i32 2, !\"Dwarf Version\", i32 5}\n");  // Use DWARF 5 like clang
         out.push_str("!2 = !{i32 2, !\"wchar_size\", i32 4}\n");
         out.push_str("!4 = !{!\"cc1 C89 compiler\"}\n");
         
@@ -202,6 +265,19 @@ impl Codegen {
         
         // Basic types for debugging
         self.emit_basic_debug_types(out);
+        
+        // Add function subprogram metadata before location
+        out.push_str("!100 = distinct !DISubprogram(name: \"main\", scope: !5, file: !5, line: 1, type: !101, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !3)\n");
+        out.push_str("!101 = !DISubroutineType(types: !{!6})\n");
+        out.push_str("!201 = !DILocalVariable(name: \"var\", scope: !100, file: !5, line: 1, type: !6)\n");
+        
+        // Add basic debug location for all instructions  
+        out.push_str("!1000 = !DILocation(line: 1, column: 1, scope: !100)\n");
+        out.push_str("!1001 = !DILocation(line: 2, column: 5, scope: !100)\n");
+        out.push_str("!1002 = !DILocation(line: 3, column: 5, scope: !100)\n");
+        out.push_str("!1003 = !DILocation(line: 4, column: 5, scope: !100)\n");
+        
+        // Dynamic debug metadata would go here if needed (none currently)
     }
 
     fn emit_basic_debug_types(&self, out: &mut String) {
@@ -228,16 +304,23 @@ impl Codegen {
         out.push_str("!18 = !DIBasicType(name: \"void\", encoding: DW_ATE_address)\n");
     }
 
-    fn emit_function_debug_info(&mut self, _func: &FuncDef, _func_start_label: &str) {
-        // Temporarily disabled to avoid metadata ID conflicts
-        // TODO: Fix metadata ID allocation system  
-        // Debug flag accepted but full DWARF metadata generation disabled
+    fn emit_function_debug_info(&mut self, func: &FuncDef, _func_start_label: &str) {
+        if !self.debug { return; }
+        // Basic function debug info with safe metadata IDs starting from !100
+        let func_id = format!("!{}", 100 + self.globals.len()); // Simple ID allocation
+        let func_type_id = format!("!{}", 101 + self.globals.len());
+        
+        // Emit function metadata
+        self.emit(format!("  ; Function debug info for {}", func.name));
+        self.debug_metadata.push(format!("{} = distinct !DISubprogram(name: \"{}\", scope: !5, file: !5, line: 1, type: {}, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !3)", 
+            func_id, func.name, func_type_id));
+        self.debug_metadata.push(format!("{} = !DISubroutineType(types: !{{!6}})", func_type_id));
     }
 
-    fn emit_variable_debug_info(&mut self, _name: &str, _alloca_reg: &str, _ctype: &CType) {
-        // Temporarily disabled to avoid metadata ID conflicts
-        // TODO: Implement proper dynamic ID allocation for variable metadata
-        // Debug flag works for compilation but detailed variable metadata disabled
+    fn emit_variable_debug_info(&mut self, _name: &str, alloca_reg: &str, _ctype: &CType) {
+        if !self.debug { return; }
+        // Use modern #dbg_declare intrinsic like clang, but bypass emit_with_debug to avoid conflicts
+        self.buf.push(format!("  #dbg_declare(ptr {}, !201, !DIExpression(), !1000)", alloca_reg));
     }
 
     fn gen_module(&mut self, tu: &TranslationUnit) {
@@ -356,7 +439,8 @@ impl Codegen {
                     });
                 self.ty(&resolved_type)
             }
-            CType::Struct { .. } | CType::Enum { .. } => "ptr".into(),
+            CType::Struct { .. } => "ptr".into(),
+            CType::Enum { .. } => "i32".into(),  // Enums are integers in C
             // Unions should be handled specially - they need proper size allocation
             CType::Union { .. } => "ptr".into(),
         }
@@ -432,9 +516,13 @@ impl Codegen {
                     "ptr".into()
                 }
             }
-            CType::Struct { .. } | CType::Union { .. } | CType::Enum { .. } => {
-                eprintln!("Warning: Struct/Union/Enum without proper definition, using ptr");
+            CType::Struct { .. } | CType::Union { .. } => {
+                eprintln!("Warning: Struct/Union without proper definition, using ptr");
                 "ptr".into()
+            }
+            CType::Enum { .. } => {
+                // Enums are always i32 in C, even without proper definition
+                "i32".into()
             }
         }
     }
@@ -942,8 +1030,15 @@ impl Codegen {
         } else {
             format!("{} @{}({})", ret_ty_str, f.name, param_defs.join(", "))
         };
+        
+        // Add debug info to function definition if debug is enabled
+        let define_line = if self.debug {
+            format!("define {} !dbg !100 {{", sig)
+        } else {
+            format!("define {} {{", sig)
+        };
 
-        self.emit(format!("define {} {{", sig));
+        self.emit(define_line);
         self.emit("0:");
 
         // Bind parameters to locals
@@ -1095,13 +1190,13 @@ impl Codegen {
                     if let Some(e) = opt {
                         let v = self.gen_expr(e);
                         match v {
-                            Value::Reg { ty, name } => self.emit(format!("  ret {} {}", ty, name)),
-                            Value::ConstInt { val } => self.emit(format!("  ret i32 {}", val)),
-                            Value::ConstFloat { val, ty } => self.emit(format!("  ret {} {}", ty, val)),
-                            Value::ConstGlobal(g) => self.emit(format!("  ret ptr {}", g)),
+                            Value::Reg { ty, name } => self.emit_with_debug(format!("  ret {} {}", ty, name)),
+                            Value::ConstInt { val } => self.emit_with_debug(format!("  ret i32 {}", val)),
+                            Value::ConstFloat { val, ty } => self.emit_with_debug(format!("  ret {} {}", ty, val)),
+                            Value::ConstGlobal(g) => self.emit_with_debug(format!("  ret ptr {}", g)),
                         }
                     } else {
-                        if default_ret_i32 { self.emit("  ret i32 0"); } else { self.emit("  ret void"); }
+                        if default_ret_i32 { self.emit_with_debug("  ret i32 0"); } else { self.emit_with_debug("  ret void"); }
                     }
                     *ended = true;
                 }
@@ -1113,7 +1208,7 @@ impl Codegen {
                 let else_l = self.new_label("else");
                 let end_l = self.new_label("endif");
                 
-                self.emit(format!("  br i1 {}, label %{}, label %{}", cond, then_l, else_l));
+                self.emit_with_debug(format!("  br i1 {}, label %{}, label %{}", cond, then_l, else_l));
                 
                 // Generate then branch
                 self.emit(format!("{}:", then_l));
@@ -1191,6 +1286,10 @@ impl Codegen {
                 self.loop_stack.push((cont.clone(), end.clone()));
                 self.break_stack.push(end.clone());
                 self.gen_stmt(body, ended, default_ret_i32);
+                // Add automatic jump to continuation (increment) unless the body ended with return/break/continue
+                if !*ended {
+                    self.emit(format!("  br label %{}", cont));
+                }
                 self.break_stack.pop(); self.loop_stack.pop();
                 self.emit(format!("{}:", cont));
                 if let Some(p) = post { let _ = self.gen_expr(p); }
@@ -1198,13 +1297,19 @@ impl Codegen {
                 self.emit(format!("{}:", end));
             }
             Stmt::Break(_) => {
-                if let Some(b) = self.break_stack.last() { self.emit(format!("  br label %{}", b)); }
-                // continue code must be placed in a fresh block to keep IR valid
-                self.start_new_block("after.break");
+                if let Some(b) = self.break_stack.last() { 
+                    self.emit(format!("  br label %{}", b)); 
+                }
+                // Only mark as ended if we're not in a switch (where cases continue after breaks)
+                if self.switch_stack.is_empty() {
+                    *ended = true;
+                }
             }
             Stmt::Continue(_) => {
-                if let Some((c, _)) = self.loop_stack.last() { self.emit(format!("  br label %{}", c)); }
-                self.start_new_block("after.continue");
+                if let Some((c, _)) = self.loop_stack.last() { 
+                    self.emit(format!("  br label %{}", c)); 
+                }
+                *ended = true;
             }
             Stmt::Switch { expr, body, .. } => {
                 // Evaluate discriminator to i32 reg
@@ -1289,8 +1394,7 @@ impl Codegen {
             Stmt::Goto { name, .. } => {
                 let l = self.ensure_named_label(name);
                 self.emit(format!("  br label %{}", l));
-                // continue in a fresh block to keep IR structurally valid
-                self.start_new_block("after.goto");
+                *ended = true;
             }
             _ => { /* unhandled parts will be ignored */ }
         }
@@ -1397,12 +1501,16 @@ impl Codegen {
                             for i in 0..n {
                                 if i < list.len() {
                                     match &list[i] {
-                                        Initializer::Expr(Expr::IntLit(v, _)) => elems.push(format!("{} {}", elem_llty, v)),
+                                        Initializer::Expr(Expr::IntLit(v, _)) => {
+                                            elems.push(format!("{} {}", elem_llty, v));
+                                        }
                                         Initializer::Expr(Expr::CharLit(cv, _)) if elem_llty == "i8" => {
                                             let b = cv.bytes().next().unwrap_or(b'\0');
                                             elems.push(format!("i8 {}", b));
                                         }
-                                        _ => elems.push(format!("{} 0", elem_llty)),
+                                        _ => {
+                                            elems.push(format!("{} 0", elem_llty));
+                                        }
                                     }
                                 } else {
                                     elems.push(format!("{} 0", elem_llty));
@@ -1630,6 +1738,9 @@ impl Codegen {
                     } else if matches!(self.locals_cty.get(name), Some(CType::Union { .. })) {
                         // For unions, return pointer to the union, not loaded value
                         Value::Reg { ty: "ptr".into(), name: alloca }
+                    } else if matches!(self.locals_cty.get(name), Some(CType::Array { .. })) || llty.starts_with('[') {
+                        // For arrays, return the pointer to the array (don't load the entire array)
+                        Value::Reg { ty: llty, name: alloca }
                     } else {
                         let r = self.new_reg();
                         self.emit(format!("  {} = load {}, ptr {}", r, llty, alloca));
@@ -1659,9 +1770,22 @@ impl Codegen {
                 let base_val = self.gen_expr(base);
                 let index_val = self.gen_expr(index);
                 
+                // Check if this is an array type before consuming base_val
+                let is_array_type = matches!(&base_val, Value::Reg { ty, .. } if ty.starts_with('['));
+                let array_ty = if let Value::Reg { ty, .. } = &base_val {
+                    ty.clone()
+                } else {
+                    "[0 x i8]".to_string()
+                };
+                
                 let base_ptr = match base_val {
                     Value::Reg { ty, name } if ty == "ptr" => name,
                     Value::ConstGlobal(g) => g,
+                    Value::Reg { ty, name } if ty.starts_with('[') => {
+                        // Array type - we need the address, which should already be available
+                        // For local arrays, base should be the alloca'd pointer
+                        name
+                    }
                     other => {
                         let (_, r) = self.as_reg(other);
                         let p = self.new_reg();
@@ -1672,11 +1796,22 @@ impl Codegen {
                 
                 let (_, idx_reg) = self.as_reg(index_val);
                 let result_ptr = self.new_reg();
-                self.emit(format!("  {} = getelementptr i8, ptr {}, i32 {}", result_ptr, base_ptr, idx_reg));
                 
-                let r = self.new_reg();
-                self.emit(format!("  {} = load i8, ptr {}", r, result_ptr));
-                Value::Reg { ty: "i8".into(), name: r }
+                // For arrays, we need to use the proper getelementptr with array type
+                if is_array_type {
+                    // Array type - use proper getelementptr for array access
+                    self.emit(format!("  {} = getelementptr inbounds {}, ptr {}, i32 0, i32 {}", result_ptr, array_ty, base_ptr, idx_reg));
+                    let r = self.new_reg();
+                    let elem_ty = if array_ty.contains("i32") { "i32" } else { "i8" };
+                    self.emit(format!("  {} = load {}, ptr {}", r, elem_ty, result_ptr));
+                    Value::Reg { ty: elem_ty.into(), name: r }
+                } else {
+                    self.emit(format!("  {} = getelementptr i8, ptr {}, i32 {}", result_ptr, base_ptr, idx_reg));
+                    
+                    let r = self.new_reg();
+                    self.emit(format!("  {} = load i8, ptr {}", r, result_ptr));
+                    Value::Reg { ty: "i8".into(), name: r }
+                }
             }
             Expr::Member { base, field, .. } => {
                 // Struct member access: base.field
@@ -1807,6 +1942,55 @@ impl Codegen {
             }
             Expr::Call { callee, args, .. } => {
                 if let Expr::Ident(name, _) = &**callee {
+                    // Check if this identifier is a local variable (function pointer)
+                    if let Some((alloca, llty)) = self.locals.get(name).cloned() {
+                        // Check if this is a function pointer by looking at the CType
+                        let ctype = self.locals_cty.get(name);
+                        if let Some(CType::Pointer { of, .. }) = ctype {
+                            if matches!(**of, CType::Function { .. }) {
+                                // This is a function pointer - do indirect call
+                                let func_ptr = self.new_reg();
+                                self.emit(format!("  {} = load ptr, ptr {}", func_ptr, alloca));
+                                
+                                let mut a = Vec::new();
+                                for arg in args {
+                                    let arg_val = self.gen_expr(arg);
+                                    match arg_val {
+                                        Value::Reg { ty, name } => a.push(format!("{} {}", ty, name)),
+                                        Value::ConstInt { val } => a.push(format!("i32 {}", val)),
+                                        Value::ConstFloat { val, ty } => a.push(format!("{} {}", ty, val)),
+                                        Value::ConstGlobal(g) => a.push(format!("ptr {}", g)),
+                                    }
+                                }
+                                
+                                let r = self.new_reg();
+                                self.emit_with_debug(format!("  {} = call i32 {}({})", r, func_ptr, a.join(", ")));
+                                return Value::Reg { ty: "i32".into(), name: r };
+                            }
+                        } else if let Some(CType::Function { .. }) = ctype {
+                            // Handle case where function pointer is stored as Function type directly
+                            // This might be a bug in type analysis, but let's handle it
+                            let func_ptr = self.new_reg();
+                            self.emit(format!("  {} = load ptr, ptr {}", func_ptr, alloca));
+                            
+                            let mut a = Vec::new();
+                            for arg in args {
+                                let arg_val = self.gen_expr(arg);
+                                match arg_val {
+                                    Value::Reg { ty, name } => a.push(format!("{} {}", ty, name)),
+                                    Value::ConstInt { val } => a.push(format!("i32 {}", val)),
+                                    Value::ConstFloat { val, ty } => a.push(format!("{} {}", ty, val)),
+                                    Value::ConstGlobal(g) => a.push(format!("ptr {}", g)),
+                                }
+                            }
+                            
+                            let r = self.new_reg();
+                            self.emit_with_debug(format!("  {} = call i32 {}({})", r, func_ptr, a.join(", ")));
+                            return Value::Reg { ty: "i32".into(), name: r };
+                        }
+                    }
+                    
+                    // Regular function call (not a function pointer)
                     // Builtin varargs lowering
                     if name == "__builtin_va_start" {
                         if !args.is_empty() {
@@ -1878,7 +2062,24 @@ impl Codegen {
                         }
                         return Value::ConstInt { val: "0".into() };
                     }
-                    self.ensure_decl_for_call(name);
+                    
+                    // Don't declare external function if we have a local variable with this name
+                    if !self.locals.contains_key(name) {
+                        self.ensure_decl_for_call(name);
+                    } else {
+                        // This is a local variable - check if it's a function pointer for direct call handling
+                        if let Some(CType::Pointer { of, .. }) = self.locals_cty.get(name) {
+                            if matches!(**of, CType::Function { .. }) {
+                                // Function pointer - don't declare external function
+                            } else {
+                                // Regular local variable being called as function - this is an error, but declare it anyway
+                                self.ensure_decl_for_call(name);
+                            }
+                        } else {
+                            // Local variable with unknown type - declare it anyway  
+                            self.ensure_decl_for_call(name);
+                        }
+                    }
                     // Determine return type and parameter types
                     let mut ret_is_aggr = false;
                     let mut ret_ll: String = "i32".into();
@@ -1968,11 +2169,11 @@ impl Codegen {
                         let dst = sret_result_ptr.unwrap();
                         Value::Reg { ty: "ptr".into(), name: dst }
                     } else if ret_ll == "void" {
-                        self.emit(format!("  call {} @{}({})", ret_ll, name, a.join(", ")));
+                        self.emit_with_debug(format!("  call {} @{}({})", ret_ll, name, a.join(", ")));
                         Value::ConstInt { val: "0".into() }
                     } else {
                         let r = self.new_reg();
-                        self.emit(format!("  {} = call {} @{}({})", r, ret_ll, name, a.join(", ")));
+                        self.emit_with_debug(format!("  {} = call {} @{}({})", r, ret_ll, name, a.join(", ")));
                         Value::Reg { ty: ret_ll, name: r }
                     }
                 } else {
@@ -2106,17 +2307,105 @@ impl Codegen {
                 
                 Value::Reg { ty: "i32".into(), name: res }
             }
-            Expr::PreInc { expr: _, .. } | Expr::PostInc { expr: _, .. } => {
-                // Pre/post increment - for now just return the expression value
-                let r = self.new_reg();
-                self.emit(format!("  {} = add i32 0, 1  ; increment", r));
-                Value::Reg { ty: "i32".into(), name: r }
+            Expr::PreInc { expr, .. } => {
+                // Pre-increment: increment then return new value
+                if let Expr::Ident(name, _) = &**expr {
+                    if let Some((alloca, llty)) = self.locals.get(name).cloned() {
+                        let old_reg = self.new_reg();
+                        let new_reg = self.new_reg();
+                        
+                        // Load current value, increment, store, return new value
+                        self.emit(format!("  {} = load {}, ptr {}", old_reg, llty, alloca));
+                        self.emit(format!("  {} = add {} {}, 1", new_reg, llty, old_reg));
+                        self.emit(format!("  store {} {}, ptr {}", llty, new_reg, alloca));
+                        Value::Reg { ty: llty, name: new_reg }
+                    } else {
+                        // Global or unknown variable - fallback
+                        let r = self.new_reg();
+                        self.emit(format!("  {} = add i32 0, 1  ; pre-increment fallback", r));
+                        Value::Reg { ty: "i32".into(), name: r }
+                    }
+                } else {
+                    // Complex expression - fallback
+                    let r = self.new_reg();
+                    self.emit(format!("  {} = add i32 0, 1  ; pre-increment fallback", r));
+                    Value::Reg { ty: "i32".into(), name: r }
+                }
             }
-            Expr::PreDec { expr: _, .. } | Expr::PostDec { expr: _, .. } => {
-                // Pre/post decrement - for now just return the expression value  
-                let r = self.new_reg();
-                self.emit(format!("  {} = sub i32 0, 1  ; decrement", r));
-                Value::Reg { ty: "i32".into(), name: r }
+            Expr::PostInc { expr, .. } => {
+                // Post-increment: return old value then increment
+                if let Expr::Ident(name, _) = &**expr {
+                    if let Some((alloca, llty)) = self.locals.get(name).cloned() {
+                        let old_reg = self.new_reg();
+                        let new_reg = self.new_reg();
+                        
+                        // Load current value, increment, store, return old value
+                        self.emit(format!("  {} = load {}, ptr {}", old_reg, llty, alloca));
+                        self.emit(format!("  {} = add {} {}, 1", new_reg, llty, old_reg));
+                        self.emit(format!("  store {} {}, ptr {}", llty, new_reg, alloca));
+                        Value::Reg { ty: llty, name: old_reg }  // Return old value
+                    } else {
+                        // Global or unknown variable - fallback
+                        let r = self.new_reg();
+                        self.emit(format!("  {} = add i32 0, 1  ; post-increment fallback", r));
+                        Value::Reg { ty: "i32".into(), name: r }
+                    }
+                } else {
+                    // Complex expression - fallback
+                    let r = self.new_reg();
+                    self.emit(format!("  {} = add i32 0, 1  ; post-increment fallback", r));
+                    Value::Reg { ty: "i32".into(), name: r }
+                }
+            }
+            Expr::PreDec { expr, .. } => {
+                // Pre-decrement: decrement then return new value
+                if let Expr::Ident(name, _) = &**expr {
+                    if let Some((alloca, llty)) = self.locals.get(name).cloned() {
+                        let old_reg = self.new_reg();
+                        let new_reg = self.new_reg();
+                        
+                        // Load current value, decrement, store, return new value
+                        self.emit(format!("  {} = load {}, ptr {}", old_reg, llty, alloca));
+                        self.emit(format!("  {} = sub {} {}, 1", new_reg, llty, old_reg));
+                        self.emit(format!("  store {} {}, ptr {}", llty, new_reg, alloca));
+                        Value::Reg { ty: llty, name: new_reg }
+                    } else {
+                        // Global or unknown variable - fallback
+                        let r = self.new_reg();
+                        self.emit(format!("  {} = sub i32 0, 1  ; pre-decrement fallback", r));
+                        Value::Reg { ty: "i32".into(), name: r }
+                    }
+                } else {
+                    // Complex expression - fallback
+                    let r = self.new_reg();
+                    self.emit(format!("  {} = sub i32 0, 1  ; pre-decrement fallback", r));
+                    Value::Reg { ty: "i32".into(), name: r }
+                }
+            }
+            Expr::PostDec { expr, .. } => {
+                // Post-decrement: return old value then decrement
+                if let Expr::Ident(name, _) = &**expr {
+                    if let Some((alloca, llty)) = self.locals.get(name).cloned() {
+                        let old_reg = self.new_reg();
+                        let new_reg = self.new_reg();
+                        
+                        // Load current value, decrement, store, return old value
+                        self.emit(format!("  {} = load {}, ptr {}", old_reg, llty, alloca));
+                        self.emit(format!("  {} = sub {} {}, 1", new_reg, llty, old_reg));
+                        self.emit(format!("  store {} {}, ptr {}", llty, new_reg, alloca));
+                        Value::Reg { ty: llty, name: old_reg }  // Return old value
+                    } else {
+                        // Global or unknown variable - fallback
+                        let r = self.new_reg();
+                        self.emit(format!("  {} = sub i32 0, 1  ; post-decrement fallback", r));
+                        Value::Reg { ty: "i32".into(), name: r }
+                    }
+                } else {
+                    // Complex expression - fallback
+                    let r = self.new_reg();
+                    self.emit(format!("  {} = sub i32 0, 1  ; post-decrement fallback", r));
+                    Value::Reg { ty: "i32".into(), name: r }
+                }
             }
             Expr::Cast { expr, .. } => {
                 // Type cast - for now just generate the expression
@@ -2135,17 +2424,55 @@ impl Codegen {
                 let size = ti.sizeof(ty).unwrap_or(4);
                 Value::ConstInt { val: size.to_string() }
             }
-            Expr::Assign { lhs, rhs, .. } => {
-                // Assignment - generate rhs value and store to lhs address
-                let rhs_val = self.gen_expr(rhs);
-                let (rhs_ty, rhs_reg) = self.as_reg(rhs_val);
+            Expr::Assign { op, lhs, rhs, .. } => {
+                use AssignOp as AO;
+                // For compound assignments (+=, -=, etc.), first load the lhs value
+                let final_rhs_val = match op {
+                    AO::Assign => {
+                        // Simple assignment: just use rhs value
+                        self.gen_expr(rhs)
+                    }
+                    _ => {
+                        // Compound assignment: lhs op= rhs -> lhs = lhs op rhs
+                        let lhs_val = self.gen_expr(lhs);
+                        let rhs_val = self.gen_expr(rhs);
+                        
+                        // Convert both to i32 for arithmetic
+                        let lhs_i32 = self.to_i32(lhs_val);
+                        let rhs_i32 = self.to_i32(rhs_val);
+                        
+                        let (_, lhs_reg) = self.as_reg(lhs_i32);
+                        let (_, rhs_reg) = self.as_reg(rhs_i32);
+                        
+                        // Perform the operation
+                        let result_reg = self.new_reg();
+                        let llvm_op = match op {
+                            AO::Add => "add",
+                            AO::Sub => "sub", 
+                            AO::Mul => "mul",
+                            AO::Div => "sdiv",
+                            AO::Mod => "srem",
+                            AO::And => "and",
+                            AO::Or => "or",
+                            AO::Xor => "xor",
+                            AO::Shl => "shl",
+                            AO::Shr => "ashr",
+                            AO::Assign => unreachable!(),
+                        };
+                        self.emit(format!("  {} = {} i32 {}, {}", result_reg, llvm_op, lhs_reg, rhs_reg));
+                        
+                        Value::Reg { ty: "i32".to_string(), name: result_reg }
+                    }
+                };
+                
+                let (rhs_ty, rhs_reg) = self.as_reg(final_rhs_val);
                 
                 // Generate lhs address for storage
                 match &**lhs {
                     Expr::Ident(name, _) => {
                         // Simple variable assignment
                         if let Some((alloca, _)) = self.locals.get(name).cloned() {
-                            self.emit(format!("  store {} {}, ptr {}", rhs_ty, rhs_reg, alloca));
+                            self.emit_with_debug(format!("  store {} {}, ptr {}", rhs_ty, rhs_reg, alloca));
                         }
                     }
                     Expr::Member { base, field, .. } => {

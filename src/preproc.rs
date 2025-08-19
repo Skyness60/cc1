@@ -170,100 +170,104 @@ fn expand_macros_with_context(s: &str, defines: &mut HashMap<String, MacroValue>
             let rest = trimmed[1..].trim_start();
             
             // Handle #define
-            if let Some(r) = rest.strip_prefix("define") {
-                let r = r.trim_start();
-                if let Some((name, macro_val)) = parse_define(r) {
-                    defines.insert(name, macro_val);
-                }
-                i += 1;
-                continue;
-            }
-            
-            // Handle #undef
-            if let Some(r) = rest.strip_prefix("undef") {
-                let name = r.trim();
-                defines.remove(name);
-                i += 1;
-                continue;
-            }
-            
-            // Handle #include
-            if let Some(r) = rest.strip_prefix("include") {
-                if let Some((content, included_path)) = process_include_with_path(r.trim(), include_stack) {
-                    // Add to include stack to prevent infinite recursion
-                    include_stack.push(included_path.clone());
-                    
-                    // Recursively preprocess the included file with the same defines context
-                    let processed = match full_preprocess(&content, defines, include_stack) {
-                        Ok(p) => p,
-                        Err(_) => content,
-                    };
-                    
-                    // Remove from include stack after processing
-                    include_stack.pop();
-                    
-                    // Add the processed content, ensuring no blank lines accumulate
-                    let trimmed_processed = processed.trim();
-                    if !trimmed_processed.is_empty() {
-                        out.push_str(trimmed_processed);
-                        out.push('\n');
-                    }
-                }
-                i += 1;
-                continue;
-            }
-            
-            // Handle conditional compilation
-            if rest.starts_with("ifdef") || rest.starts_with("ifndef") || rest.starts_with("if") {
-                let (block_lines, next_i) = process_conditional_block(&lines[i..], defines);
-                // Process each line in the conditional block recursively to handle nested directives
-                for block_line in block_lines {
-                    let trimmed = block_line.trim_start();
-                    if trimmed.starts_with('#') {
-                        let directive_rest = trimmed[1..].trim_start();
-                        // Handle directives within the conditional block
-                        if let Some(r) = directive_rest.strip_prefix("define") {
-                            let r = r.trim_start();
-                            if let Some((name, macro_val)) = parse_define(r) {
-                                defines.insert(name, macro_val);
-                            }
-                            continue;
-                        }
-                        if let Some(r) = directive_rest.strip_prefix("undef") {
-                            let name = r.trim();
-                            defines.remove(name);
-                            continue;
-                        }
-                        if let Some(r) = directive_rest.strip_prefix("include") {
-                            if let Some((content, included_path)) = process_include_with_path(r.trim(), include_stack) {
-                                include_stack.push(included_path.clone());
-                                let processed = match full_preprocess(&content, defines, include_stack) {
-                                    Ok(p) => p,
-                                    Err(_) => content,
-                                };
-                                include_stack.pop();
-                                let trimmed_processed = processed.trim();
-                                if !trimmed_processed.is_empty() {
-                                    out.push_str(trimmed_processed);
-                                    out.push('\n');
-                                }
-                            }
-                            continue;
-                        }
-                        // Ignore other preprocessor directives in blocks
+            if trimmed.starts_with('#') {
+                let rest = trimmed[1..].trim_start();
+                // Ignore #include <...> system headers (bonus: behave like clang -E)
+                if rest.starts_with("include") {
+                    let inc_arg = rest[7..].trim();
+                    if inc_arg.starts_with('<') && inc_arg.ends_with('>') {
+                        // Ignore system header includes
+                        i += 1;
                         continue;
                     }
-                    // Regular line - expand macros and add
-                    out.push_str(&expand_line_macros(&block_line, defines));
-                    out.push('\n');
+                    // Otherwise, handle as before (local includes)
+                    if let Some((content, included_path)) = process_include_with_path(inc_arg, include_stack) {
+                        include_stack.push(included_path.clone());
+                        let processed = match full_preprocess(&content, defines, include_stack) {
+                            Ok(p) => p,
+                            Err(_) => content,
+                        };
+                        include_stack.pop();
+                        let trimmed_processed = processed.trim();
+                        if !trimmed_processed.is_empty() {
+                            out.push_str(trimmed_processed);
+                            out.push('\n');
+                        }
+                    }
+                    i += 1;
+                    continue;
                 }
-                i += next_i;
+                // Handle #define
+                if let Some(r) = rest.strip_prefix("define") {
+                    let r = r.trim_start();
+                    if let Some((name, macro_val)) = parse_define(r) {
+                        defines.insert(name, macro_val);
+                    }
+                    i += 1;
+                    continue;
+                }
+                // Handle #undef
+                if let Some(r) = rest.strip_prefix("undef") {
+                    let name = r.trim();
+                    defines.remove(name);
+                    i += 1;
+                    continue;
+                }
+                // Handle conditional compilation
+                if rest.starts_with("ifdef") || rest.starts_with("ifndef") || rest.starts_with("if") {
+                    let (block_lines, next_i) = process_conditional_block(&lines[i..], defines);
+                    for block_line in block_lines {
+                        let trimmed = block_line.trim_start();
+                        if trimmed.starts_with('#') {
+                            let directive_rest = trimmed[1..].trim_start();
+                            if let Some(r) = directive_rest.strip_prefix("define") {
+                                let r = r.trim_start();
+                                if let Some((name, macro_val)) = parse_define(r) {
+                                    defines.insert(name, macro_val);
+                                }
+                                continue;
+                            }
+                            if let Some(r) = directive_rest.strip_prefix("undef") {
+                                let name = r.trim();
+                                defines.remove(name);
+                                continue;
+                            }
+                            if directive_rest.starts_with("include") {
+                                let inc_arg = directive_rest[7..].trim();
+                                if inc_arg.starts_with('<') && inc_arg.ends_with('>') {
+                                    // Ignore system header includes in conditionals
+                                    continue;
+                                }
+                                if let Some((content, included_path)) = process_include_with_path(inc_arg, include_stack) {
+                                    include_stack.push(included_path.clone());
+                                    let processed = match full_preprocess(&content, defines, include_stack) {
+                                        Ok(p) => p,
+                                        Err(_) => content,
+                                    };
+                                    include_stack.pop();
+                                    let trimmed_processed = processed.trim();
+                                    if !trimmed_processed.is_empty() {
+                                        out.push_str(trimmed_processed);
+                                        out.push('\n');
+                                    }
+                                }
+                                continue;
+                            }
+                            continue;
+                        }
+                        out.push_str(&expand_line_macros(&block_line, defines));
+                        out.push('\n');
+                    }
+                    i += next_i;
+                    continue;
+                }
+                // Handle #error
+                if let Some(r) = rest.strip_prefix("error") {
+                    return format!("/* #error: {} */\n{}", r.trim(), out);
+                }
+                // Ignore other directives (#line, #pragma, etc.)
+                i += 1;
                 continue;
-            }
-            
-            // Handle #error
-            if let Some(r) = rest.strip_prefix("error") {
-                return format!("/* #error: {} */\n{}", r.trim(), out);
             }
             
             // Ignore other directives (#line, #pragma, etc.)
@@ -273,6 +277,11 @@ fn expand_macros_with_context(s: &str, defines: &mut HashMap<String, MacroValue>
         
         // Expand macros in regular lines
         let expanded_line = expand_line_macros(line, defines);
+        // Skip builtin typedefs that our parser doesn't understand
+        if expanded_line.trim().starts_with("typedef __builtin_") {
+            i += 1;
+            continue;
+        }
         out.push_str(&expanded_line);
         out.push('\n');
         i += 1;

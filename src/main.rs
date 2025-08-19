@@ -19,6 +19,7 @@ fn main() {
 
     let mut infile: Option<String> = None;
     let mut outfile: Option<String> = None;
+    let mut debug_source_file: Option<String> = None;  // For debug metadata filename
     let mut lex_only_mode = false;
     let mut parse_expr_mode = false;
     let mut parse_tu_mode = false;
@@ -44,6 +45,14 @@ fn main() {
             "-m64" => { arch_opt = Some(front::semantics::Arch::X86_64); i += 1; }
             "-g" => { debug_info = true; i += 1; }
             "--continue-on-error" => { continue_on_error = true; i += 1; }
+            "--debug-source-file" => {
+                if i + 1 >= args.len() { 
+                    eprintln!("cc1: error: --debug-source-file requires a value"); 
+                    std::process::exit(1);
+                } 
+                debug_source_file = Some(args[i+1].clone()); 
+                i += 2; 
+            }
             "-o" => { 
                 if i + 1 >= args.len() { 
                     eprintln!("cc1: error: -o requires a value"); 
@@ -245,7 +254,8 @@ fn main() {
     match p.parse_translation_unit() {
         Ok(tu) => {
             let arch = arch_opt.unwrap_or(front::semantics::Arch::I386);
-            let m = back::lower_to_llvm_ir(&tu, arch, debug_info, &infile);
+            let debug_filename = debug_source_file.as_ref().unwrap_or(&infile);
+            let m = back::lower_to_llvm_ir(&tu, arch, debug_info, debug_filename);
             let _ = debug_info; // reserved for future DI metadata emission
             writeln!(out, "{}", m.text).ok();
         }

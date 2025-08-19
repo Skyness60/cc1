@@ -362,7 +362,12 @@ fi
 cc1_arch="$ARCH"
 if [[ "$ARCH" == "-m32" ]]; then cc1_arch="-m32"; else cc1_arch="-m64"; fi
 # Write IR via stdout redirection to be robust
-"$CC1_BIN" "$CPP_OUT" $cc1_arch $DEBUG "${CC1_ARGS[@]}" -o - > "$IR_OUT"
+# Pass original filename for debug metadata if debug is enabled
+if [[ -n "$DEBUG" ]]; then
+  "$CC1_BIN" $cc1_arch $DEBUG --debug-source-file "$INFILE" "${CC1_ARGS[@]}" "$CPP_OUT" -o - > "$IR_OUT"
+else
+  "$CC1_BIN" $cc1_arch $DEBUG "${CC1_ARGS[@]}" "$CPP_OUT" -o - > "$IR_OUT"
+fi
 
 # Strip any datalayout to avoid alignment issues across LLVM/targets
 if grep -q "^target datalayout" "$IR_OUT"; then
@@ -377,23 +382,23 @@ HAS_AS=0; if command -v as  >/dev/null 2>&1; then HAS_AS=1; fi
 
 # 2) Lower IR to assembly or object
 if [[ "$MODE" == "asm" ]]; then
-  # Add optimization flag if specified
+  # Add optimization flag if specified (don't pass -g to llc)
   if [[ -n "$OPTIM" ]]; then LLC_ARGS+=("$OPTIM"); fi
   if [[ $HAS_LLC -eq 1 ]]; then
     llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
   elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
     # Use clang to produce assembly directly from IR
-    clang $ARCH "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -S -x ir "$IR_USE" -o "$ASM_OUT"
+    clang $ARCH $DEBUG "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -S -x ir "$IR_USE" -o "$ASM_OUT"
   else
     echo "fcc: error: llc not found. Install LLVM (llc) or pass --allow-clang-ir" >&2; exit 1
   fi
 else
-  # Add optimization flag if specified
+  # Add optimization flag if specified (don't pass -g to llc)  
   if [[ -n "$OPTIM" ]]; then LLC_ARGS+=("$OPTIM"); fi
   if [[ $HAS_LLC -eq 1 && $HAS_AS -eq 1 ]]; then
     # LLVM IR -> ASM via llc
     llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
-    # ASM -> OBJ via as
+    # ASM -> OBJ via as (as doesn't support -g in this context)
     if [[ "$ARCH" == "-m32" ]]; then
       as --32 "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
     else
@@ -401,7 +406,7 @@ else
     fi
   elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
     # Compile IR to object directly with clang
-    clang $ARCH "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -c -x ir "$IR_USE" -o "$OBJ_OUT"
+    clang $ARCH $DEBUG "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -c -x ir "$IR_USE" -o "$OBJ_OUT"
   else
     missing=()
     [[ $HAS_LLC -eq 1 ]] || missing+=("llc")
@@ -427,9 +432,9 @@ case "$MODE" in
     fi
     
     if [[ "$ARCH" == "-m32" ]]; then
-      clang -m32 -no-pie $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+      clang -m32 -no-pie $DEBUG $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
     else
-      clang -m64 $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+      clang -m64 $DEBUG $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
     fi;;
   *) echo "fcc: internal error (mode)" >&2; exit 1;;
 esac

@@ -379,7 +379,7 @@ impl<'a> Parser<'a> {
             let _ = self.ts.expect_kind(K::RBrace).map_err(|e| ParseError { msg: e.msg, span: e.span, is_fatal: false })?;
             Ok(Initializer::List(elems))
         } else {
-            Ok(Initializer::Expr(self.parse_expr()?))
+            Ok(Initializer::Expr(self.parse_assign_expr()?))
         }
     }
 
