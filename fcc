@@ -95,6 +95,7 @@ EOF
 
 ARCH="-m32"
 DEBUG=""
+OPTIM=""
 OUT="a.out"
 INFILE=""
 MODE="link"   # link|obj|asm|pp
@@ -109,6 +110,8 @@ USE_INTERNAL_PP=0
 STD="c89"
 VERBOSE=0
 FREESTANDING=0
+# Optimization level (default none)
+OPTIM=""
 # Dependency-generation tracking
 M_SEEN=0
 MD_SEEN=0
@@ -130,6 +133,7 @@ while [[ $idx -lt ${#ARGS[@]} ]]; do
     --) stop_opts=1; idx=$((idx+1));;
     -m32|-m64) ARCH="$a"; idx=$((idx+1));;
     -g) DEBUG="-g"; idx=$((idx+1));;
+    -O0|-O1|-O2|-O3|-Os|-Oz) OPTIM="$a"; idx=$((idx+1));;
     -v) VERBOSE=1; idx=$((idx+1));;
     -ffreestanding) FREESTANDING=1; idx=$((idx+1));;
         --use-cc1-pp) USE_INTERNAL_PP=1; idx=$((idx+1));;
@@ -191,7 +195,7 @@ while [[ $idx -lt ${#ARGS[@]} ]]; do
       LD_ARGS+=("-s"); idx=$((idx+1));;
     -O)
       if [[ $((idx+1)) -ge ${#ARGS[@]} ]]; then echo "fcc: -O needs a level" >&2; exit 1; fi
-      LLC_ARGS+=("-O${ARGS[$((idx+1))]}"); idx=$((idx+2));;
+      OPTIM="-O${ARGS[$((idx+1))]}"; idx=$((idx+2));;
     -std=*)
       STD="${a#-std=}"; idx=$((idx+1));;
     -c) MODE="obj"; idx=$((idx+1));;
@@ -373,6 +377,8 @@ HAS_AS=0; if command -v as  >/dev/null 2>&1; then HAS_AS=1; fi
 
 # 2) Lower IR to assembly or object
 if [[ "$MODE" == "asm" ]]; then
+  # Add optimization flag if specified
+  if [[ -n "$OPTIM" ]]; then LLC_ARGS+=("$OPTIM"); fi
   if [[ $HAS_LLC -eq 1 ]]; then
     llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
   elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
@@ -382,6 +388,8 @@ if [[ "$MODE" == "asm" ]]; then
     echo "fcc: error: llc not found. Install LLVM (llc) or pass --allow-clang-ir" >&2; exit 1
   fi
 else
+  # Add optimization flag if specified
+  if [[ -n "$OPTIM" ]]; then LLC_ARGS+=("$OPTIM"); fi
   if [[ $HAS_LLC -eq 1 && $HAS_AS -eq 1 ]]; then
     # LLVM IR -> ASM via llc
     llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
@@ -409,10 +417,19 @@ case "$MODE" in
   asm)
     if [[ "$OUT" == "-" ]]; then cat "$ASM_OUT"; else mv "$ASM_OUT" "$OUT"; fi;;
   link)
+    # Add optimization flag to linker if specified
+    LINK_OPT=""
+    if [[ -n "$OPTIM" ]]; then
+      case "$OPTIM" in
+        -O0) ;; # No optimization for linking
+        -O1|-O2|-O3|-Os|-Oz) LINK_OPT="$OPTIM" ;;
+      esac
+    fi
+    
     if [[ "$ARCH" == "-m32" ]]; then
-      clang -m32 -no-pie "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+      clang -m32 -no-pie $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
     else
-      clang -m64 "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+      clang -m64 $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
     fi;;
   *) echo "fcc: internal error (mode)" >&2; exit 1;;
 esac

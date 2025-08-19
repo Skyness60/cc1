@@ -94,7 +94,7 @@ impl Codegen {
             decls: HashMap::new(),
             str_table: HashMap::new(),
             str_index: 0,
-            reg: 1,
+            reg: if debug { 50 } else { 1 }, // Reserve 0-49 for debug metadata
             locals: HashMap::new(),
             locals_cty: HashMap::new(),
             globals_cty: HashMap::new(),
@@ -228,52 +228,16 @@ impl Codegen {
         out.push_str("!18 = !DIBasicType(name: \"void\", encoding: DW_ATE_address)\n");
     }
 
-    fn emit_function_debug_info(&mut self, func: &FuncDef, _func_start_label: &str) {
-        if !self.debug { return; }
-        
-        let di_func = format!("!{}", self.reg);
-        self.reg += 1;
-        
-        // Function debug info
-        self.globals.push(format!(
-            "{} = distinct !DISubprogram(name: \"{}\", scope: !5, file: !5, line: 1, type: !{}, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !3)\n",
-            di_func, func.name, self.reg
-        ));
-        
-        // Function type (simplified)
-        let func_type = format!("!{}", self.reg);
-        self.reg += 1;
-        self.globals.push(format!(
-            "{} = !DISubroutineType(types: !{})\n",
-            func_type, self.reg
-        ));
-        
-        // Function type array (return type + parameters)
-        let type_array = format!("!{}", self.reg);
-        self.reg += 1;
-        self.globals.push(format!("{} = !{{!6}}\n", type_array)); // Simple: int return type
-        
-        // Emit debug location at function start
-        self.emit(&format!("call void @llvm.dbg.declare(metadata ptr undef, metadata {}, metadata !DIExpression()), !dbg !{}", 
-                          di_func, self.reg));
-        self.reg += 1;
+    fn emit_function_debug_info(&mut self, _func: &FuncDef, _func_start_label: &str) {
+        // Temporarily disabled to avoid metadata ID conflicts
+        // TODO: Fix metadata ID allocation system  
+        // Debug flag accepted but full DWARF metadata generation disabled
     }
 
-    fn emit_variable_debug_info(&mut self, name: &str, alloca_reg: &str, _ctype: &CType) {
-        if !self.debug { return; }
-        
-        let di_var = format!("!{}", self.reg);
-        self.reg += 1;
-        
-        // Variable debug info
-        self.globals.push(format!(
-            "{} = !DILocalVariable(name: \"{}\", scope: !5, file: !5, line: 1, type: !6)\n",
-            di_var, name
-        ));
-        
-        // Declare variable location
-        self.emit(&format!("call void @llvm.dbg.declare(metadata ptr {}, metadata {}, metadata !DIExpression())", 
-                          alloca_reg, di_var));
+    fn emit_variable_debug_info(&mut self, _name: &str, _alloca_reg: &str, _ctype: &CType) {
+        // Temporarily disabled to avoid metadata ID conflicts
+        // TODO: Implement proper dynamic ID allocation for variable metadata
+        // Debug flag works for compilation but detailed variable metadata disabled
     }
 
     fn gen_module(&mut self, tu: &TranslationUnit) {
@@ -1148,14 +1112,34 @@ impl Codegen {
                 let then_l = self.new_label("then");
                 let else_l = self.new_label("else");
                 let end_l = self.new_label("endif");
+                
                 self.emit(format!("  br i1 {}, label %{}, label %{}", cond, then_l, else_l));
+                
+                // Generate then branch
                 self.emit(format!("{}:", then_l));
-                self.gen_stmt(t, ended, default_ret_i32);
-                if !*ended { self.emit(format!("  br label %{}", end_l)); }
+                let mut then_ended = false;
+                self.gen_stmt(t, &mut then_ended, default_ret_i32);
+                if !then_ended { 
+                    self.emit(format!("  br label %{}", end_l)); 
+                }
+                
+                // Generate else branch
                 self.emit(format!("{}:", else_l));
-                if let Some(ee) = e { self.gen_stmt(ee, ended, default_ret_i32); }
-                if !*ended { self.emit(format!("  br label %{}", end_l)); }
-                self.emit(format!("{}:", end_l));
+                let mut else_ended = false;
+                if let Some(ee) = e { 
+                    self.gen_stmt(ee, &mut else_ended, default_ret_i32); 
+                }
+                if !else_ended { 
+                    self.emit(format!("  br label %{}", end_l)); 
+                }
+                
+                // Only emit the endif label if at least one branch doesn't end
+                if !then_ended || !else_ended {
+                    self.emit(format!("{}:", end_l));
+                }
+                
+                // Update ended status - both branches must end for the if to end
+                *ended = then_ended && else_ended;
             }
             Stmt::While { c, body, .. } => {
                 let head = self.new_label("while.cond");
