@@ -1,6 +1,16 @@
-# cc1 — Compilateur C89 complet
+# cc1 — Compilateur C89 complet (Version Containerisée)
 
-cc1 est un compilateur C89 complet avec lexer, parser, analyse sémantique, préprocesseur interne et génération LLVM IR, pensé pour être strict et conforme au standard C89. Il s'intègre dans une toolchain complète via le driver `fcc`.
+cc1 est un compilateur C89 complet avec lexer, parser, analyse sémantique, préprocesseur interne et génération LLVM IR, pensé pour être strict et conforme au standard C89. Il s'intègre dans une toolchain complète via le driver `fcc` **entièrement containerisé**.
+
+## ⚠️ Version Containerisée
+
+Cette version utilise **exclusivement Docker** pour toutes les opérations de compilation :
+- ✅ **clang** : Préprocesseur et linker dans le conteneur
+- ✅ **llc** : Compilateur LLVM IR vers assembleur dans le conteneur  
+- ✅ **as** : Assembleur dans le conteneur
+- ✅ **cc1** : Compilateur C89 vers LLVM IR dans le conteneur
+
+**Aucune dépendance** sur les outils système de l'hôte requis.
 
 ## Synopsis
 
@@ -11,11 +21,11 @@ fcc [options] <infile.c>
 
 ## Build
 
-Deux options:
-- Docker (si Docker Hub accessible): `make cc1`
-- Local (sans Docker): `make cc1-local`
+La compilation utilise **uniquement Docker** :
+- `make cc1` : Build containerisé (recommandé)
+- `make cc1-local` : Build local pour développement uniquement
 
-Le binaire est disponible en `./cc1` (lien symbolique vers `target/release/cc1`).
+Le driver `fcc` utilise automatiquement le conteneur Docker pour toutes les opérations.
 
 ## Utilisation
 
@@ -28,31 +38,32 @@ Le binaire est disponible en `./cc1` (lien symbolique vers `target/release/cc1`)
   - `./cc1 --parse-tu file.c` : Parser translation unit uniquement
   - `./cc1 --sem file.c` : Analyse sémantique uniquement
 
-- Driver complet (préprocesseur → compile → assemble → link):
-  - `./fcc main.c -o main` : Compilation complète
-  - `./fcc -c main.c` : Compilation vers objet (.o)
-  - `./fcc -S main.c` : Compilation vers assembleur (.s)
+- Driver complet (préprocesseur → compile → assemble → link) **containerisé**:
+  - `./fcc main.c -o main` : Compilation complète dans conteneur
+  - `./fcc -c main.c` : Compilation vers objet (.o) dans conteneur
+  - `./fcc -S main.c` : Compilation vers assembleur (.s) dans conteneur
 
-- Suite de tests:
-  - `make test-lex` : Tests lexer
-  - `make test-parse` : Tests parser  
-  - `make test-sem` : Tests sémantique
+- Suite de tests containerisés:
+  - `make test-compile` : Test de compilation containerisée
+  - `make test-all-modes` : Test de tous les modes de compilation
+  - `./test-container.sh` : Suite de tests complète
   - `make test-abi` : Tests ABI/runtime (System V i386 : structs, alignement/padding, promotions varargs)
 
-## Driver fcc
+## Driver fcc (Containerisé)
 
-Le compilateur s'utilise principalement via son driver `fcc` qui orchestre la toolchain complète :
+Le compilateur s'utilise via son driver `fcc` qui orchestre la toolchain complète **dans un conteneur Docker** :
 
 ```bash
 ./fcc [options] <infile.c|->
 ```
 
+- **Pipeline containerisé**: `docker run clang -E` → `docker run cc1` → `docker run llc` → `docker run as` → `docker run clang`
 - Modes: `-E` (préprocesseur seulement), `-S` (ASM), `-c` (objet), défaut: link → `a.out`
 - Sorties par défaut: `<in>.s`, `<in>.o`, `a.out`; `-o -` pour stdout
 - Entrée depuis stdin supportée via l'opérande `-`
 - Options POSIX c17 implémentées (sauf `-B -G -R`). Voir `./fcc --help` pour les sections: SYNOPSIS, DESCRIPTION, OPTIONS, OPERANDS, STDIN, INPUT FILES, STDOUT, STDERR, EXIT STATUS
-- Pipeline exacte: `cc1` (préprocesseur interne) → `cc1` (LLVM IR) → `llc` → `as -c` → `clang -m32 -no-pie`
-- Option `--use-clang-pp` pour basculer sur `clang -E` (fallback)
+- Pipeline exacte: `docker run cc1` (préprocesseur interne) → `docker run cc1` (LLVM IR) → `docker run llc` → `docker run as` → `docker run clang`
+- Option `--use-clang-pp` pour basculer sur `docker run clang -E` (fallback)
 
 ## Cibles et standard
 
@@ -73,11 +84,6 @@ Le compilateur applique des règles strictes C89:
 - Nombres flottants: formes `.5`, `1.`, `1e10`, etc.; l'exposant doit contenir des chiffres; suffixes `f/F` ou `l/L` (pas les deux)
 - Opérateurs et ponctuation complets, y compris `...` (ellipsis)
 - Caractères inconnus (ex: non‑ASCII isolés) → erreur
-
-## Limitations actuelles
-
-- Génération LLVM IR basique (optimisations à faire côté LLVM)
-- Pas de support des encodages/large chars C locale‑dépendants
 
 ## Fonctionnalités avancées
 

@@ -12,8 +12,10 @@ RUN apt update && apt install -y \
     ln -sf /usr/bin/clang-19 /usr/local/bin/cc && \
     rm -rf /var/lib/apt/lists/*
 
+# Set working directory to /workspace for consistent behavior
+WORKDIR /workspace
+
 # Pre-copy deps only
-WORKDIR /usr/src/cc1
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs && \
     cargo build --release && \
@@ -22,9 +24,13 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs && \
 # Copy sources
 COPY . .
 
-# Build
+# Build and install cc1
 RUN cargo build --release && \
-    cp target/release/cc1 /usr/local/bin/cc1
+    cp target/release/cc1 /usr/local/bin/cc1 && \
+    chmod +x /usr/local/bin/cc1
+
+# Verify all tools are available
+RUN clang --version && llc --version && as --version && /usr/local/bin/cc1 --help || true
 
 # Default shell
 CMD ["bash"]

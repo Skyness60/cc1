@@ -1,26 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# fcc: Forty-two Compiler Collection driver
+# fcc: Forty-two Compiler Collection driver (Containerized Version)
 
-# Pipeline (default): clang -E -std=c89 -> cc1 -> llc -> as -> clang (link)
-# Fallback (if --use-cc1-pp): cc1 internal preprocessor -> cc1 -> llc -> as -> clang (link)
-# Optional fallback (if --allow-clang-ir): use clang -x ir when llc/as are unavailable
+# Pipeline (default): docker run clang -E -std=c89 -> docker run cc1 -> docker run llc -> docker run as -> docker run clang (link)
+# Fallback (if --use-cc1-pp): docker run cc1 internal preprocessor -> docker run cc1 -> docker run llc -> docker run as -> docker run clang (link)
+# Optional fallback (if --allow-clang-ir): use docker run clang -x ir when llc/as are unavailable
+
+# Docker image name
+DOCKER_IMG="cc1"
+
+# Function to run command in container
+run_in_container() {
+    local cmd="$1"
+    shift
+    docker run --rm -v "$(pwd)":/workspace -w /workspace "$DOCKER_IMG" "$cmd" "$@"
+}
+
+# Function to run command in container and capture stdout
+run_in_container_capture() {
+    local cmd="$1"
+    shift
+    docker run --rm -v "$(pwd)":/workspace -w /workspace "$DOCKER_IMG" "$cmd" "$@"
+}
+
+# Function to check if container exists and build it if needed
+ensure_container() {
+    if ! docker image inspect "$DOCKER_IMG" >/dev/null 2>&1; then
+        echo "Building container image..." >&2
+        docker build -t "$DOCKER_IMG" .
+    fi
+}
 
 show_help() {
   cat <<EOF
-fcc — Forty-two Compiler Collection driver
+fcc — Forty-two Compiler Collection driver (Containerized)
 
 SYNOPSIS
   fcc [options] <infile.c|->
 
 DESCRIPTION
-  fcc is a compiler driver that orchestrates the full toolchain:
-    1) Preprocess:  clang -E -std=c89 (C preprocessing)
-    2) Compile:     cc1 (C89 -> LLVM IR)  
-    3) Lower:       llc (LLVM IR -> assembly)
-    4) Assemble:    as  (assembly -> object)
-    5) Link:        clang -m32|-m64 (object -> executable)
+  fcc is a containerized compiler driver that orchestrates the full toolchain:
+    1) Preprocess:  docker run clang -E -std=c89 (C preprocessing)
+    2) Compile:     docker run cc1 (C89 -> LLVM IR)  
+    3) Lower:       docker run llc (LLVM IR -> assembly)
+    4) Assemble:    docker run as  (assembly -> object)
+    5) Link:        docker run clang -m32|-m64 (object -> executable)
+
+  All external tools (clang, llc, as) are executed within the Docker container
+  to ensure consistent toolchain behavior across different host systems.
   The default mode is to link and produce an executable. Use -c or -S to stop earlier,
   or -E to only preprocess.
 
@@ -117,6 +145,9 @@ M_SEEN=0
 MD_SEEN=0
 # Track if -o was explicitly provided
 OUT_SPECIFIED=0
+
+# Ensure container is available
+ensure_container
 
 # Parse args
 ARGS=($@)
@@ -245,7 +276,7 @@ esac
 # Always use nostdinc for C89 compliance and our minimal headers
 PP_ARGS+=(
   "-nostdinc"
-  "-I" "$(pwd)/tools/include"
+  "-I" "/workspace/tools/include"
   "-D" "__attribute__(...)="
   "-D" "__asm__(...)="
   "-D" "__inline__="
@@ -271,33 +302,12 @@ fi
 if [[ $M_SEEN -eq 1 && $MD_SEEN -eq 0 ]]; then
   pp_lang=()
   if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
-  clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE"
+  run_in_container clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE"
   exit 0
 fi
 
-# Choose cc1 binary (prefer local build over installed)
-# Get the directory where this script is located
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-
-if [[ -x "$SCRIPT_DIR/target/release/cc1" ]]; then
-  CC1_BIN="$SCRIPT_DIR/target/release/cc1"
-elif [[ -x "$SCRIPT_DIR/target/debug/cc1" ]]; then
-  CC1_BIN="$SCRIPT_DIR/target/debug/cc1"
-elif [[ -x "$SCRIPT_DIR/cc1" ]]; then
-  CC1_BIN="$SCRIPT_DIR/cc1"
-elif [[ -x target/release/cc1 ]]; then
-  CC1_BIN="target/release/cc1"
-elif [[ -x target/debug/cc1 ]]; then
-  CC1_BIN="target/debug/cc1"
-elif [[ -x cc1 ]]; then
-  CC1_BIN="cc1"
-elif [[ -x ../../cc1 ]]; then
-  CC1_BIN="../../cc1"
-elif command -v cc1 >/dev/null 2>&1; then
-  CC1_BIN="$(command -v cc1)"
-else
-  echo "fcc: error: cc1 not found" >&2; exit 1
-fi
+# Choose cc1 binary path inside container
+CC1_BIN="/usr/local/bin/cc1"
 
 # Preprocess step (always before cc1)
 if [[ "$MODE" == "pp" ]]; then
@@ -305,18 +315,18 @@ if [[ "$MODE" == "pp" ]]; then
   if [[ $USE_INTERNAL_PP -eq 1 ]]; then
     # Use cc1 internal preprocessor
     if [[ "$OUT" == "-" ]]; then
-      "$CC1_BIN" --preprocess-only "$INFILE"
+      run_in_container "$CC1_BIN" --preprocess-only "$INFILE"
     else
-      "$CC1_BIN" --preprocess-only "$INFILE" -o "$OUT"
+      run_in_container "$CC1_BIN" --preprocess-only "$INFILE" -o "$OUT"
     fi
   else
     # Use clang -E -std=c89 to preprocess (DEFAULT)
     pp_lang=()
     if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
     if [[ "$OUT" == "-" ]]; then
-      clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE"
+      run_in_container clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE"
     else
-      clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$OUT"
+      run_in_container clang -E -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$OUT"
     fi
   fi
   exit 0
@@ -325,11 +335,18 @@ fi
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
-CPP_OUT="$TMPDIR/out.i"
-IR_OUT="$TMPDIR/out.ll"
-IR_USE="$TMPDIR/out_use.ll"
-ASM_OUT="$TMPDIR/out.s"
-OBJ_OUT="$TMPDIR/out.o"
+# Use relative paths for temp files to ensure they're in the workspace
+CPP_OUT="./tmp_out.i"
+IR_OUT="./tmp_out.ll"
+IR_USE="./tmp_out_use.ll"
+ASM_OUT="./tmp_out.s"
+OBJ_OUT="./tmp_out.o"
+
+# Cleanup function for temp files
+cleanup_temp() {
+    rm -f "$CPP_OUT" "$IR_OUT" "$IR_USE" "$ASM_OUT" "$OBJ_OUT"
+}
+trap cleanup_temp EXIT
 
 # 0) Preprocess
 # Preprocessing step - use clang -E by default as required by subject
@@ -345,28 +362,27 @@ done
 if [[ $USE_INTERNAL_PP -eq 1 ]]; then
   # Use cc1 internal preprocessor when explicitly requested
   if [[ "$INFILE" == "-" ]]; then
-    cat > "$CPP_OUT.raw"
-    "$CC1_BIN" --preprocess-only "$CPP_OUT.raw" -o "$CPP_OUT"
-    rm -f "$CPP_OUT.raw"
+    cat > "./tmp_input.raw"
+    run_in_container "$CC1_BIN" --preprocess-only "./tmp_input.raw" -o "$CPP_OUT"
+    rm -f "./tmp_input.raw"
   else
-    "$CC1_BIN" --preprocess-only "$INFILE" -o "$CPP_OUT"
+    run_in_container "$CC1_BIN" --preprocess-only "$INFILE" -o "$CPP_OUT"
   fi
 else
   # Use clang preprocessor (DEFAULT as per subject specification)
   pp_lang=()
   if [[ "$INFILE" == "-" ]]; then pp_lang=(-x c); fi
-  clang -E -P -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$CPP_OUT"
+  run_in_container clang -E -P -std=$STD "${PP_ARGS[@]}" "${pp_lang[@]}" "$INFILE" -o "$CPP_OUT"
 fi
 
 # 1) C -> LLVM IR (cc1)
 cc1_arch="$ARCH"
 if [[ "$ARCH" == "-m32" ]]; then cc1_arch="-m32"; else cc1_arch="-m64"; fi
-# Write IR via stdout redirection to be robust
-# Pass original filename for debug metadata if debug is enabled
+# Write IR to file instead of trying to capture stdout
 if [[ -n "$DEBUG" ]]; then
-  "$CC1_BIN" $cc1_arch $DEBUG --debug-source-file "$INFILE" "${CC1_ARGS[@]}" "$CPP_OUT" -o - > "$IR_OUT"
+  run_in_container "$CC1_BIN" $cc1_arch $DEBUG --debug-source-file "$INFILE" "${CC1_ARGS[@]}" "$CPP_OUT" -o "$IR_OUT"
 else
-  "$CC1_BIN" $cc1_arch $DEBUG "${CC1_ARGS[@]}" "$CPP_OUT" -o - > "$IR_OUT"
+  run_in_container "$CC1_BIN" $cc1_arch $DEBUG "${CC1_ARGS[@]}" "$CPP_OUT" -o "$IR_OUT"
 fi
 
 # Strip any datalayout to avoid alignment issues across LLVM/targets
@@ -376,19 +392,19 @@ else
   cp "$IR_OUT" "$IR_USE"
 fi
 
-# Tool availability
-HAS_LLC=0; if command -v llc >/dev/null 2>&1; then HAS_LLC=1; fi
-HAS_AS=0; if command -v as  >/dev/null 2>&1; then HAS_AS=1; fi
+# Tool availability - all tools are available in container
+HAS_LLC=1
+HAS_AS=1
 
 # 2) Lower IR to assembly or object
 if [[ "$MODE" == "asm" ]]; then
   # Add optimization flag if specified (don't pass -g to llc)
   if [[ -n "$OPTIM" ]]; then LLC_ARGS+=("$OPTIM"); fi
   if [[ $HAS_LLC -eq 1 ]]; then
-    llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
+    run_in_container llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
   elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
     # Use clang to produce assembly directly from IR
-    clang $ARCH $DEBUG "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -S -x ir "$IR_USE" -o "$ASM_OUT"
+    run_in_container clang $ARCH $DEBUG "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -S -x ir "$IR_USE" -o "$ASM_OUT"
   else
     echo "fcc: error: llc not found. Install LLVM (llc) or pass --allow-clang-ir" >&2; exit 1
   fi
@@ -397,16 +413,16 @@ else
   if [[ -n "$OPTIM" ]]; then LLC_ARGS+=("$OPTIM"); fi
   if [[ $HAS_LLC -eq 1 && $HAS_AS -eq 1 ]]; then
     # LLVM IR -> ASM via llc
-    llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
+    run_in_container llc "${LLC_ARGS[@]}" "$IR_USE" -o "$ASM_OUT"
     # ASM -> OBJ via as (as doesn't support -g in this context)
     if [[ "$ARCH" == "-m32" ]]; then
-      as --32 "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
+      run_in_container as --32 "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
     else
-      as "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
+      run_in_container as "${AS_ARGS[@]}" "$ASM_OUT" -o "$OBJ_OUT"
     fi
   elif [[ $ALLOW_CLANG_IR -eq 1 ]]; then
     # Compile IR to object directly with clang
-    clang $ARCH $DEBUG "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -c -x ir "$IR_USE" -o "$OBJ_OUT"
+    run_in_container clang $ARCH $DEBUG "${LLC_ARGS[@]}" "${WA_CLANG_ARGS[@]}" -c -x ir "$IR_USE" -o "$OBJ_OUT"
   else
     missing=()
     [[ $HAS_LLC -eq 1 ]] || missing+=("llc")
@@ -432,9 +448,9 @@ case "$MODE" in
     fi
     
     if [[ "$ARCH" == "-m32" ]]; then
-      clang -m32 -no-pie $DEBUG $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+      run_in_container clang -m32 -no-pie $DEBUG $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
     else
-      clang -m64 $DEBUG $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
+      run_in_container clang -m64 $DEBUG $LINK_OPT "${LD_ARGS[@]}" "$OBJ_OUT" -o "$OUT"
     fi;;
   *) echo "fcc: internal error (mode)" >&2; exit 1;;
 esac

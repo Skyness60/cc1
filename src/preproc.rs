@@ -1,78 +1,159 @@
 // ----------------------------
 // File: src/preproc.rs
 // ----------------------------
+//! Module préprocesseur C89 pour le compilateur cc1
+//! 
+//! Ce module implémente les phases de préprocessing du standard C89 :
+//! - Phase 1 : Traduction des trigraphes (?? -> caractères spéciaux)
+//! - Phase 2 : Fusion des lignes continuées avec backslash
+//! - Phase 3 : Suppression des commentaires /* */
+//! - Phase 4 : Expansion des macros et traitement des directives #
+//! 
+//! Le préprocesseur gère :
+//! - Les directives #include (locales et système)
+//! - Les macros #define (simples et fonction-like)
+//! - Les directives #undef
+//! - La compilation conditionnelle (#ifdef, #ifndef, #if, #else, #endif)
+//! - Les définitions de ligne de commande (-D, -U, -I)
+
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::collections::HashMap;  // Pour stocker les définitions de macros
+use std::path::PathBuf;         // Pour la gestion des chemins de fichiers
 
+/// Énumération des types de macros supportées
 #[derive(Debug, Clone)]
 pub enum MacroValue {
+    /// Macro simple : #define NAME value
     Simple(String),
-    FunctionLike { params: Vec<String>, body: String },
+    /// Macro fonction : #define NAME(param1, param2) body
+    FunctionLike { 
+        params: Vec<String>,  // Liste des paramètres de la macro
+        body: String          // Corps de la macro à expander
+    },
 }
 
+/// Structure représentant le préprocesseur avancé
+/// Gère les macros, les répertoires d'inclusion et la pile d'inclusion
 pub struct AdvancedPreprocessor {
-    defines: HashMap<String, MacroValue>,
-    include_dirs: Vec<String>,
-    include_stack: Vec<PathBuf>,
+    defines: HashMap<String, MacroValue>,  // Toutes les macros définies
+    include_dirs: Vec<String>,             // Répertoires où chercher les fichiers #include
+    include_stack: Vec<PathBuf>,           // Pile pour détecter les inclusions circulaires
 }
 
 impl AdvancedPreprocessor {
+    /// Crée un nouveau préprocesseur avec des définitions et répertoires initiaux
+    /// 
+    /// # Arguments
+    /// * `defines` - HashMap des macros pré-définies (ex: via -D)
+    /// * `include_dirs` - Vecteur des répertoires d'inclusion (ex: via -I)
+    /// 
+    /// # Fonctionnement
+    /// - Initialise les macros standard C (__STDC__, __STDC_VERSION__)
+    /// - Ajoute les macros spécifiques à la plateforme (__x86_64__, __linux__, etc.)
     pub fn new(defines: HashMap<String, MacroValue>, include_dirs: Vec<String>) -> Self {
         let mut preprocessor = AdvancedPreprocessor {
             defines,
             include_dirs,
-            include_stack: Vec::new(),
+            include_stack: Vec::new(),  // Pile d'inclusion initialement vide
         };
         
+        // ===== DÉFINITION DES MACROS STANDARD C =====
+        
+        // Macro indiquant la conformité au standard C
         preprocessor.defines.insert("__STDC__".to_string(), MacroValue::Simple("1".to_string()));
+        
+        // Version du standard C supporté (C94/Amendment 1)
         preprocessor.defines.insert("__STDC_VERSION__".to_string(), MacroValue::Simple("199409L".to_string()));
         
-        // Add common platform defines
+        // ===== MACROS SPÉCIFIQUES À LA PLATEFORME =====
+        
+        // Macro d'architecture : définie selon la cible de compilation
         #[cfg(target_arch = "x86_64")]
         preprocessor.defines.insert("__x86_64__".to_string(), MacroValue::Simple("1".to_string()));
+        
         #[cfg(target_arch = "x86")]
         preprocessor.defines.insert("__i386__".to_string(), MacroValue::Simple("1".to_string()));
+        
+        // Macro de système d'exploitation
         #[cfg(target_os = "linux")]
         preprocessor.defines.insert("__linux__".to_string(), MacroValue::Simple("1".to_string()));
         
         preprocessor
     }
     
+    /// Lance le préprocessing complet du code source
+    /// Délègue vers la fonction full_preprocess avec les définitions et pile actuelles
     pub fn preprocess(&mut self, source: &str) -> Result<String, String> {
         full_preprocess(source, &mut self.defines, &mut self.include_stack)
     }
     
+    /// Alias de preprocess() pour compatibilité
+    /// Effectue exactement la même opération
     pub fn full_preprocess(&mut self, source: &str) -> Result<String, String> {
         self.preprocess(source)
     }
     
+    /// Ajoute un nouveau répertoire à la liste des répertoires d'inclusion
+    /// Ces répertoires seront consultés lors du traitement des directives #include
     pub fn add_include_dir(&mut self, dir: String) {
         self.include_dirs.push(dir);
     }
     
+    /// Définit une nouvelle macro dans le préprocesseur
+    /// 
+    /// # Arguments
+    /// * `name` - Nom de la macro
+    /// * `value` - Valeur de la macro (Simple ou FunctionLike)
     pub fn define_macro(&mut self, name: String, value: MacroValue) {
         self.defines.insert(name, value);
     }
     
+    /// Supprime une macro du préprocesseur
+    /// Équivalent à la directive #undef
     pub fn undefine_macro(&mut self, name: &str) {
         self.defines.remove(name);
     }
 }
 
+/// Fonction de préprocessing basique sans macros ni répertoires personnalisés
+/// Utilise un préprocesseur temporaire avec des définitions par défaut uniquement
+/// 
+/// # Arguments
+/// * `source` - Code source C à préprocesser
+/// 
+/// # Retour
+/// * `Ok(String)` - Code préprocessé en cas de succès
+/// * `Err(String)` - Message d'erreur en cas d'échec
 pub fn basic_preprocess(source: &str) -> Result<String, String> {
     let mut preprocessor = AdvancedPreprocessor::new(HashMap::new(), Vec::new());
     preprocessor.preprocess(source)
 }
 
+/// Fonction principale de préprocessing complet
+/// Applique toutes les phases de préprocessing du standard C89
+/// 
+/// # Arguments
+/// * `source` - Code source C brut à préprocesser
+/// * `defines` - HashMap mutable des définitions de macros
+/// * `include_stack` - Pile mutable pour détecter les inclusions circulaires
+/// 
+/// # Retour
+/// * `Ok(String)` - Code préprocessé et prêt pour la compilation
+/// * `Err(String)` - Message d'erreur détaillant le problème rencontré
+/// 
+/// # Phases de traitement
+/// 1. **Phase 1** : Traduction des trigraphes (?? -> caractères spéciaux)
+/// 2. **Phase 2** : Fusion des lignes continuées (backslash à la fin)
+/// 3. **Phase 3** : Suppression des commentaires /* */ (C89 uniquement)
+/// 4. **Phase 4** : Expansion des macros et traitement des directives #
 pub fn full_preprocess(source: &str, defines: &mut HashMap<String, MacroValue>, include_stack: &mut Vec<PathBuf>) -> Result<String, String> {
-    // Phase 1-3: trigraphs, line splicing, comments
-    let s1 = translate_trigraphs(source);
-    let s2 = splice_lines(&s1);
-    let s3 = remove_comments(&s2)?;
+    // Phase 1-3: trigraphes, fusion de lignes, suppression de commentaires
+    let s1 = translate_trigraphs(source);    // ?? -> caractères spéciaux
+    let s2 = splice_lines(&s1);              // Fusion des lignes avec \ à la fin
+    let s3 = remove_comments(&s2)?;          // Suppression /* */ (peut échouer)
     
-    // Phase 4: macro expansion and directives
+    // Phase 4: expansion des macros et traitement des directives
     let s4 = expand_macros_with_context(&s3, defines, include_stack);
     Ok(s4)
 }

@@ -2,7 +2,6 @@
 // File: src/front/ast.rs
 // ----------------------------
 #![allow(dead_code)]
-//! AST C89 minimal (déclarations, types, expressions, statements)
 
 use crate::front::token::Span;
 
