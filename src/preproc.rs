@@ -155,7 +155,7 @@ fn expand_macros_with_context(s: &str, defines: &mut HashMap<String, MacroValue>
         let trimmed = line.trim_start();
         
         if trimmed.starts_with('#') {
-            let rest = trimmed[1..].trim_start();
+            let _rest = trimmed[1..].trim_start();
             
             if trimmed.starts_with('#') {
                 let rest = trimmed[1..].trim_start();

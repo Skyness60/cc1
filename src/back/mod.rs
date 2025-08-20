@@ -1943,7 +1943,7 @@ impl Codegen {
             Expr::Call { callee, args, .. } => {
                 if let Expr::Ident(name, _) = &**callee {
                     // Check if this identifier is a local variable (function pointer)
-                    if let Some((alloca, llty)) = self.locals.get(name).cloned() {
+                    if let Some((alloca, _llty)) = self.locals.get(name).cloned() {
                         // Check if this is a function pointer by looking at the CType
                         let ctype = self.locals_cty.get(name);
                         if let Some(CType::Pointer { of, .. }) = ctype {
