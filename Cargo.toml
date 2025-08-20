@@ -3,15 +3,14 @@
 name = "cc1"
 version = "0.1.0"
 edition = "2021"
+authors = ["Sami <you@example.com>"]
+description = "C89 -> LLVM IR front-end (cc1)"
+license = "MIT OR Apache-2.0"
 
 # on garde le binaire sous src/main.rs
 [[bin]]
 name = "cc1"
 path = "src/main.rs"
-
-authors = ["Sami <you@example.com>"]
-description = "C89 -> LLVM IR front-end (cc1)"
-license = "MIT OR Apache-2.0"
 
 [dependencies]
 # aucune dépendance externe (règle du sujet)

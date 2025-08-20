@@ -5,6 +5,18 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Span { pub lo: usize, pub hi: usize, pub line: u32, pub col: u32 }
 
+impl Span {
+    pub fn dummy() -> Self {
+        Self { lo: 0, hi: 0, line: 1, col: 1 }
+    }
+}
+
+impl Default for Span {
+    fn default() -> Self {
+        Self::dummy()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     // Keywords (C89)
