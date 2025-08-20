@@ -19,7 +19,7 @@ fn main() {
 
     let mut infile: Option<String> = None;
     let mut outfile: Option<String> = None;
-    let mut debug_source_file: Option<String> = None;  // For debug metadata filename
+    let mut debug_source_file: Option<String> = None;
     let mut lex_only_mode = false;
     let mut parse_expr_mode = false;
     let mut parse_tu_mode = false;

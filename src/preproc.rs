@@ -2,11 +2,6 @@
 // File: src/preproc.rs
 // ----------------------------
 #![allow(dead_code)]
-//! Complete C89 preprocessor implementing phases 1–4:
-//! - Phase 1: Translate trigraphs
-//! - Phase 2: Splice continued lines ending with '\'
-//! - Phase 3: Remove comments (/* ... */) and reject '//' in strict C89
-//! - Phase 4: Execute preprocessing directives and expand macros
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -17,7 +12,6 @@ pub enum MacroValue {
     FunctionLike { params: Vec<String>, body: String },
 }
 
-/// Advanced preprocessor with full C89 support
 pub struct AdvancedPreprocessor {
     defines: HashMap<String, MacroValue>,
     include_dirs: Vec<String>,
@@ -32,7 +26,6 @@ impl AdvancedPreprocessor {
             include_stack: Vec::new(),
         };
         
-        // Add standard predefined macros
         preprocessor.defines.insert("__STDC__".to_string(), MacroValue::Simple("1".to_string()));
         preprocessor.defines.insert("__STDC_VERSION__".to_string(), MacroValue::Simple("199409L".to_string()));
         
@@ -55,17 +48,14 @@ impl AdvancedPreprocessor {
         self.preprocess(source)
     }
     
-    /// Add include directory
     pub fn add_include_dir(&mut self, dir: String) {
         self.include_dirs.push(dir);
     }
     
-    /// Define macro
     pub fn define_macro(&mut self, name: String, value: MacroValue) {
         self.defines.insert(name, value);
     }
     
-    /// Undefine macro
     pub fn undefine_macro(&mut self, name: &str) {
         self.defines.remove(name);
     }
@@ -137,14 +127,12 @@ fn remove_comments(source: &str) -> Result<String, String> {
                 }
                 i += 1;
             }
-            // Check if we reached EOF without closing the comment
             if !found_close {
                 return Err("unterminated block comment".to_string());
             }
             continue;
         }
         if i + 1 < b.len() && b[i] == b'/' && b[i+1] == b'/' {
-            // C89 forbids //; we need to report this error
             return Err("'//' line comments are not allowed in C89".to_string());
         }
         out.push(b[i] as char);
@@ -169,14 +157,11 @@ fn expand_macros_with_context(s: &str, defines: &mut HashMap<String, MacroValue>
         if trimmed.starts_with('#') {
             let rest = trimmed[1..].trim_start();
             
-            // Handle #define
             if trimmed.starts_with('#') {
                 let rest = trimmed[1..].trim_start();
-                // Ignore #include <...> system headers (bonus: behave like clang -E)
                 if rest.starts_with("include") {
                     let inc_arg = rest[7..].trim();
                     if inc_arg.starts_with('<') && inc_arg.ends_with('>') {
-                        // Ignore system header includes
                         i += 1;
                         continue;
                     }
@@ -646,6 +631,5 @@ fn evaluate_if_condition(condition: &str, defines: &HashMap<String, MacroValue>)
         return num != 0;
     }
     
-    // Default: include the block if we can't evaluate
     true
 }
