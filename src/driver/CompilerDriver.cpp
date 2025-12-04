@@ -8,15 +8,16 @@
 #include <iostream>
 #include <sstream>
 
-CompilerDriver::CompilerDriver(std::vector<std::string>& input, const std::string& output)
+CompilerDriver::CompilerDriver(std::vector<std::string>& input, const std::string& output, bool syntaxOnly)
     : input_files_(input),
-      output_file_(output)
+      output_file_(output),
+      syntax_only_(syntaxOnly)
 {
     // symbols_ and ast_ initialization moved to runParsing/runSemantics usually, 
     // but keeping constructor init for now as per existing code structure
     // Note: symbols_ might be better placed inside SemanticAnalyzer
-    symbols_ = std::make_unique<SymbolTable>();
-    ast_ = std::make_unique<AST::ProgramNode>();
+    symbols_.reset(new SymbolTable());
+    ast_.reset(new AST::ProgramNode());
 }
 
 CompilerDriver::~CompilerDriver() = default;
@@ -25,6 +26,8 @@ bool CompilerDriver::compile()
 {
     if (!runLexing())
         return false;
+    if (syntax_only_)
+        return true;
     if (!runParsing())
         return false;
     if (!runSemantics())
@@ -56,9 +59,10 @@ bool CompilerDriver::runLexing()
     Lexer lexer(source, filename);
     tokens_ = lexer.tokenize();
 
-    // Debug: Print tokens
-    for (const auto& token : tokens_) {
-        std::cout << token << std::endl;
+    if (syntax_only_) {
+        for (const auto& token : tokens_) {
+            std::cout << token << std::endl;
+        }
     }
 
     return true;

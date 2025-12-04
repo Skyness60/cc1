@@ -16,12 +16,13 @@ class CompilerDriver
     private:
         std::vector<std::string> input_files_;
         std::string output_file_;
+        bool syntax_only_;
         std::unique_ptr<AST::ProgramNode> ast_;
         std::unique_ptr<SymbolTable> symbols_;
         std::vector<Token> tokens_;
 
     public:
-        CompilerDriver(std::vector<std::string>& input, const std::string& output = "");
+        CompilerDriver(std::vector<std::string>& input, const std::string& output = "", bool syntaxOnly = false);
         ~CompilerDriver();
 
         bool compile();

@@ -20,7 +20,7 @@ void SemanticAnalyzer::visit(ReturnStatement& node)
     // Check return type matches function signature here
 }
 
-void SemanticAnalyzer::visit(AST::ProgramNode& node)
+void SemanticAnalyzer::visit(AST::ProgramNode&)
 {
     // Visit all global declarations and functions
 }

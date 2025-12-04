@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <parser/Visitor.hpp>
 #include <lexer/Token.hpp>
 

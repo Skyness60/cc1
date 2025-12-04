@@ -28,7 +28,7 @@ void IRGenerator::visit(ReturnStatement& node)
     buffer_ << "  ret i32 0\n";
 }
 
-void IRGenerator::visit(AST::ProgramNode& node)
+void IRGenerator::visit(AST::ProgramNode&)
 {
     buffer_ << "define i32 @main() {\n";
     // In a real implementation, ProgramNode would have a list of statements/functions
