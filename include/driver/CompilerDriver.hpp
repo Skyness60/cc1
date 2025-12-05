@@ -6,7 +6,7 @@
 #include <lexer/Token.hpp>
 
 namespace AST {
-    class ProgramNode;
+    class TranslationUnit;
 }
 
 class SymbolTable;
@@ -16,8 +16,9 @@ class CompilerDriver
     private:
         std::vector<std::string> input_files_;
         std::string output_file_;
+        std::string source_;  // Source code for error reporting
         bool syntax_only_;
-        std::unique_ptr<AST::ProgramNode> ast_;
+        std::unique_ptr<AST::TranslationUnit> ast_;
         std::unique_ptr<SymbolTable> symbols_;
         std::vector<Token> tokens_;
 
