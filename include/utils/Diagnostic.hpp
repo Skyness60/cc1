@@ -57,8 +57,20 @@ private:
         result += "    " + lineNumStr + " | " + sourceLine + "\n";
         
         // Caret line: "      | ^"
+        // We need to handle tabs by preserving them in the caret line
         result += "    " + std::string(lineNumStr.length(), ' ') + " | ";
-        result += GREEN + std::string(column > 0 ? column - 1 : 0, ' ') + "^" RESET;
+        
+        // Build the spacing to reach the caret position, preserving tabs
+        std::string spacing;
+        int pos = 1;
+        for (size_t i = 0; i < sourceLine.length() && pos < column; ++i, ++pos) {
+            if (sourceLine[i] == '\t') {
+                spacing += '\t';
+            } else {
+                spacing += ' ';
+            }
+        }
+        result += GREEN + spacing + "^" RESET;
         
         return result;
     }

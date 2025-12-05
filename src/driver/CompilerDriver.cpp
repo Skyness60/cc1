@@ -1,5 +1,7 @@
 #include <driver/CompilerDriver.hpp>
-#include <parser/AST.hpp>
+#include <parser/ast/AST.hpp>
+#include <parser/Parser.hpp>
+#include <parser/ParseError.hpp>
 #include <semantics/SymbolTable.hpp>
 #include <semantics/SemanticAnalyzer.hpp>
 #include <codegen/IRGenerator.hpp>
@@ -13,11 +15,7 @@ CompilerDriver::CompilerDriver(std::vector<std::string>& input, const std::strin
       output_file_(output),
       syntax_only_(syntaxOnly)
 {
-    // symbols_ and ast_ initialization moved to runParsing/runSemantics usually, 
-    // but keeping constructor init for now as per existing code structure
-    // Note: symbols_ might be better placed inside SemanticAnalyzer
     symbols_.reset(new SymbolTable());
-    ast_.reset(new AST::ProgramNode());
 }
 
 CompilerDriver::~CompilerDriver() = default;
@@ -26,10 +24,10 @@ bool CompilerDriver::compile()
 {
     if (!runLexing())
         return false;
-    if (syntax_only_)
-        return true;
     if (!runParsing())
         return false;
+    if (syntax_only_)
+        return true;
     if (!runSemantics())
         return false;
     if (!runCodeGen())
@@ -54,9 +52,9 @@ bool CompilerDriver::runLexing()
 
     std::stringstream buffer;
     buffer << file.rdbuf();
-    std::string source = buffer.str();
+    source_ = buffer.str();
 
-    Lexer lexer(source, filename);
+    Lexer lexer(source_, filename);
     tokens_ = lexer.tokenize();
 
     if (syntax_only_) {
@@ -70,39 +68,57 @@ bool CompilerDriver::runLexing()
 
 bool CompilerDriver::runParsing()
 {
-    // Implementation of parsing phase
-    return true; // Placeholder
+    if (tokens_.empty()) {
+        return true;  // Nothing to parse
+    }
+    
+    std::string filename = input_files_.empty() ? "<input>" : input_files_[0];
+    
+    try {
+        cc1::Parser parser(tokens_, filename, source_);
+        ast_ = parser.parse();
+        
+        // Check if any errors were encountered during parsing
+        if (parser.hadError()) {
+            return false;
+        }
+        return true;
+    } catch (const ParseError& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool CompilerDriver::runSemantics()
 {
-    SemanticAnalyzer analyzer;
-    if (ast_) {
-        ast_->accept(analyzer);
-    }
-    return true;
+    if (!ast_) return true;
+    
+    std::string filename = input_files_.empty() ? "<input>" : input_files_[0];
+    cc1::SemanticAnalyzer analyzer(filename, source_);
+    analyzer.analyze(*ast_);
+    
+    return !analyzer.hadError();
 }
 
 bool CompilerDriver::runCodeGen()
 {
-    IRGenerator generator;
-    if (ast_) {
-        ast_->accept(generator);
-    }
+    // Code generation not yet implemented with new AST
+    // IRGenerator generator;
+    // if (ast_) {
+    //     ast_->accept(generator);
+    // }
 
-    if (!output_file_.empty()) {
-        std::ofstream out(output_file_);
-        if (out.is_open()) {
-            out << generator.getIR();
-            out.close();
-        } else {
-            std::cerr << "Error: Could not open output file " << output_file_ << std::endl;
-            return false;
-        }
-    } else {
-        // If no output file specified, maybe print to stdout or do nothing?
-        // For now, let's print to stdout for debugging if no output file
-        std::cout << generator.getIR();
-    }
+    // if (!output_file_.empty()) {
+    //     std::ofstream out(output_file_);
+    //     if (out.is_open()) {
+    //         out << generator.getIR();
+    //         out.close();
+    //     } else {
+    //         std::cerr << "Error: Could not open output file " << output_file_ << std::endl;
+    //         return false;
+    //     }
+    // } else {
+    //     std::cout << generator.getIR();
+    // }
     return true;
 }

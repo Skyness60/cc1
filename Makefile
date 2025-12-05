@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Iinclude
+CXXFLAGS = -std=c++11 -Wall -Wextra -g -fno-stack-protector -Iinclude
 
 SRC_DIR = src
 OBJ_DIR = obj
