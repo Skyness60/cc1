@@ -9,6 +9,10 @@ struct CompilerOptions {
     bool showHelp = false;
     bool showVersion = false;
     bool syntaxOnly = false;
+    bool preprocessOnly = false;  // -E option
+    std::vector<std::string> defines;      // -D options
+    std::vector<std::string> undefines;    // -U options
+    std::vector<std::string> includePaths; // -I options
 };
 
 class ArgumentParser {

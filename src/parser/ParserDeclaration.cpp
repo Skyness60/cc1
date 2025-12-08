@@ -77,13 +77,20 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
     // Function definition?
     if (check(TokenType::LeftBrace)) {
         // Check for redefinition at global scope only
-        if (functionDepth_ == 0 && !decl.name.empty() && globalIdentifiers_.count(decl.name)) {
-            std::string newType = decl.type ? decl.type->toString() : "unknown";
-            std::string oldType = globalIdentifiers_[decl.name];
-            errorAtPosition(decl.line, decl.column, "redefinition of '" + decl.name + "' with a different type: '" + newType + "' vs '" + oldType + "'");
-        }
+        // Multiple declarations are OK, but only one definition
         if (functionDepth_ == 0 && !decl.name.empty()) {
+            if (definedFunctions_.count(decl.name)) {
+                errorAtPosition(decl.line, decl.column, "redefinition of function '" + decl.name + "'");
+            } else if (globalIdentifiers_.count(decl.name)) {
+                // Check if the new type matches the declared type
+                std::string newType = decl.type ? decl.type->toString() : "unknown";
+                std::string oldType = globalIdentifiers_[decl.name];
+                if (newType != oldType) {
+                    errorAtPosition(decl.line, decl.column, "conflicting types for '" + decl.name + "': '" + newType + "' vs '" + oldType + "'");
+                }
+            }
             globalIdentifiers_[decl.name] = decl.type ? decl.type->toString() : "unknown";
+            definedFunctions_.insert(decl.name);
         }
         return parseFunctionDefinition(specs, decl);
     }
@@ -121,10 +128,13 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
     }
     
     // Regular variable declaration - check for redefinition at global scope only
+    // Allow redeclarations with the same type (e.g., multiple function prototypes)
     if (functionDepth_ == 0 && !decl.name.empty() && globalIdentifiers_.count(decl.name)) {
         std::string newType = decl.type ? decl.type->toString() : "unknown";
         std::string oldType = globalIdentifiers_[decl.name];
-        errorAtPosition(decl.line, decl.column, "redefinition of '" + decl.name + "' with a different type: '" + newType + "' vs '" + oldType + "'");
+        if (newType != oldType) {
+            errorAtPosition(decl.line, decl.column, "redefinition of '" + decl.name + "' with a different type: '" + newType + "' vs '" + oldType + "'");
+        }
     }
     if (functionDepth_ == 0 && !decl.name.empty()) {
         globalIdentifiers_[decl.name] = decl.type ? decl.type->toString() : "unknown";
@@ -138,22 +148,35 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         var->initializer = parseInitializer();
     }
     
+    // Clear additional declarations from any previous call
+    additionalDeclarations_.clear();
+    
     // Handle multiple declarators
     while (match(TokenType::Comma)) {
         Declarator nextDecl = parseDeclarator(specs.type);
         // Check for redefinition at global scope only
+        // Allow redeclarations with the same type
         if (functionDepth_ == 0 && !nextDecl.name.empty() && globalIdentifiers_.count(nextDecl.name)) {
             std::string newType = nextDecl.type ? nextDecl.type->toString() : "unknown";
             std::string oldType = globalIdentifiers_[nextDecl.name];
-            error("redefinition of '" + nextDecl.name + "' with a different type: '" + newType + "' vs '" + oldType + "'");
+            if (newType != oldType) {
+                error("redefinition of '" + nextDecl.name + "' with a different type: '" + newType + "' vs '" + oldType + "'");
+            }
         }
         if (functionDepth_ == 0 && !nextDecl.name.empty()) {
             globalIdentifiers_[nextDecl.name] = nextDecl.type ? nextDecl.type->toString() : "unknown";
         }
-        // TODO: Store additional declarations
+        
+        // Create and store additional declarations
+        auto nextVar = AST::make<AST::VarDecl>(nextDecl.name, std::move(nextDecl.type),
+                                                nextDecl.line, nextDecl.column);
+        nextVar->storageClass = specs.storageClass;
+        
         if (match(TokenType::Equal)) {
-            parseInitializer(); // Parse but don't store yet
+            nextVar->initializer = parseInitializer();
         }
+        
+        additionalDeclarations_.push_back(std::move(nextVar));
     }
     
     consume(TokenType::Semicolon, "expected ';' after declaration");
@@ -162,6 +185,20 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
 
 AST::Ptr<AST::Declaration> Parser::parseDeclaration() {
     return parseExternalDeclaration();
+}
+
+std::vector<AST::Ptr<AST::Declaration>> Parser::parseDeclarations() {
+    std::vector<AST::Ptr<AST::Declaration>> result;
+    auto first = parseDeclaration();
+    if (first) {
+        result.push_back(std::move(first));
+    }
+    // Move any additional declarations collected during parsing
+    while (!additionalDeclarations_.empty()) {
+        result.push_back(std::move(additionalDeclarations_.back()));
+        additionalDeclarations_.pop_back();
+    }
+    return result;
 }
 
 Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
@@ -542,7 +579,7 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
     // Handle pointer prefix
     AST::Ptr<AST::Type> type = parsePointer(std::move(specs.type));
     
-    // Check for parenthesized declarator (for function pointer parameters like `int (*)(long)`)
+    // Check for parenthesized declarator (for function pointer parameters like `int (*)(long)` or `int (*f)(long)`)
     if (check(TokenType::LeftParen)) {
         // Could be abstract parenthesized declarator or concrete declarator
         // Save position to potentially backtrack
@@ -550,8 +587,16 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
         advance(); // consume '('
         
         if (check(TokenType::Star) || check(TokenType::LeftParen)) {
-            // Abstract declarator like (*) or ((*))
+            // Declarator like (*) or (*f) or ((*))
             AST::Ptr<AST::Type> innerType = parsePointer(type->clone());
+            
+            // Check for optional name after the pointer (like (*f))
+            if (check(TokenType::Identifier)) {
+                name = current().value;
+                line = current().line;
+                col = current().column;
+                advance();
+            }
             
             // Handle nested parentheses
             while (check(TokenType::LeftParen)) {
@@ -559,14 +604,21 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
                 advance();
                 if (check(TokenType::Star) || check(TokenType::LeftParen)) {
                     innerType = parsePointer(std::move(innerType));
+                    // Check for name in nested case
+                    if (check(TokenType::Identifier) && name.empty()) {
+                        name = current().value;
+                        line = current().line;
+                        col = current().column;
+                        advance();
+                    }
                 } else {
                     currentIndex_ = nestedPos;
                     break;
                 }
-                consume(TokenType::RightParen, "expected ')' in abstract declarator");
+                consume(TokenType::RightParen, "expected ')' in declarator");
             }
             
-            consume(TokenType::RightParen, "expected ')' after abstract declarator");
+            consume(TokenType::RightParen, "expected ')' after declarator");
             
             // Now check for function suffix
             if (match(TokenType::LeftParen)) {

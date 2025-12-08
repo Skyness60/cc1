@@ -245,6 +245,11 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
         }
     }
     
+    // Handle cast expression - evaluate the inner expression
+    if (auto* cast = dynamic_cast<AST::CastExpr*>(expr)) {
+        return evaluateConstantExpr(cast->operand.get(), result);
+    }
+    
     return false;
 }
 
