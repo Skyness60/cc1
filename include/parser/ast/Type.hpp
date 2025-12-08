@@ -185,9 +185,10 @@ struct Enumerator {
     Ptr<Expression> value;  // nullptr if no explicit value
     int line = 0, column = 0;  // Position of the enumerator name
     int equalColumn = 0;  // Position of the '=' sign (if present)
+    mutable long long computedValue = 0;  // Computed after semantic analysis
     
     Enumerator(const std::string& n, Ptr<Expression> v, int l = 0, int c = 0, int eq = 0)
-        : name(n), value(std::move(v)), line(l), column(c), equalColumn(eq) {}
+        : name(n), value(std::move(v)), line(l), column(c), equalColumn(eq), computedValue(0) {}
 };
 
 class EnumType : public Type {

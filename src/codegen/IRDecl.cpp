@@ -50,14 +50,9 @@ void IRGenerator::visit(AST::VarDecl& node) {
     if (node.name.empty()) {
         // Anonymous declaration (e.g., standalone enum definition)
         if (auto* enumType = dynamic_cast<AST::EnumType*>(stripQualifiers(node.type.get()))) {
-            // Process enum values
-            long long nextValue = 0;
+            // Use pre-computed enum values from semantic analysis
             for (const auto& enumerator : enumType->enumerators) {
-                if (enumerator.value) {
-                    evaluateConstantExpr(enumerator.value.get(), nextValue);
-                }
-                enumValues_[enumerator.name] = nextValue;
-                nextValue++;
+                enumValues_[enumerator.name] = enumerator.computedValue;
             }
         }
         return;
@@ -474,14 +469,9 @@ void IRGenerator::visit(AST::StructDecl& node) {
 // ============================================================================
 
 void IRGenerator::visit(AST::EnumDecl& node) {
-    // Process enumerators
-    long long nextValue = 0;
+    // Use pre-computed enum values from semantic analysis
     for (auto& enumerator : node.enumerators) {
-        if (enumerator.value) {
-            evaluateConstantExpr(enumerator.value.get(), nextValue);
-        }
-        enumValues_[enumerator.name] = nextValue;
-        nextValue++;
+        enumValues_[enumerator.name] = enumerator.computedValue;
     }
 }
 

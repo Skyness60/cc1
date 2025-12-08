@@ -195,7 +195,10 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
         switch (unary->op) {
             case AST::UnaryOp::Plus: result = operand; return true;
             case AST::UnaryOp::Negate: result = -operand; return true;
-            case AST::UnaryOp::BitwiseNot: result = ~operand; return true;
+            case AST::UnaryOp::BitwiseNot:
+                // Perform bitwise NOT as 32-bit unsigned to match target architecture
+                result = static_cast<long long>(~static_cast<unsigned int>(operand));
+                return true;
             case AST::UnaryOp::LogicalNot: result = !operand ? 1 : 0; return true;
             default: return false;
         }
@@ -216,7 +219,8 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
                 return true;
             case AST::BinaryOp::Mod:
                 if (right == 0) return false;
-                result = left % right;
+                // Use unsigned arithmetic for modulo to match C semantics
+                result = static_cast<long long>(static_cast<unsigned long long>(left) % static_cast<unsigned long long>(right));
                 return true;
             case AST::BinaryOp::Equal: result = left == right ? 1 : 0; return true;
             case AST::BinaryOp::NotEqual: result = left != right ? 1 : 0; return true;
@@ -245,9 +249,33 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
         }
     }
     
-    // Handle cast expression - evaluate the inner expression
+    // Handle cast expression - may need to convert to unsigned
     if (auto* cast = dynamic_cast<AST::CastExpr*>(expr)) {
-        return evaluateConstantExpr(cast->operand.get(), result);
+        if (!evaluateConstantExpr(cast->operand.get(), result)) return false;
+        
+        // Check if casting to unsigned type
+        if (auto* prim = dynamic_cast<AST::PrimitiveType*>(cast->targetType.get())) {
+            switch (prim->kind) {
+                case AST::PrimitiveKind::UnsignedChar:
+                    result = static_cast<unsigned char>(result);
+                    return true;
+                case AST::PrimitiveKind::UnsignedShort:
+                    result = static_cast<unsigned short>(result);
+                    return true;
+                case AST::PrimitiveKind::UnsignedInt:
+                    result = static_cast<unsigned int>(result);
+                    return true;
+                case AST::PrimitiveKind::UnsignedLong:
+                    result = static_cast<unsigned long>(result);
+                    return true;
+                case AST::PrimitiveKind::UnsignedLongLong:
+                    result = static_cast<unsigned long long>(result);
+                    return true;
+                default:
+                    break;
+            }
+        }
+        return true;
     }
     
     return false;
@@ -336,6 +364,9 @@ void SemanticAnalyzer::processEnumType(AST::EnumType* enumType) {
                 return;
             }
         }
+        
+        // Store computed value in AST
+        enumerator.computedValue = nextValue;
         
         // Register enumerator as constant with its value
         Symbol sym;

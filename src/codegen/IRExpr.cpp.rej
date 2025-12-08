@@ -1,0 +1,11 @@
+--- src/codegen/IRExpr.cpp
++++ src/codegen/IRExpr.cpp
+@@ -872,7 +872,7 @@ void IRGenerator::visit(AST::IndexExpr& node) {
+         elemType = elemType.substr(0, elemType.size() - 1);
+     }
+     // Then, if it's an array type (starts with [), extract the element type
+-    if (elemType.find('[') != std::string::npos) {
++    if (!elemType.empty() && elemType[0] == '[') {
+         // For array type like [3 x i32] or [2 x { ... }], extract the element type
+         size_t start = elemType.find("x ") + 2;
+         if (start != std::string::npos) {
