@@ -5,15 +5,20 @@
 #include <semantics/SymbolTable.hpp>
 #include <semantics/SemanticAnalyzer.hpp>
 #include <codegen/IRGenerator.hpp>
+#include <preprocessor/Preprocessor.hpp>
 #include <lexer/Lexer.hpp>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-CompilerDriver::CompilerDriver(std::vector<std::string>& input, const std::string& output, bool syntaxOnly)
-    : input_files_(input),
-      output_file_(output),
-      syntax_only_(syntaxOnly)
+CompilerDriver::CompilerDriver(const CompilerOptions& opts)
+    : input_files_(opts.inputFiles),
+      output_file_(opts.outputFile),
+      syntax_only_(opts.syntaxOnly),
+      preprocess_only_(opts.preprocessOnly),
+      defines_(opts.defines),
+      undefines_(opts.undefines),
+      include_paths_(opts.includePaths)
 {
     symbols_.reset(new SymbolTable());
 }
@@ -22,6 +27,10 @@ CompilerDriver::~CompilerDriver() = default;
 
 bool CompilerDriver::compile()
 {
+    if (!runPreprocessing())
+        return false;
+    if (preprocess_only_)
+        return true;
     if (!runLexing())
         return false;
     if (!runParsing())
@@ -35,6 +44,66 @@ bool CompilerDriver::compile()
     return true;
 }
 
+bool CompilerDriver::runPreprocessing()
+{
+    if (input_files_.empty()) {
+        std::cerr << "Error: No input files provided." << std::endl;
+        return false;
+    }
+
+    cc1::Preprocessor preprocessor;
+    
+    // Add include paths
+    for (const auto& path : include_paths_) {
+        preprocessor.addIncludePath(path);
+    }
+    
+    // Process -D options
+    for (const auto& def : defines_) {
+        size_t eq = def.find('=');
+        if (eq != std::string::npos) {
+            preprocessor.defineMacro(def.substr(0, eq), def.substr(eq + 1));
+        } else {
+            preprocessor.defineMacro(def, "1");
+        }
+    }
+    
+    // Process -U options
+    for (const auto& undef : undefines_) {
+        preprocessor.undefineMacro(undef);
+    }
+
+    // Process all input files
+    source_.clear();
+    for (const auto& filename : input_files_) {
+        std::string fileSource = preprocessor.preprocess(filename);
+        
+        if (preprocessor.hadError()) {
+            return false;
+        }
+        
+        source_ += fileSource;
+    }
+    
+    // If -E flag, output preprocessed source
+    if (preprocess_only_) {
+        if (!output_file_.empty()) {
+            std::ofstream out(output_file_);
+            if (out.is_open()) {
+                out << source_;
+                out.close();
+            } else {
+                std::cerr << "Error: Could not open output file " << output_file_ << std::endl;
+                return false;
+            }
+        } else {
+            std::cout << source_;
+        }
+    }
+    
+    return true;
+}
+
 bool CompilerDriver::runLexing()
 {
     if (input_files_.empty()) {
@@ -42,18 +111,9 @@ bool CompilerDriver::runLexing()
         return false;
     }
 
-    // For now, we only handle the first file as per standard cc1 behavior (usually one TU)
     std::string filename = input_files_[0];
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
-        return false;
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    source_ = buffer.str();
-
+    
+    // source_ is already preprocessed
     Lexer lexer(source_, filename);
     tokens_ = lexer.tokenize();
 
@@ -102,23 +162,26 @@ bool CompilerDriver::runSemantics()
 
 bool CompilerDriver::runCodeGen()
 {
-    // Code generation not yet implemented with new AST
-    // IRGenerator generator;
-    // if (ast_) {
-    //     ast_->accept(generator);
-    // }
+    if (!ast_) return true;
+    
+    cc1::IRGenerator generator;
+    generator.generate(*ast_);
+    
+    if (generator.hadError()) {
+        return false;
+    }
 
-    // if (!output_file_.empty()) {
-    //     std::ofstream out(output_file_);
-    //     if (out.is_open()) {
-    //         out << generator.getIR();
-    //         out.close();
-    //     } else {
-    //         std::cerr << "Error: Could not open output file " << output_file_ << std::endl;
-    //         return false;
-    //     }
-    // } else {
-    //     std::cout << generator.getIR();
-    // }
+    if (!output_file_.empty()) {
+        std::ofstream out(output_file_);
+        if (out.is_open()) {
+            out << generator.getIR();
+            out.close();
+        } else {
+            std::cerr << "Error: Could not open output file " << output_file_ << std::endl;
+            return false;
+        }
+    } else {
+        std::cout << generator.getIR();
+    }
     return true;
 }

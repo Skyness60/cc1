@@ -107,6 +107,7 @@ private:
     
     AST::Ptr<AST::Declaration> parseExternalDeclaration();
     AST::Ptr<AST::Declaration> parseDeclaration();
+    std::vector<AST::Ptr<AST::Declaration>> parseDeclarations();
     
     DeclSpecifiers parseDeclarationSpecifiers();
     bool isDeclarationSpecifier() const;
@@ -210,6 +211,12 @@ private:
     
     /// Global identifiers declared with their types (for redefinition detection)
     std::map<std::string, std::string> globalIdentifiers_;
+    
+    /// Functions that have a body/definition (not just declaration)
+    std::set<std::string> definedFunctions_;
+    
+    /// Additional declarations from multi-variable declarations (e.g., int a, b, c;)
+    std::vector<AST::Ptr<AST::Declaration>> additionalDeclarations_;
     
     /// Context tracking for semantic validation during parsing
     int switchDepth_ = 0;     // Track nesting level inside switch statements

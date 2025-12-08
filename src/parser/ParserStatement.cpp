@@ -53,9 +53,11 @@ AST::Ptr<AST::CompoundStmt> Parser::parseCompoundStatement() {
     while (!check(TokenType::RightBrace) && !isAtEnd()) {
         // In C89, declarations come first, then statements
         if (isDeclarationStart()) {
-            auto decl = parseDeclaration();
-            if (decl) {
-                compound->declarations.push_back(std::move(decl));
+            auto decls = parseDeclarations();
+            for (auto& decl : decls) {
+                if (decl) {
+                    compound->declarations.push_back(std::move(decl));
+                }
             }
         } else {
             auto stmt = parseStatement();

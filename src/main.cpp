@@ -18,7 +18,7 @@ int main(int argc, char** argv)
             return 0;
         }
         
-        CompilerDriver driver(opts.inputFiles, opts.outputFile, opts.syntaxOnly);
+        CompilerDriver driver(opts);
         return driver.compile() ? 0 : 1;
     }
     catch (const std::exception& e) {

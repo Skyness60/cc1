@@ -361,8 +361,58 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryExpression() {
     if (check(TokenType::StringLiteral)) {
         Token tok = current();
         advance();
-        // Remove quotes and handle escape sequences (simplified)
-        std::string value = tok.value.substr(1, tok.value.length() - 2);
+        // Remove quotes and handle escape sequences
+        std::string raw = tok.value.substr(1, tok.value.length() - 2);
+        std::string value;
+        for (size_t i = 0; i < raw.size(); ++i) {
+            if (raw[i] == '\\' && i + 1 < raw.size()) {
+                char next = raw[i + 1];
+                ++i;
+                switch (next) {
+                    case 'n': value += '\n'; break;
+                    case 't': value += '\t'; break;
+                    case 'r': value += '\r'; break;
+                    case '0': value += '\0'; break;
+                    case '\\': value += '\\'; break;
+                    case '"': value += '"'; break;
+                    case '\'': value += '\''; break;
+                    case 'a': value += '\a'; break;
+                    case 'b': value += '\b'; break;
+                    case 'f': value += '\f'; break;
+                    case 'v': value += '\v'; break;
+                    case 'x': {
+                        // Hex escape \xNN
+                        if (i + 2 < raw.size()) {
+                            std::string hex = raw.substr(i + 1, 2);
+                            try {
+                                value += static_cast<char>(std::stoi(hex, nullptr, 16));
+                                i += 2;
+                            } catch (...) {
+                                value += next; // Invalid, keep as-is
+                            }
+                        } else {
+                            value += next;
+                        }
+                        break;
+                    }
+                    default:
+                        // Octal escape \NNN or unknown escape
+                        if (next >= '0' && next <= '7') {
+                            std::string oct;
+                            oct += next;
+                            while (i + 1 < raw.size() && raw[i + 1] >= '0' && raw[i + 1] <= '7' && oct.size() < 3) {
+                                oct += raw[++i];
+                            }
+                            value += static_cast<char>(std::stoi(oct, nullptr, 8));
+                        } else {
+                            value += next; // Unknown escape, keep the char
+                        }
+                        break;
+                }
+            } else {
+                value += raw[i];
+            }
+        }
         return AST::make<AST::StringLiteral>(value, tok.value, tok.line, tok.column);
     }
     
@@ -370,7 +420,43 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryExpression() {
     if (check(TokenType::CharLiteral)) {
         Token tok = current();
         advance();
-        int value = tok.value.length() > 2 ? tok.value[1] : 0;
+        // Handle escape sequences for char literals
+        std::string raw = tok.value.substr(1, tok.value.length() - 2);
+        int value = 0;
+        if (!raw.empty()) {
+            if (raw[0] == '\\' && raw.size() > 1) {
+                switch (raw[1]) {
+                    case 'n': value = '\n'; break;
+                    case 't': value = '\t'; break;
+                    case 'r': value = '\r'; break;
+                    case '0': value = '\0'; break;
+                    case '\\': value = '\\'; break;
+                    case '"': value = '"'; break;
+                    case '\'': value = '\''; break;
+                    case 'a': value = '\a'; break;
+                    case 'b': value = '\b'; break;
+                    case 'f': value = '\f'; break;
+                    case 'v': value = '\v'; break;
+                    case 'x':
+                        if (raw.size() > 3) {
+                            std::string hex = raw.substr(2, 2);
+                            try { value = std::stoi(hex, nullptr, 16); } catch (...) { value = raw[1]; }
+                        }
+                        break;
+                    default:
+                        if (raw[1] >= '0' && raw[1] <= '7') {
+                            std::string oct = raw.substr(1);
+                            if (oct.size() > 3) oct = oct.substr(0, 3);
+                            try { value = std::stoi(oct, nullptr, 8); } catch (...) { value = raw[1]; }
+                        } else {
+                            value = raw[1];
+                        }
+                        break;
+                }
+            } else {
+                value = static_cast<unsigned char>(raw[0]);
+            }
+        }
         return AST::make<AST::CharLiteral>(value, tok.value, tok.line, tok.column);
     }
     
