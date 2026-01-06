@@ -11,16 +11,25 @@
 #include <iostream>
 #include <sstream>
 
+using cc1::DebugLogger;
+
 CompilerDriver::CompilerDriver(const CompilerOptions& opts)
     : input_files_(opts.inputFiles),
       output_file_(opts.outputFile),
       syntax_only_(opts.syntaxOnly),
       preprocess_only_(opts.preprocessOnly),
+      debug_mode_(opts.debugMode),
       defines_(opts.defines),
       undefines_(opts.undefines),
       include_paths_(opts.includePaths)
 {
     symbols_.reset(new SymbolTable());
+    
+    // Enable debug logging if requested
+    if (debug_mode_) {
+        DebugLogger::instance().setEnabled(true);
+        DebugLogger::instance().setOutputFile("cc1_debug.log");
+    }
 }
 
 CompilerDriver::~CompilerDriver() = default;

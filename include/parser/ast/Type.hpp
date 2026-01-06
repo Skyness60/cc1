@@ -155,9 +155,17 @@ struct StructMember {
     Ptr<Type> type;
     int line = 0;
     int column = 0;
+    int bitWidth = -1;  // -1 means not a bitfield
     
+    // Default constructor (no bitfield)
     StructMember(const std::string& n, Ptr<Type> t, int l = 0, int c = 0)
-        : name(n), type(std::move(t)), line(l), column(c) {}
+        : name(n), type(std::move(t)), line(l), column(c), bitWidth(-1) {}
+    
+    // Constructor with explicit bitfield width
+    StructMember(const std::string& n, Ptr<Type> t, int l, int c, int bw)
+        : name(n), type(std::move(t)), line(l), column(c), bitWidth(bw) {}
+        
+    bool isBitfield() const { return bitWidth >= 0; }
 };
 
 class StructType : public Type {

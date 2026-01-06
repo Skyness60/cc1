@@ -9,18 +9,32 @@ namespace cc1 {
 void IRGenerator::visit(AST::TranslationUnit& node) {
     inGlobalScope_ = true;
     
-    // First pass: collect typedef definitions ONLY
+    // First pass: collect typedef definitions and assign names to anonymous structs
     for (auto& decl : node.declarations) {
-        // Check for TypedefDecl (if used by semantic analysis)
+        // Check for TypedefDecl
         if (auto* typedefDecl = dynamic_cast<AST::TypedefDecl*>(decl.get())) {
             if (typedefDecl->underlyingType) {
                 typedefMap_[typedefDecl->name] = typedefDecl->underlyingType.get();
+                
+                // If the underlying type is an anonymous struct, assign the typedef name as struct name
+                if (auto* structType = dynamic_cast<AST::StructType*>(typedefDecl->underlyingType.get())) {
+                    if (structType->name.empty()) {
+                        structType->name = typedefDecl->name;
+                    }
+                }
             }
         }
         // Also check for VarDecl with Typedef storage class (used by parser)
         else if (auto* varDecl = dynamic_cast<AST::VarDecl*>(decl.get())) {
             if (varDecl->storageClass == AST::StorageClass::Typedef && varDecl->type) {
                 typedefMap_[varDecl->name] = varDecl->type.get();
+                
+                // If the underlying type is an anonymous struct, assign the typedef name as struct name
+                if (auto* structType = dynamic_cast<AST::StructType*>(varDecl->type.get())) {
+                    if (structType->name.empty()) {
+                        structType->name = varDecl->name;
+                    }
+                }
             }
         }
     }
@@ -47,6 +61,11 @@ void IRGenerator::visit(AST::TranslationUnit& node) {
 // ============================================================================
 
 void IRGenerator::visit(AST::VarDecl& node) {
+    // Skip typedef declarations - they don't generate code
+    if (node.storageClass == AST::StorageClass::Typedef) {
+        return;
+    }
+    
     if (node.name.empty()) {
         // Anonymous declaration (e.g., standalone enum definition)
         if (auto* enumType = dynamic_cast<AST::EnumType*>(stripQualifiers(node.type.get()))) {
@@ -149,6 +168,18 @@ void IRGenerator::visit(AST::VarDecl& node) {
                 std::string strName = newGlobalString(strLit->value);
                 // This is tricky - need to handle differently
                 initValue = getDefaultValue(node.type.get());
+            } else if (auto* initList = dynamic_cast<AST::InitializerList*>(node.initializer.get())) {
+                // InitializerList - try to generate the proper initializer
+                // For arrays of structs, use flattening (works with or without bitfields)
+                bool isArrayOfStruct = false;
+                if (auto* arrayType = dynamic_cast<AST::ArrayType*>(node.type.get())) {
+                    auto* elemType = stripQualifiers(arrayType->elementType.get());
+                    auto* structType = dynamic_cast<AST::StructType*>(elemType);
+                    isArrayOfStruct = (structType != nullptr);
+                }
+                
+                // Use generateInitializerValue for all array types
+                initValue = generateInitializerValue(node.type.get(), initList);
             } else {
                 initValue = getDefaultValue(node.type.get());
             }
@@ -479,9 +510,6 @@ void IRGenerator::visit(AST::EnumDecl& node) {
 // Typedef Declaration
 // ============================================================================
 
-void IRGenerator::visit(AST::TypedefDecl& /*node*/) {
-    // Typedefs don't generate IR - they're resolved at compile time
-    // The type system handles the aliasing
-}
+
 
 } // namespace cc1

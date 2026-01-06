@@ -750,6 +750,8 @@ void IRGenerator::visit(AST::MemberExpr& node) {
     node.object->accept(*this);
     IRValue objVal = lastValue_;
     
+    DebugLogger::instance().logExpr("MemberExpr.object", objVal.type, objVal.name, objVal.isPointer, objVal.isConstant);
+    
     // Determine the actual struct type
     std::string structType = objVal.type;
     std::string structLLVMType = structType;  // The type being indexed
@@ -771,10 +773,15 @@ void IRGenerator::visit(AST::MemberExpr& node) {
         }
     }
     
+    DebugLogger::instance().log("[MemberExpr] operator=" + std::string(node.isArrow ? "->" : ".") + 
+                               " member=" + node.member + " structType=" + structType + 
+                               " structLLVMType=" + structLLVMType);
+    
     // Sanity check: if structLLVMType is not a struct or pointer, something's wrong
     // This can happen if previous operations returned a scalar value
     if (structLLVMType.find('{') != 0 && structLLVMType.find("%struct.") != 0) {
         // Scalar type - can't do member access
+        DebugLogger::instance().log("[MemberExpr] ERROR: Not a struct type! " + structLLVMType);
         // Default to i32 pointer as fallback
         lastValue_ = IRValue(newTemp(), "i32*", true, false);
         return;
@@ -806,16 +813,27 @@ void IRGenerator::visit(AST::MemberExpr& node) {
             }
         }
     } else if (structLLVMType.find('{') == 0) {
-        // Inline struct type - parse it to extract field type
+        // Inline struct type - try to find member index
+        int foundIdx = findMemberIndexInInlineStruct(structLLVMType, node.member);
+        if (foundIdx >= 0) {
+            memberIdx = foundIdx;
+        }
+        // Now extract the field type using the correct index
         memberType = extractFieldTypeFromInlineStruct(structLLVMType, memberIdx);
     }
+    
+    DebugLogger::instance().log("[MemberExpr] memberIdx=" + std::to_string(memberIdx) + 
+                               " memberType=" + memberType);
     
     // Generate getelementptr
     // Pattern: getelementptr inbounds <pointee_type>, <ptr_type> <ptr>, i32 0, i32 <member_idx>
     std::string memberPtr = newTemp();
+    DebugLogger::instance().log("[MemberExpr] GEP: pointee=" + structLLVMType + 
+                               " ptrType=" + objVal.type + " ptr=" + objVal.name);
     emit(memberPtr + " = getelementptr inbounds " + structLLVMType + ", " + 
          objVal.type + " " + objVal.name + ", i32 0, i32 " + std::to_string(memberIdx));
     
+    DebugLogger::instance().logExpr("MemberExpr.result", memberType + "*", memberPtr, true, false);
     lastValue_ = IRValue(memberPtr, memberType + "*", true, false);
 }
 
@@ -830,13 +848,30 @@ void IRGenerator::visit(AST::IndexExpr& node) {
     node.index->accept(*this);
     IRValue idxVal = lastValue_;
     
-    // Load array pointer if needed
+    DebugLogger::instance().logExpr("IndexExpr.array", arrVal.type, arrVal.name, arrVal.isPointer, arrVal.isConstant);
+    DebugLogger::instance().logExpr("IndexExpr.index", idxVal.type, idxVal.name, idxVal.isPointer, idxVal.isConstant);
+    
+    // Get the array pointer
     std::string arrPtr = arrVal.name;
     std::string arrType = arrVal.type;
+    
+    // For arrays, if the pointer is in a register (isPointer), we use it directly
+    // We don't load arrays - arrays always decay to pointers to their first element
     if (arrVal.isPointer && !arrVal.isConstant) {
-        arrPtr = newTemp();
-        arrType = arrVal.derefType();
-        emit(arrPtr + " = load " + arrType + ", " + arrVal.type + " " + arrVal.name);
+        // Check if the dereferenced type is an array
+        std::string derefType = arrVal.derefType();
+        if (derefType.find('[') != std::string::npos) {
+            // Array type - use the pointer directly without loading
+            // The pointer is already in arrVal.name
+            // arrType is already the correct pointer type
+            DebugLogger::instance().log("[IndexExpr] Array type detected, using pointer directly: " + arrType);
+        } else {
+            // Non-array pointer - load the value
+            arrPtr = newTemp();
+            arrType = arrVal.derefType();
+            DebugLogger::instance().log("[IndexExpr] Non-array pointer, loading value. arrType=" + arrType);
+            emit(arrPtr + " = load " + arrType + ", " + arrVal.type + " " + arrVal.name);
+        }
     }
     
     // Load index if needed
@@ -846,17 +881,23 @@ void IRGenerator::visit(AST::IndexExpr& node) {
         emit(idxReg + " = load " + idxVal.derefType() + ", " + idxVal.type + " " + idxVal.name);
     }
     
-    // Compute element pointer
-    std::string elemPtr = newTemp();
-    
-    // Determine element type from pointer type
+    // Compute element type from pointer type
     std::string elemType = arrType;
+    // Handle double-pointer case (can happen with array parameters)
+    if (elemType.size() >= 2 && elemType.substr(elemType.size() - 2) == "**") {
+        elemType = elemType.substr(0, elemType.size() - 1);  // Remove one *
+        arrType = elemType;  // Fix arrType too
+    }
     if (elemType.back() == '*') {
         elemType = elemType.substr(0, elemType.size() - 1);
     }
     
+    // Compute element pointer
+    std::string elemPtr = newTemp();
+    DebugLogger::instance().log("[IndexExpr] GEP: elemType=" + elemType + " arrType=" + arrType + " arrPtr=" + arrPtr);
     emit(elemPtr + " = getelementptr inbounds " + elemType + ", " + arrType + " " + arrPtr + ", " + idxVal.derefType() + " " + idxReg);
     
+    DebugLogger::instance().logExpr("IndexExpr.result", elemType + "*", elemPtr, true, false);
     lastValue_ = IRValue(elemPtr, elemType + "*", true, false);
 }
 

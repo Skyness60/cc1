@@ -8,8 +8,44 @@
 #include <set>
 #include <vector>
 #include <stack>
+#include <fstream>
 
 namespace cc1 {
+
+/**
+ * @brief Debug logging utility
+ */
+class DebugLogger {
+public:
+    static DebugLogger& instance() {
+        static DebugLogger logger;
+        return logger;
+    }
+    
+    void setEnabled(bool enabled) { enabled_ = enabled; }
+    void setOutputFile(const std::string& filename) {
+        output_.open(filename, std::ios::app);
+    }
+    
+    void log(const std::string& message) {
+        if (!enabled_) return;
+        output_ << message << "\n";
+        output_.flush();
+    }
+    
+    void logExpr(const std::string& exprName, const std::string& type, 
+                 const std::string& name, bool isPointer, bool isConstant) {
+        if (!enabled_) return;
+        output_ << "[EXPR] " << exprName << " -> type='" << type << "' name='" << name 
+               << "' isPtr=" << isPointer << " isConst=" << isConstant << "\n";
+        output_.flush();
+    }
+
+private:
+    DebugLogger() = default;
+    bool enabled_ = false;
+    std::ofstream output_;
+};
 
 /**
  * @brief Represents an LLVM IR value (register or constant)
@@ -80,7 +116,6 @@ public:
     void visit(AST::ParamDecl& node) override;
     void visit(AST::StructDecl& node) override;
     void visit(AST::EnumDecl& node) override;
-    void visit(AST::TypedefDecl& node) override;
     
     // ========================================================================
     // Statement Visitors
@@ -127,6 +162,9 @@ public:
     int getTypeAlign(AST::Type* type);
     int getPrimitiveSize(AST::PrimitiveKind kind);
     std::string getDefaultValue(AST::Type* type);
+    std::string generateInitializerValue(AST::Type* type, AST::InitializerList* initList);
+    size_t countFlattedMembers(AST::Type* type);
+    std::string generateStructInitializerFromFlatHelper(AST::StructType* st, AST::InitializerList* flatList, size_t& idx);
     AST::Type* stripQualifiers(AST::Type* type);
 
     // ========================================================================
@@ -174,9 +212,25 @@ public:
     StructLayout computeStructLayout(AST::StructType* type);
     const StructLayout* getStructLayout(const std::string& name);
     
+    // Collect named struct types encountered during code generation
+    void collectNamedStruct(AST::StructType* structType);
+    
+    // Generate LLVM IR definition for a named struct type with proper packing
+    std::string generateStructTypeDefinition(AST::StructType* structType);
+    
     // Extract the Nth field type from an inline LLVM struct type string
     // E.g., from "{ float, [2 x i32], { i32 } }" get field 1 as "[2 x i32]"
     std::string extractFieldTypeFromInlineStruct(const std::string& inlineStructType, int fieldIndex);
+    
+    // Register inline struct member information from AST
+    void registerInlineStructMembers(const std::string& llvmType, AST::StructType* structType);
+    
+    // Look up member index in inline struct by name
+    int findMemberIndexInInlineStruct(const std::string& llvmType, const std::string& memberName);
+    
+    // Generate flattened initializer for arrays of structs
+    // Converts flat initializer list to properly nested structure
+    std::string generateFlattenedInitializer(AST::ArrayType* arrayType, AST::InitializerList* initList);
 
     
     // ========================================================================
@@ -231,6 +285,12 @@ private:
     
     // Struct layouts cache
     std::map<std::string, StructLayout> structLayouts_;
+    
+    // Inline struct member info (maps LLVM type string -> member info)
+    std::map<std::string, std::map<std::string, int>> inlineStructMembers_;
+    
+    // Named struct type definitions (maps name -> { LLVM type definition, AST type pointer })
+    std::map<std::string, std::pair<std::string, AST::StructType*>> namedStructDefs_;
     
     // Typedef cache (maps typedef name to its underlying type)
     std::map<std::string, AST::Type*> typedefMap_;

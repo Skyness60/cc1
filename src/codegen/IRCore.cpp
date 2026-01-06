@@ -34,6 +34,14 @@ void IRGenerator::generate(AST::TranslationUnit& unit) {
 }
 
 std::string IRGenerator::getIR() const {
+    // Build struct type definitions
+    std::stringstream structs;
+    for (const auto& pair : namedStructDefs_) {
+        if (!pair.second.first.empty()) {
+            structs << pair.second.first << "\n";
+        }
+    }
+    
     // Build metadata for PIE (Position Independent Executable)
     std::stringstream meta;
     meta << "!llvm.module.flags = !{!0, !1}\n";
@@ -48,8 +56,8 @@ std::string IRGenerator::getIR() const {
         }
     }
     
-    // Order: header, globals, string literals, function declarations, function definitions, metadata
-    return headerBuffer_.str() + globalBuffer_.str() + stringBuffer_.str() + 
+    // Order: header, struct type definitions, globals, string literals, function declarations, function definitions, metadata
+    return headerBuffer_.str() + structs.str() + globalBuffer_.str() + stringBuffer_.str() + 
            decls.str() + funcDefBuffer_.str() + meta.str();
 }
 

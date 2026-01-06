@@ -39,6 +39,11 @@ CompilerOptions ArgumentParser::parse() {
             continue;
         }
         
+        if (arg == "-debug") {
+            opts.debugMode = true;
+            continue;
+        }
+        
         // -D macro definition
         if (arg.substr(0, 2) == "-D") {
             if (arg.length() > 2) {

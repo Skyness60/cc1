@@ -1,0 +1,171 @@
+; ModuleID = 'cc1'
+source_filename = "cc1"
+target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128"
+target triple = "i386-pc-linux-gnu"
+
+@size_t = dso_local global i32 0
+@T = dso_local global i8 zeroinitializer
+@array1 = dso_local global [4 x i8] []
+@array2 = dso_local global [4 x i8] []
+@.str.0 = private unnamed_addr constant [3 x i8] c"{\0A\00"
+@.str.1 = private unnamed_addr constant [15 x i8] c"    .[%d] = {\0A\00"
+@.str.2 = private unnamed_addr constant [16 x i8] c"        .a = {\0A\00"
+@.str.3 = private unnamed_addr constant [22 x i8] c"            .a = %f,\0A\00"
+@.str.4 = private unnamed_addr constant [20 x i8] c"            .b = {\0A\00"
+@.str.5 = private unnamed_addr constant [28 x i8] c"                .[0] = %d,\0A\00"
+@.str.6 = private unnamed_addr constant [28 x i8] c"                .[1] = %d,\0A\00"
+@.str.7 = private unnamed_addr constant [16 x i8] c"            },\0A\00"
+@.str.8 = private unnamed_addr constant [29 x i8] c"            .c = {.a = %d},\0A\00"
+@.str.9 = private unnamed_addr constant [12 x i8] c"        },\0A\00"
+@.str.10 = private unnamed_addr constant [19 x i8] c"        .b1 = %d,\0A\00"
+@.str.11 = private unnamed_addr constant [19 x i8] c"        .b2 = %d,\0A\00"
+@.str.12 = private unnamed_addr constant [16 x i8] c"        .c = {\0A\00"
+@.str.13 = private unnamed_addr constant [24 x i8] c"            .[0] = %d,\0A\00"
+@.str.14 = private unnamed_addr constant [24 x i8] c"            .[1] = %d,\0A\00"
+@.str.15 = private unnamed_addr constant [12 x i8] c"        },\0A\00"
+@.str.16 = private unnamed_addr constant [8 x i8] c"    },\0A\00"
+@.str.17 = private unnamed_addr constant [3 x i8] c"}\0A\00"
+@.str.18 = private unnamed_addr constant [9 x i8] c"array1:\0A\00"
+@.str.19 = private unnamed_addr constant [9 x i8] c"array2:\0A\00"
+@.str.20 = private unnamed_addr constant [43 x i8] c"error: struct isn't correctly initialized\0A\00"
+@.str.21 = private unnamed_addr constant [4 x i8] c"OK\0A\00"
+declare i32 @memcmp(i8*, i8*, i32)
+declare i32 @printf(i8*, ...)
+
+define dso_local void @print_array(i8* %0) {
+entry:
+  %array.addr = alloca i8*
+  store i8* %0, i8** %array.addr
+  %i.addr1 = alloca i32
+  %2 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.0, i32 0, i32 0
+  %3 = call i32 @printf(i8* %2)
+  store i32 0, i32* %i.addr1
+  br label %for.cond1
+for.cond1:
+  %4 = load i32, i32* %i.addr1
+  %5 = icmp slt i32 %4, 4
+  %6 = zext i1 %5 to i32
+  %7 = icmp ne i32 %6, 0
+  br i1 %7, label %for.body2, label %for.end4
+for.body2:
+  %8 = getelementptr inbounds [15 x i8], [15 x i8]* @.str.1, i32 0, i32 0
+  %9 = load i32, i32* %i.addr1
+  %10 = call i32 @printf(i8* %8, i32 %9)
+  %11 = getelementptr inbounds [16 x i8], [16 x i8]* @.str.2, i32 0, i32 0
+  %12 = call i32 @printf(i8* %11)
+  %13 = getelementptr inbounds [22 x i8], [22 x i8]* @.str.3, i32 0, i32 0
+  %14 = load i8*, i8** %array.addr
+  %15 = load i32, i32* %i.addr1
+  %16 = getelementptr inbounds i8, i8* %14, i32 %15
+  %19 = load i32, i32* %18
+  %20 = call i32 @printf(i8* %13, i32 %19)
+  %21 = getelementptr inbounds [20 x i8], [20 x i8]* @.str.4, i32 0, i32 0
+  %22 = call i32 @printf(i8* %21)
+  %23 = getelementptr inbounds [28 x i8], [28 x i8]* @.str.5, i32 0, i32 0
+  %24 = load i8*, i8** %array.addr
+  %25 = load i32, i32* %i.addr1
+  %26 = getelementptr inbounds i8, i8* %24, i32 %25
+  %29 = load i32, i32* %28
+  %30 = getelementptr inbounds i32, i32 %29, i32 0
+  %31 = load i32, i32* %30
+  %32 = call i32 @printf(i8* %23, i32 %31)
+  %33 = getelementptr inbounds [28 x i8], [28 x i8]* @.str.6, i32 0, i32 0
+  %34 = load i8*, i8** %array.addr
+  %35 = load i32, i32* %i.addr1
+  %36 = getelementptr inbounds i8, i8* %34, i32 %35
+  %39 = load i32, i32* %38
+  %40 = getelementptr inbounds i32, i32 %39, i32 1
+  %41 = load i32, i32* %40
+  %42 = call i32 @printf(i8* %33, i32 %41)
+  %43 = getelementptr inbounds [16 x i8], [16 x i8]* @.str.7, i32 0, i32 0
+  %44 = call i32 @printf(i8* %43)
+  %45 = getelementptr inbounds [29 x i8], [29 x i8]* @.str.8, i32 0, i32 0
+  %46 = load i8*, i8** %array.addr
+  %47 = load i32, i32* %i.addr1
+  %48 = getelementptr inbounds i8, i8* %46, i32 %47
+  %52 = load i32, i32* %51
+  %53 = call i32 @printf(i8* %45, i32 %52)
+  %54 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.9, i32 0, i32 0
+  %55 = call i32 @printf(i8* %54)
+  %56 = getelementptr inbounds [19 x i8], [19 x i8]* @.str.10, i32 0, i32 0
+  %57 = load i8*, i8** %array.addr
+  %58 = load i32, i32* %i.addr1
+  %59 = getelementptr inbounds i8, i8* %57, i32 %58
+  %61 = load i32, i32* %60
+  %62 = call i32 @printf(i8* %56, i32 %61)
+  %63 = getelementptr inbounds [19 x i8], [19 x i8]* @.str.11, i32 0, i32 0
+  %64 = load i8*, i8** %array.addr
+  %65 = load i32, i32* %i.addr1
+  %66 = getelementptr inbounds i8, i8* %64, i32 %65
+  %68 = load i32, i32* %67
+  %69 = call i32 @printf(i8* %63, i32 %68)
+  %70 = getelementptr inbounds [16 x i8], [16 x i8]* @.str.12, i32 0, i32 0
+  %71 = call i32 @printf(i8* %70)
+  %72 = getelementptr inbounds [24 x i8], [24 x i8]* @.str.13, i32 0, i32 0
+  %73 = load i8*, i8** %array.addr
+  %74 = load i32, i32* %i.addr1
+  %75 = getelementptr inbounds i8, i8* %73, i32 %74
+  %77 = load i32, i32* %76
+  %78 = getelementptr inbounds i32, i32 %77, i32 0
+  %79 = load i32, i32* %78
+  %80 = call i32 @printf(i8* %72, i32 %79)
+  %81 = getelementptr inbounds [24 x i8], [24 x i8]* @.str.14, i32 0, i32 0
+  %82 = load i8*, i8** %array.addr
+  %83 = load i32, i32* %i.addr1
+  %84 = getelementptr inbounds i8, i8* %82, i32 %83
+  %86 = load i32, i32* %85
+  %87 = getelementptr inbounds i32, i32 %86, i32 1
+  %88 = load i32, i32* %87
+  %89 = call i32 @printf(i8* %81, i32 %88)
+  %90 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.15, i32 0, i32 0
+  %91 = call i32 @printf(i8* %90)
+  %92 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.16, i32 0, i32 0
+  %93 = call i32 @printf(i8* %92)
+  br label %for.inc3
+for.inc3:
+  %94 = load i32, i32* %i.addr1
+  %95 = add i32 %94, 1
+  store i32 %95, i32* %i.addr1
+  br label %for.cond1
+for.end4:
+  %96 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.17, i32 0, i32 0
+  %97 = call i32 @printf(i8* %96)
+  br label %return0
+return0:
+  ret void
+}
+
+define dso_local i32 @main() {
+entry:
+  %retval = alloca i32
+  store i32 0, i32* %retval
+  %0 = getelementptr inbounds [9 x i8], [9 x i8]* @.str.18, i32 0, i32 0
+  %1 = call i32 @printf(i8* %0)
+  %2 = load [4 x i8], [4 x i8]* @array1
+  call void @print_array([4 x i8] %2)
+  %3 = getelementptr inbounds [9 x i8], [9 x i8]* @.str.19, i32 0, i32 0
+  %4 = call i32 @printf(i8* %3)
+  %5 = load [4 x i8], [4 x i8]* @array2
+  call void @print_array([4 x i8] %5)
+  %6 = load [4 x i8], [4 x i8]* @array1
+  %7 = load [4 x i8], [4 x i8]* @array2
+  %8 = call i32 @memcmp([4 x i8] %6, [4 x i8] %7, i32 4)
+  %9 = icmp ne i32 %8, 0
+  br i1 %9, label %if.then6, label %if.else7
+if.then6:
+  %10 = getelementptr inbounds [43 x i8], [43 x i8]* @.str.20, i32 0, i32 0
+  %11 = call i32 @printf(i8* %10)
+  br label %if.end8
+if.else7:
+  %12 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.21, i32 0, i32 0
+  %13 = call i32 @printf(i8* %12)
+  br label %if.end8
+if.end8:
+  br label %return5
+return5:
+  %14 = load i32, i32* %retval
+  ret i32 %14
+}
+!llvm.module.flags = !{!0, !1}
+!0 = !{i32 8, !"PIC Level", i32 2}
+!1 = !{i32 7, !"PIE Level", i32 2}

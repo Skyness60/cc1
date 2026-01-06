@@ -20,6 +20,7 @@ class CompilerDriver
         std::string source_;  // Source code for error reporting
         bool syntax_only_;
         bool preprocess_only_;
+        bool debug_mode_;
         std::vector<std::string> defines_;
         std::vector<std::string> undefines_;
         std::vector<std::string> include_paths_;

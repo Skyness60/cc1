@@ -1,0 +1,138 @@
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%15' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%15' isPtr=1 isConst=0
+[MemberExpr] operator=. member=a structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'a' at index 0
+[MemberExpr] memberIdx=0 memberType={ float, [2 x i32], { i32 } }
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%15
+[EXPR] MemberExpr.result -> type='{ float, [2 x i32], { i32 } }*' name='%16' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ float, [2 x i32], { i32 } }*' name='%16' isPtr=1 isConst=0
+[MemberExpr] operator=. member=a structType={ float, [2 x i32], { i32 } }* structLLVMType={ float, [2 x i32], { i32 } }
+[InlineStruct] Found member 'a' at index 0
+[MemberExpr] memberIdx=0 memberType=float
+[MemberExpr] GEP: pointee={ float, [2 x i32], { i32 } } ptrType={ float, [2 x i32], { i32 } }* ptr=%16
+[EXPR] MemberExpr.result -> type='float*' name='%17' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%24' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%24' isPtr=1 isConst=0
+[MemberExpr] operator=. member=a structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'a' at index 0
+[MemberExpr] memberIdx=0 memberType={ float, [2 x i32], { i32 } }
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%24
+[EXPR] MemberExpr.result -> type='{ float, [2 x i32], { i32 } }*' name='%25' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ float, [2 x i32], { i32 } }*' name='%25' isPtr=1 isConst=0
+[MemberExpr] operator=. member=b structType={ float, [2 x i32], { i32 } }* structLLVMType={ float, [2 x i32], { i32 } }
+[InlineStruct] Found member 'b' at index 1
+[MemberExpr] memberIdx=1 memberType=[2 x i32]
+[MemberExpr] GEP: pointee={ float, [2 x i32], { i32 } } ptrType={ float, [2 x i32], { i32 } }* ptr=%25
+[EXPR] MemberExpr.result -> type='[2 x i32]*' name='%26' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='[2 x i32]*' name='%26' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32' name='0' isPtr=0 isConst=1
+[IndexExpr] Array type detected, using pointer directly: [2 x i32]*
+[IndexExpr] GEP: elemType=[2 x i32] arrType=[2 x i32]* arrPtr=%26
+[EXPR] IndexExpr.result -> type='[2 x i32]*' name='%27' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%32' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%32' isPtr=1 isConst=0
+[MemberExpr] operator=. member=a structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'a' at index 0
+[MemberExpr] memberIdx=0 memberType={ float, [2 x i32], { i32 } }
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%32
+[EXPR] MemberExpr.result -> type='{ float, [2 x i32], { i32 } }*' name='%33' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ float, [2 x i32], { i32 } }*' name='%33' isPtr=1 isConst=0
+[MemberExpr] operator=. member=b structType={ float, [2 x i32], { i32 } }* structLLVMType={ float, [2 x i32], { i32 } }
+[InlineStruct] Found member 'b' at index 1
+[MemberExpr] memberIdx=1 memberType=[2 x i32]
+[MemberExpr] GEP: pointee={ float, [2 x i32], { i32 } } ptrType={ float, [2 x i32], { i32 } }* ptr=%33
+[EXPR] MemberExpr.result -> type='[2 x i32]*' name='%34' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='[2 x i32]*' name='%34' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32' name='1' isPtr=0 isConst=1
+[IndexExpr] Array type detected, using pointer directly: [2 x i32]*
+[IndexExpr] GEP: elemType=[2 x i32] arrType=[2 x i32]* arrPtr=%34
+[EXPR] IndexExpr.result -> type='[2 x i32]*' name='%35' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%42' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%42' isPtr=1 isConst=0
+[MemberExpr] operator=. member=a structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'a' at index 0
+[MemberExpr] memberIdx=0 memberType={ float, [2 x i32], { i32 } }
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%42
+[EXPR] MemberExpr.result -> type='{ float, [2 x i32], { i32 } }*' name='%43' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ float, [2 x i32], { i32 } }*' name='%43' isPtr=1 isConst=0
+[MemberExpr] operator=. member=c structType={ float, [2 x i32], { i32 } }* structLLVMType={ float, [2 x i32], { i32 } }
+[InlineStruct] Found member 'c' at index 2
+[MemberExpr] memberIdx=2 memberType={ i32 }
+[MemberExpr] GEP: pointee={ float, [2 x i32], { i32 } } ptrType={ float, [2 x i32], { i32 } }* ptr=%43
+[EXPR] MemberExpr.result -> type='{ i32 }*' name='%44' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ i32 }*' name='%44' isPtr=1 isConst=0
+[MemberExpr] operator=. member=a structType={ i32 }* structLLVMType={ i32 }
+[InlineStruct] Found member 'a' at index 0
+[MemberExpr] memberIdx=0 memberType=i32
+[MemberExpr] GEP: pointee={ i32 } ptrType={ i32 }* ptr=%44
+[EXPR] MemberExpr.result -> type='i32*' name='%45' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%52' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%52' isPtr=1 isConst=0
+[MemberExpr] operator=. member=b1 structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'b1' at index 1
+[MemberExpr] memberIdx=1 memberType=i8
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%52
+[EXPR] MemberExpr.result -> type='i8*' name='%53' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%58' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%58' isPtr=1 isConst=0
+[MemberExpr] operator=. member=b2 structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'b2' at index 2
+[MemberExpr] memberIdx=2 memberType=i8
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%58
+[EXPR] MemberExpr.result -> type='i8*' name='%59' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%66' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%66' isPtr=1 isConst=0
+[MemberExpr] operator=. member=c structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'c' at index 3
+[MemberExpr] memberIdx=3 memberType=[2 x i32]
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%66
+[EXPR] MemberExpr.result -> type='[2 x i32]*' name='%67' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='[2 x i32]*' name='%67' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32' name='0' isPtr=0 isConst=1
+[IndexExpr] Array type detected, using pointer directly: [2 x i32]*
+[IndexExpr] GEP: elemType=[2 x i32] arrType=[2 x i32]* arrPtr=%67
+[EXPR] IndexExpr.result -> type='[2 x i32]*' name='%68' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**' name='%array.addr' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32*' name='%i.addr1' isPtr=1 isConst=0
+[IndexExpr] Array type detected, using pointer directly: { { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }**
+[IndexExpr] GEP: elemType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } arrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* arrPtr=%array.addr
+[EXPR] IndexExpr.result -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%73' isPtr=1 isConst=0
+[EXPR] MemberExpr.object -> type='{ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }*' name='%73' isPtr=1 isConst=0
+[MemberExpr] operator=. member=c structType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* structLLVMType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }
+[InlineStruct] Found member 'c' at index 3
+[MemberExpr] memberIdx=3 memberType=[2 x i32]
+[MemberExpr] GEP: pointee={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] } ptrType={ { float, [2 x i32], { i32 } }, i8, i8, [2 x i32] }* ptr=%73
+[EXPR] MemberExpr.result -> type='[2 x i32]*' name='%74' isPtr=1 isConst=0
+[EXPR] IndexExpr.array -> type='[2 x i32]*' name='%74' isPtr=1 isConst=0
+[EXPR] IndexExpr.index -> type='i32' name='1' isPtr=0 isConst=1
+[IndexExpr] Array type detected, using pointer directly: [2 x i32]*
+[IndexExpr] GEP: elemType=[2 x i32] arrType=[2 x i32]* arrPtr=%74
+[EXPR] IndexExpr.result -> type='[2 x i32]*' name='%75' isPtr=1 isConst=0

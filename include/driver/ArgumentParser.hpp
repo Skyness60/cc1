@@ -10,6 +10,7 @@ struct CompilerOptions {
     bool showVersion = false;
     bool syntaxOnly = false;
     bool preprocessOnly = false;  // -E option
+    bool debugMode = false;        // -debug option
     std::vector<std::string> defines;      // -D options
     std::vector<std::string> undefines;    // -U options
     std::vector<std::string> includePaths; // -I options

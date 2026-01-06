@@ -758,12 +758,23 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
                             "bit-field '" + decl.name + "' has non-integral type '" + typeName + "'");
                     }
                     
-                    // Parse the bitfield width expression
-                    parseAssignmentExpression(); // Discard for now
+                    // Parse the bitfield width expression and evaluate it
+                    int bitWidth = 0;
+                    auto widthExpr = parseAssignmentExpression();
+                    if (widthExpr) {
+                        // Try to evaluate the expression as a constant
+                        if (auto* constExpr = dynamic_cast<AST::IntegerLiteral*>(widthExpr.get())) {
+                            bitWidth = static_cast<int>(constExpr->value);
+                        }
+                        // If not a simple constant, bitWidth stays 0 (error handling)
+                    }
+                    
+                    structType->members.emplace_back(decl.name, std::move(decl.type), 
+                                                      decl.line, decl.column, bitWidth);
+                } else {
+                    structType->members.emplace_back(decl.name, std::move(decl.type),
+                                                      decl.line, decl.column);
                 }
-                
-                structType->members.emplace_back(decl.name, std::move(decl.type),
-                                                  decl.line, decl.column);
             } while (match(TokenType::Comma));
             
             consume(TokenType::Semicolon, "expected ';' after struct member");
@@ -778,33 +789,6 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
     return AST::make<AST::StructType>(name, isUnion, line, col);
 }
 
-std::vector<AST::Ptr<AST::VarDecl>> Parser::parseStructMemberList() {
-    std::vector<AST::Ptr<AST::VarDecl>> members;
-    
-    while (!check(TokenType::RightBrace) && !isAtEnd()) {
-        DeclSpecifiers specs = parseDeclarationSpecifiers();
-        
-        if (!specs.type) {
-            error("expected type in struct member");
-        }
-        
-        // Storage class specifiers are not allowed in struct members
-        if (specs.storageClass != AST::StorageClass::None || specs.isTypedef) {
-            errorAtPosition(specs.storageClassLine, specs.storageClassColumn, "type name does not allow storage class to be specified");
-        }
-        
-        do {
-            Declarator decl = parseDeclarator(specs.type);
-            auto member = AST::make<AST::VarDecl>(decl.name, std::move(decl.type),
-                                                   decl.line, decl.column);
-            members.push_back(std::move(member));
-        } while (match(TokenType::Comma));
-        
-        consume(TokenType::Semicolon, "expected ';' after struct member");
-    }
-    
-    return members;
-}
 
 AST::Ptr<AST::Type> Parser::parseEnumSpecifier() {
     consume(TokenType::Enum, "expected 'enum'");

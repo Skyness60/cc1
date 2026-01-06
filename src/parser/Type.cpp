@@ -197,8 +197,13 @@ std::string StructType::toString() const {
 Ptr<Type> StructType::clone() const {
     auto copy = make<StructType>(name, isUnion, line, column);
     for (const auto& member : members) {
-        copy->members.emplace_back(member.name, member.type->clone(),
-                                    member.line, member.column);
+        if (member.isBitfield()) {
+            copy->members.emplace_back(member.name, member.type->clone(),
+                                        member.line, member.column, member.bitWidth);
+        } else {
+            copy->members.emplace_back(member.name, member.type->clone(),
+                                        member.line, member.column);
+        }
     }
     copy->isComplete = isComplete;
     return copy;

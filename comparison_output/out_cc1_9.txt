@@ -1,0 +1,3 @@
+alpha:
+position: 0
+lowercase
