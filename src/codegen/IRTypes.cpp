@@ -326,8 +326,23 @@ std::string IRGenerator::getDefaultValue(AST::Type* type) {
         return "zeroinitializer";
     }
     
-    if (dynamic_cast<AST::StructType*>(type)) {
-        return "zeroinitializer";
+    if (auto* structType = dynamic_cast<AST::StructType*>(type)) {
+        // For structs, generate proper initializer with all members defaulted
+        // For unions, only initialize the first member
+        std::string result = "{ ";
+        bool first = true;
+        
+        size_t memberCount = structType->isUnion ? 1 : structType->members.size();
+        for (size_t i = 0; i < memberCount; ++i) {
+            if (!first) result += ", ";
+            first = false;
+            const auto& member = structType->members[i];
+            std::string memberType = typeToLLVM(stripQualifiers(member.type.get()));
+            result += memberType + " " + getDefaultValue(stripQualifiers(member.type.get()));
+        }
+        result += " }";
+        return result;
+
     }
     
     return "0";
@@ -1296,7 +1311,11 @@ size_t IRGenerator::countFlattedMembers(AST::Type* type) {
     }
     
     // Structs: sum of all member counts (recursively flattened)
+    // For unions, only count 1 since they initialize only the first member
     if (auto* st = dynamic_cast<AST::StructType*>(type)) {
+        if (st->isUnion) {
+            return 1;  // Union consumes only one initializer
+        }
         size_t total = 0;
         for (const auto& member : st->members) {
             total += countFlattedMembers(member.type.get());
@@ -1316,79 +1335,148 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
     std::string result = "{ ";
     bool first = true;
     
-    for (const auto& member : st->members) {
+    size_t i = 0;
+    while (i < st->members.size()) {
         if (!first) result += ", ";
         first = false;
         
+        const auto& member = st->members[i];
         AST::Type* memberType = stripQualifiers(member.type.get());
         std::string memberTypeStr = typeToLLVM(memberType);
         
-        // Determine how many initializers this member consumes
-        size_t memberInitCount = countFlattedMembers(memberType);
-        
-        // Generate initializer value for this member
-        result += memberTypeStr + " ";
-        
-        if (idx >= flatList->initializers.size()) {
-            // No more initializers available
-            result += getDefaultValue(memberType);
-        } else if (memberInitCount == 1) {
-            // Single initializer for this member - extract value
-            long long val;
-            if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
-                // Format the value based on member type
-                if (auto* primType = dynamic_cast<AST::PrimitiveType*>(memberType)) {
-                    if (primType->kind == AST::PrimitiveKind::Float || 
-                        primType->kind == AST::PrimitiveKind::Double ||
-                        primType->kind == AST::PrimitiveKind::LongDouble) {
-                        // Float/double - add decimal point
-                        result += std::to_string(val) + ".0";
-                    } else {
-                        result += std::to_string(val);
-                    }
-                } else {
+        // Handle bitfield packing
+        if (member.isBitfield()) {
+            // Count consecutive bitfields
+            int totalBits = member.bitWidth;
+            size_t j = i + 1;
+            while (j < st->members.size() && st->members[j].isBitfield()) {
+                totalBits += st->members[j].bitWidth;
+                j++;
+            }
+            
+            // Emit the first bitfield value
+            result += memberTypeStr + " ";
+            if (idx < flatList->initializers.size()) {
+                long long val;
+                if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
                     result += std::to_string(val);
+                } else {
+                    result += getDefaultValue(member.type.get());
                 }
                 idx++;
             } else {
-                // Could be an InitializerList for nested struct
-                if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
-                    // It's a nested initializer list - use it directly for the next element
-                    result += generateInitializerValue(memberType, initListExpr);
-                    idx++;
-                } else {
-                    result += getDefaultValue(memberType);
-                    idx++;
+                result += getDefaultValue(member.type.get());
+            }
+            
+            // Skip additional bitfields in the pack
+            for (size_t k = i + 1; k < j; ++k) {
+                if (idx < flatList->initializers.size()) {
+                    idx++;  // Consume initializers
                 }
             }
+            
+            // Add padding if needed
+            int packingBytes = totalBits / 8;
+            if (packingBytes == 1 && j < st->members.size()) {
+                // Bitfield took 1 byte, add 3 bytes of padding
+                result += ", [3 x i8] zeroinitializer";
+            }
+            
+            i = j;
         } else {
-            // Multiple initializers - recursively distribute them
-            if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
-                result += generateStructInitializerFromFlatHelper(structMemberType, flatList, idx);
-            } else if (auto* arrayMemberType = dynamic_cast<AST::ArrayType*>(memberType)) {
-                // For arrays, consume the required number of initializers
-                size_t elemCount = (arrayMemberType->size > 0) ? arrayMemberType->size : 0;
-                result += "[";
-                std::string elemTypeStr = typeToLLVM(arrayMemberType->elementType.get());
-                for (size_t i = 0; i < elemCount; ++i) {
-                    if (i > 0) result += ", ";
-                    result += elemTypeStr + " ";
-                    if (idx < flatList->initializers.size()) {
-                        long long val;
-                        if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
+            // Regular (non-bitfield) member
+            // Determine how many initializers this member consumes
+            size_t memberInitCount = countFlattedMembers(memberType);
+            
+            // Generate initializer value for this member
+            result += memberTypeStr + " ";
+            
+            if (idx >= flatList->initializers.size()) {
+                // No more initializers available
+                result += getDefaultValue(memberType);
+            } else if (memberInitCount == 1) {
+                // Single initializer for this member - extract value
+                long long val;
+                if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
+                    // Check if this is a struct/union - need to wrap in braces
+                    if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
+                        // For struct/union with 1 initializer, wrap in braces
+                        result += "{ ";
+                        if (!structMemberType->members.empty()) {
+                            const auto& firstMember = structMemberType->members[0];
+                            std::string firstMemberType = typeToLLVM(stripQualifiers(firstMember.type.get()));
+                            result += firstMemberType + " ";
+                            // Format the value based on member type
+                            if (auto* primType = dynamic_cast<AST::PrimitiveType*>(stripQualifiers(firstMember.type.get()))) {
+                                if (primType->kind == AST::PrimitiveKind::Float || 
+                                    primType->kind == AST::PrimitiveKind::Double ||
+                                    primType->kind == AST::PrimitiveKind::LongDouble) {
+                                    result += std::to_string(val) + ".0";
+                                } else {
+                                    result += std::to_string(val);
+                                }
+                            } else {
+                                result += std::to_string(val);
+                            }
+                        }
+                        result += " }";
+                    } else {
+                        // Primitive type
+                        if (auto* primType = dynamic_cast<AST::PrimitiveType*>(memberType)) {
+                            if (primType->kind == AST::PrimitiveKind::Float || 
+                                primType->kind == AST::PrimitiveKind::Double ||
+                                primType->kind == AST::PrimitiveKind::LongDouble) {
+                                // Float/double - add decimal point
+                                result += std::to_string(val) + ".0";
+                            } else {
+                                result += std::to_string(val);
+                            }
+                        } else {
                             result += std::to_string(val);
+                        }
+                    }
+                    idx++;
+                } else {
+                    // Could be an InitializerList for nested struct
+                    if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
+                        // It's a nested initializer list - use it directly for the next element
+                        result += generateInitializerValue(memberType, initListExpr);
+                        idx++;
+                    } else {
+                        result += getDefaultValue(memberType);
+                        idx++;
+                    }
+                }
+            } else {
+                // Multiple initializers - recursively distribute them
+                if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
+                    result += generateStructInitializerFromFlatHelper(structMemberType, flatList, idx);
+                } else if (auto* arrayMemberType = dynamic_cast<AST::ArrayType*>(memberType)) {
+                    // For arrays, consume the required number of initializers
+                    size_t elemCount = (arrayMemberType->size > 0) ? arrayMemberType->size : 0;
+                    result += "[";
+                    std::string elemTypeStr = typeToLLVM(arrayMemberType->elementType.get());
+                    for (size_t k = 0; k < elemCount; ++k) {
+                        if (k > 0) result += ", ";
+                        result += elemTypeStr + " ";
+                        if (idx < flatList->initializers.size()) {
+                            long long val;
+                            if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
+                                result += std::to_string(val);
+                            } else {
+                                result += "0";
+                            }
+                            idx++;
                         } else {
                             result += "0";
                         }
-                        idx++;
-                    } else {
-                        result += "0";
                     }
+                    result += "]";
+                } else {
+                    result += getDefaultValue(memberType);
                 }
-                result += "]";
-            } else {
-                result += getDefaultValue(memberType);
             }
+            i++;
         }
     }
     
