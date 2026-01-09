@@ -64,7 +64,7 @@ public:
  */
 class SemanticAnalyzer : public AST::DefaultVisitor {
 public:
-    SemanticAnalyzer(const std::string& filename, const std::string& source);
+    SemanticAnalyzer(const std::string& filename, const std::string& source, bool is64bit = false);
     
     /// Analyze the AST
     void analyze(AST::TranslationUnit& unit);
@@ -147,6 +147,7 @@ private:
     std::string filename_;
     std::string source_;
     bool hadError_ = false;
+    bool is64bit_ = false;
     
     // Scope stack
     std::vector<std::unique_ptr<Scope>> scopes_;

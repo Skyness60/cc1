@@ -6,10 +6,47 @@
 #include <sstream>
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 #include <stack>
+#include <fstream>
 
 namespace cc1 {
+
+/**
+ * @brief Debug logging utility
+ */
+class DebugLogger {
+public:
+    static DebugLogger& instance() {
+        static DebugLogger logger;
+        return logger;
+    }
+    
+    void setEnabled(bool enabled) { enabled_ = enabled; }
+    void setOutputFile(const std::string& filename) {
+        output_.open(filename, std::ios::app);
+    }
+    
+    void log(const std::string& message) {
+        if (!enabled_) return;
+        output_ << message << "\n";
+        output_.flush();
+    }
+    
+    void logExpr(const std::string& exprName, const std::string& type, 
+                 const std::string& name, bool isPointer, bool isConstant) {
+        if (!enabled_) return;
+        output_ << "[EXPR] " << exprName << " -> type='" << type << "' name='" << name 
+               << "' isPtr=" << isPointer << " isConst=" << isConstant << "\n";
+        output_.flush();
+    }
+
+private:
+    DebugLogger() = default;
+    bool enabled_ = false;
+    std::ofstream output_;
+};
 
 /**
  * @brief Represents an LLVM IR value (register or constant)
@@ -19,6 +56,14 @@ struct IRValue {
     std::string type;       // LLVM type (e.g., "i32", "i32*")
     bool isPointer = false; // True if this is a pointer/address
     bool isConstant = false;
+
+    // Bitfield lvalue support: when true, this IRValue represents a reference to a bitfield
+    // stored inside an integer storage unit at 'name' (which is a pointer to the storage unit).
+    bool isBitfieldRef = false;
+    std::string bitfieldStorageType; // integer type (e.g., i8/i16/i32/i64)
+    int bitfieldOffset = 0;          // bit offset within storage unit
+    int bitfieldWidth = 0;           // bit width
+    bool bitfieldIsUnsigned = true;  // affects sign-extension on load
     
     IRValue() = default;
     IRValue(const std::string& n, const std::string& t, bool ptr = false, bool cst = false)
@@ -61,6 +106,8 @@ struct IRSymbol {
 class IRGenerator : public AST::DefaultVisitor {
 public:
     IRGenerator(bool is64bit = false);
+
+    void setDebugInfo(bool enabled, const std::string& primaryFilename);
     
     /// Generate IR for the AST
     void generate(AST::TranslationUnit& unit);
@@ -80,7 +127,6 @@ public:
     void visit(AST::ParamDecl& node) override;
     void visit(AST::StructDecl& node) override;
     void visit(AST::EnumDecl& node) override;
-    void visit(AST::TypedefDecl& node) override;
     
     // ========================================================================
     // Statement Visitors
@@ -127,6 +173,9 @@ public:
     int getTypeAlign(AST::Type* type);
     int getPrimitiveSize(AST::PrimitiveKind kind);
     std::string getDefaultValue(AST::Type* type);
+    std::string generateInitializerValue(AST::Type* type, AST::InitializerList* initList);
+    size_t countFlattedMembers(AST::Type* type);
+    std::string generateStructInitializerFromFlatHelper(AST::StructType* st, AST::InitializerList* flatList, size_t& idx);
     AST::Type* stripQualifiers(AST::Type* type);
 
     // ========================================================================
@@ -167,6 +216,9 @@ public:
         std::string llvmType;
         std::map<std::string, int> memberIndices;  // name -> struct index
         std::map<std::string, std::string> memberTypes;  // name -> LLVM type
+        std::map<std::string, int> bitfieldOffsets;  // name -> bit offset within packed storage
+        std::map<std::string, int> bitfieldWidths;   // name -> bit width
+        std::map<std::string, bool> bitfieldIsUnsigned;  // name -> unsigned?
         int totalSize = 0;
         int alignment = 1;
     };
@@ -174,9 +226,25 @@ public:
     StructLayout computeStructLayout(AST::StructType* type);
     const StructLayout* getStructLayout(const std::string& name);
     
+    // Collect named struct types encountered during code generation
+    void collectNamedStruct(AST::StructType* structType);
+    
+    // Generate LLVM IR definition for a named struct type with proper packing
+    std::string generateStructTypeDefinition(AST::StructType* structType);
+    
     // Extract the Nth field type from an inline LLVM struct type string
     // E.g., from "{ float, [2 x i32], { i32 } }" get field 1 as "[2 x i32]"
     std::string extractFieldTypeFromInlineStruct(const std::string& inlineStructType, int fieldIndex);
+    
+    // Register inline struct member information from AST
+    void registerInlineStructMembers(const std::string& llvmType, AST::StructType* structType);
+    
+    // Look up member index in inline struct by name
+    int findMemberIndexInInlineStruct(const std::string& llvmType, const std::string& memberName);
+    
+    // Generate flattened initializer for arrays of structs
+    // Converts flat initializer list to properly nested structure
+    std::string generateFlattenedInitializer(AST::ArrayType* arrayType, AST::InitializerList* initList);
 
     
     // ========================================================================
@@ -184,7 +252,48 @@ public:
     // ========================================================================
     bool evaluateConstantExpr(AST::Expression* expr, long long& result);
 
+    // Like evaluateConstantExpr, but evaluates into floating point (double).
+    // Intended for constant initializers of float/double objects.
+    bool evaluateConstantFloatExpr(AST::Expression* expr, double& result);
+
 private:
+    // Debug info (LLVM metadata)
+    struct DebugLoc {
+        int line = 0;
+        int column = 0;
+    };
+
+    bool debugInfo_ = false;
+    std::string debugFilename_;
+    std::string debugDirectory_;
+
+    int nextDebugMetaId_ = 4; // !0/!1 reserved for PIC/PIE, !2/!3 for DWARF/debug info version
+    int diFileId_ = -1;
+    int diCompileUnitId_ = -1;
+    int currentSubprogramId_ = -1;
+    std::vector<DebugLoc> debugLocStack_;
+    std::map<std::tuple<int,int,int>, int> diLocationIds_; // (line,col,scope) -> !id
+    std::stringstream debugMetaBuffer_;
+
+    void initDebugMetadataIfNeeded();
+    int newDebugMetaId();
+    int getOrCreateDILocationId(int line, int col, int scopeId);
+    std::string dbgSuffixForCurrentLoc();
+
+    void pushDebugLoc(int line, int col);
+    void popDebugLoc();
+
+    struct DebugLocGuard {
+        IRGenerator& gen;
+        bool active;
+        DebugLocGuard(IRGenerator& g, int line, int col) : gen(g), active(g.debugInfo_) {
+            if (active) gen.pushDebugLoc(line, col);
+        }
+        ~DebugLocGuard() {
+            if (active) gen.popDebugLoc();
+        }
+    };
+
     // ========================================================================
     // State
     // ========================================================================
@@ -223,14 +332,27 @@ private:
         std::string defaultLabel;
         std::string endLabel;
         std::vector<std::pair<long long, std::string>> cases;
+        // Labeling + fallthrough support
+        std::vector<AST::Statement*> labelOrder;               // in source order
+        std::map<AST::Statement*, std::string> labelForNode;   // CaseStmt/DefaultStmt node -> label
     };
     std::stack<SwitchContext> switchStack_;
+
+    // Tracks whether the current basic block already ended with a terminator.
+    // Used to avoid emitting instructions after terminators when generating case labels.
+    bool blockTerminated_ = false;
     
     // Symbol tables (scoped)
     std::vector<std::map<std::string, IRSymbol>> scopes_;
     
     // Struct layouts cache
     std::map<std::string, StructLayout> structLayouts_;
+    
+    // Inline struct member info (maps LLVM type string -> member info)
+    std::map<std::string, std::map<std::string, int>> inlineStructMembers_;
+    
+    // Named struct type definitions (maps name -> { LLVM type definition, AST type pointer })
+    std::map<std::string, std::pair<std::string, AST::StructType*>> namedStructDefs_;
     
     // Typedef cache (maps typedef name to its underlying type)
     std::map<std::string, AST::Type*> typedefMap_;

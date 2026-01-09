@@ -1,5 +1,8 @@
 #include <semantics/SemanticAnalyzer.hpp>
 
+#include <cstdint>
+#include <functional>
+
 namespace cc1 {
 
 // ============================================================================
@@ -44,6 +47,51 @@ bool SemanticAnalyzer::isConstantExpr(AST::Expression* expr) {
 
 bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& result) {
     if (!expr) return false;
+
+    auto maskUnsigned = [](uint64_t value, int bits) -> uint64_t {
+        if (bits >= 64) return value;
+        if (bits <= 0) return 0;
+        return value & ((1ULL << bits) - 1ULL);
+    };
+
+    auto widthBitsForPrim = [this](AST::PrimitiveKind kind) -> int {
+        switch (kind) {
+            case AST::PrimitiveKind::Char:
+            case AST::PrimitiveKind::SignedChar:
+            case AST::PrimitiveKind::UnsignedChar:
+                return 8;
+            case AST::PrimitiveKind::Short:
+            case AST::PrimitiveKind::UnsignedShort:
+                return 16;
+            case AST::PrimitiveKind::Int:
+            case AST::PrimitiveKind::UnsignedInt:
+                return 32;
+            case AST::PrimitiveKind::Long:
+            case AST::PrimitiveKind::UnsignedLong:
+                return is64bit_ ? 64 : 32;
+            case AST::PrimitiveKind::LongLong:
+            case AST::PrimitiveKind::UnsignedLongLong:
+                return 64;
+            default:
+                return 32;
+        }
+    };
+
+    std::function<int(AST::Expression*)> inferIntWidthBits;
+    inferIntWidthBits = [&](AST::Expression* e) -> int {
+        if (!e) return 32;
+        if (auto* cast = dynamic_cast<AST::CastExpr*>(e)) {
+            if (auto* prim = dynamic_cast<AST::PrimitiveType*>(cast->targetType.get())) {
+                return widthBitsForPrim(prim->kind);
+            }
+        }
+        if (auto* unary = dynamic_cast<AST::UnaryExpr*>(e)) {
+            if (unary->op == AST::UnaryOp::BitwiseNot) {
+                return inferIntWidthBits(unary->operand.get());
+            }
+        }
+        return 32;
+    };
     
     if (auto* lit = dynamic_cast<AST::IntegerLiteral*>(expr)) {
         result = lit->value;
@@ -57,6 +105,248 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
     
     // Handle sizeof expression
     if (auto* sizeofExpr = dynamic_cast<AST::SizeofExpr*>(expr)) {
+        auto alignTo = [](long long offset, int alignment) -> long long {
+            if (alignment <= 1) return offset;
+            long long a = static_cast<long long>(alignment);
+            return (offset + (a - 1)) & ~(a - 1);
+        };
+
+        std::function<long long(AST::Type*)> typeSize;
+        std::function<int(AST::Type*)> typeAlign;
+
+        typeAlign = [&](AST::Type* t) -> int {
+            if (!t) return 1;
+
+            // Strip qualifiers
+            while (auto* qual = dynamic_cast<AST::QualifiedType*>(t)) {
+                t = qual->baseType.get();
+            }
+
+            if (auto* td = dynamic_cast<AST::TypedefType*>(t)) {
+                if (td->underlyingType) return typeAlign(td->underlyingType.get());
+                return 4;
+            }
+
+            if (dynamic_cast<AST::PrimitiveType*>(t)) {
+                long long sz = typeSize(t);
+                int ptrSize = is64bit_ ? 8 : 4;
+                return static_cast<int>(std::min<long long>(sz, ptrSize));
+            }
+
+            if (dynamic_cast<AST::PointerType*>(t)) {
+                return is64bit_ ? 8 : 4;
+            }
+
+            if (auto* arr = dynamic_cast<AST::ArrayType*>(t)) {
+                return typeAlign(arr->elementType.get());
+            }
+
+            if (auto* st = dynamic_cast<AST::StructType*>(t)) {
+                if (st->isUnion) {
+                    int maxA = 1;
+                    for (const auto& m : st->members) {
+                        maxA = std::max(maxA, typeAlign(m.type.get()));
+                    }
+                    return maxA;
+                }
+
+                int maxA = 1;
+                size_t i = 0;
+                while (i < st->members.size()) {
+                    const auto& m = st->members[i];
+                    int a = typeAlign(m.type.get());
+                    maxA = std::max(maxA, a);
+                    if (m.isBitfield()) {
+                        size_t j = i + 1;
+                        while (j < st->members.size() && st->members[j].isBitfield()) j++;
+                        i = j;
+                        continue;
+                    }
+                    i++;
+                }
+                return maxA;
+            }
+
+            if (dynamic_cast<AST::EnumType*>(t)) {
+                return 4;
+            }
+
+            // Typedefs are resolved by the semantic analyzer elsewhere; fall back to int.
+            return 4;
+        };
+
+        typeSize = [&](AST::Type* t) -> long long {
+            if (!t) return 0;
+
+            // Strip qualifiers
+            while (auto* qual = dynamic_cast<AST::QualifiedType*>(t)) {
+                t = qual->baseType.get();
+            }
+
+            if (auto* td = dynamic_cast<AST::TypedefType*>(t)) {
+                if (td->underlyingType) return typeSize(td->underlyingType.get());
+                return 4;
+            }
+
+            if (auto* prim = dynamic_cast<AST::PrimitiveType*>(t)) {
+                switch (prim->kind) {
+                    case AST::PrimitiveKind::Char:
+                    case AST::PrimitiveKind::SignedChar:
+                    case AST::PrimitiveKind::UnsignedChar:
+                        return 1;
+                    case AST::PrimitiveKind::Short:
+                    case AST::PrimitiveKind::UnsignedShort:
+                        return 2;
+                    case AST::PrimitiveKind::Int:
+                    case AST::PrimitiveKind::UnsignedInt:
+                        return 4;
+                    case AST::PrimitiveKind::Long:
+                    case AST::PrimitiveKind::UnsignedLong:
+                        return is64bit_ ? 8 : 4;
+                    case AST::PrimitiveKind::LongLong:
+                    case AST::PrimitiveKind::UnsignedLongLong:
+                        return 8;
+                    case AST::PrimitiveKind::Float:
+                        return 4;
+                    case AST::PrimitiveKind::Double:
+                        return 8;
+                    case AST::PrimitiveKind::LongDouble:
+                        // Keep consistent with existing assumptions in this project.
+                        return 16;
+                    case AST::PrimitiveKind::Void:
+                        return 1;
+                }
+                return 4;
+            }
+
+            if (dynamic_cast<AST::PointerType*>(t)) {
+                return is64bit_ ? 8 : 4;
+            }
+
+            if (auto* arr = dynamic_cast<AST::ArrayType*>(t)) {
+                long long elem = typeSize(arr->elementType.get());
+                long long n = arr->size;
+                if (n < 0 && arr->sizeExpr) {
+                    long long evaluated;
+                    if (!evaluateConstantExpr(arr->sizeExpr.get(), evaluated)) return 0;
+                    n = evaluated;
+                }
+                if (n < 0) return 0;
+                return elem * n;
+            }
+
+            if (auto* st = dynamic_cast<AST::StructType*>(t)) {
+                if (st->isUnion) {
+                    long long maxSize = 0;
+                    int maxAlign = 1;
+                    for (const auto& m : st->members) {
+                        int ma = typeAlign(m.type.get());
+                        long long ms = 0;
+                        if (m.isBitfield()) {
+                            // In a union, each bitfield member occupies at least one storage unit.
+                            // Zero-width bitfields contribute alignment but no size.
+                            ms = (m.bitWidth == 0) ? 0 : typeSize(m.type.get());
+                        } else {
+                            ms = typeSize(m.type.get());
+                        }
+                        maxSize = std::max(maxSize, ms);
+                        maxAlign = std::max(maxAlign, ma);
+                    }
+                    long long desired = alignTo(std::max(1LL, maxSize), maxAlign);
+                    return desired;
+                }
+
+                long long offset = 0;
+                int maxAlign = 1;
+                // Bitfield packing: model allocation into storage units of the declared base type.
+                // - Bitfields do not cross a storage-unit boundary.
+                // - A zero-width bitfield forces alignment to the next storage unit of its base type.
+                long long currentUnitSizeBytes = 0;
+                int currentUnitAlign = 1;
+                int currentUnitBitsTotal = 0;
+                int currentUnitBitsUsed = 0;
+
+                auto flushUnit = [&]() {
+                    if (currentUnitBitsUsed > 0) {
+                        offset += currentUnitSizeBytes;
+                    }
+                    currentUnitSizeBytes = 0;
+                    currentUnitAlign = 1;
+                    currentUnitBitsTotal = 0;
+                    currentUnitBitsUsed = 0;
+                };
+
+                for (const auto& m : st->members) {
+                    if (!m.isBitfield()) {
+                        flushUnit();
+                        int a = typeAlign(m.type.get());
+                        long long s = typeSize(m.type.get());
+                        offset = alignTo(offset, a);
+                        offset += s;
+                        maxAlign = std::max(maxAlign, a);
+                        continue;
+                    }
+
+                    long long unitSizeBytes = typeSize(m.type.get());
+                    int unitAlign = typeAlign(m.type.get());
+                    int unitBits = static_cast<int>(unitSizeBytes * 8);
+
+                    maxAlign = std::max(maxAlign, unitAlign);
+
+                    // Defensive: invalid/incomplete base types.
+                    if (unitBits <= 0) return 0;
+
+                    if (m.bitWidth == 0) {
+                        // Force alignment to the next storage unit boundary for this base type.
+                        flushUnit();
+                        offset = alignTo(offset, unitAlign);
+                        continue;
+                    }
+
+                    if (m.bitWidth < 0 || m.bitWidth > unitBits) {
+                        // Semantic analysis should have rejected this, but don't crash here.
+                        return 0;
+                    }
+
+                    // Start a new unit if needed (different base type, or none active yet).
+                    if (currentUnitBitsTotal == 0 || currentUnitSizeBytes != unitSizeBytes || currentUnitAlign != unitAlign) {
+                        flushUnit();
+                        offset = alignTo(offset, unitAlign);
+                        currentUnitSizeBytes = unitSizeBytes;
+                        currentUnitAlign = unitAlign;
+                        currentUnitBitsTotal = unitBits;
+                    }
+
+                    // If it doesn't fit, close current unit and start a new one.
+                    if (currentUnitBitsUsed + m.bitWidth > currentUnitBitsTotal) {
+                        flushUnit();
+                        offset = alignTo(offset, unitAlign);
+                        currentUnitSizeBytes = unitSizeBytes;
+                        currentUnitAlign = unitAlign;
+                        currentUnitBitsTotal = unitBits;
+                    }
+
+                    currentUnitBitsUsed += m.bitWidth;
+
+                    // If unit is full, flush immediately.
+                    if (currentUnitBitsUsed == currentUnitBitsTotal) {
+                        flushUnit();
+                    }
+                }
+
+                // Flush trailing partial unit.
+                flushUnit();
+                long long finalSize = alignTo(offset, maxAlign);
+                return std::max(1LL, finalSize);
+            }
+
+            if (dynamic_cast<AST::EnumType*>(t)) {
+                return 4;
+            }
+
+            return 4;
+        };
+
         // For simplicity, use common sizes
         if (sizeofExpr->targetType) {
             AST::Type* type = sizeofExpr->targetType.get();
@@ -74,7 +364,7 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
                         result = 4; return true;
                     case AST::PrimitiveKind::Long:
                     case AST::PrimitiveKind::UnsignedLong:
-                        result = 8; return true;
+                        result = is64bit_ ? 8 : 4; return true;
                     case AST::PrimitiveKind::LongLong:
                     case AST::PrimitiveKind::UnsignedLongLong:
                         result = 8; return true;
@@ -89,7 +379,7 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
                 }
             }
             if (dynamic_cast<AST::PointerType*>(type)) {
-                result = 8; // 64-bit pointers
+                result = is64bit_ ? 8 : 4;
                 return true;
             }
             if (auto* arr = dynamic_cast<AST::ArrayType*>(type)) {
@@ -119,32 +409,21 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
                     // Look up the struct definition from tag namespace
                     Symbol* tagSym = currentScope_->lookupTag(structType->name);
                     if (tagSym && tagSym->structDecl) {
-                        // Calculate struct size from declaration members
-                        long long totalSize = 0;
+                        // Build a temporary StructType from the declaration members so we can compute padding/align.
+                        AST::StructType tmp(structType->name, tagSym->structDecl->isUnion, 0, 0);
+                        tmp.isUnion = tagSym->structDecl->isUnion;
                         for (const auto& memberDecl : tagSym->structDecl->members) {
                             if (memberDecl && memberDecl->type) {
-                                AST::SizeofExpr memberSizeof(memberDecl->type->clone(), 0, 0);
-                                long long memberSize;
-                                if (!evaluateConstantExpr(&memberSizeof, memberSize)) return false;
-                                totalSize += memberSize;
+                                tmp.members.emplace_back(memberDecl->name, memberDecl->type->clone(), memberDecl->line, memberDecl->column);
                             }
                         }
-                        result = totalSize > 0 ? totalSize : 1;
+                        result = typeSize(&tmp);
                         return true;
                     }
                 }
                 
-                // Calculate struct size (simplified - no padding)
-                long long totalSize = 0;
-                for (const auto& member : structType->members) {
-                    if (member.type) {
-                        AST::SizeofExpr memberSizeof(member.type->clone(), 0, 0);
-                        long long memberSize;
-                        if (!evaluateConstantExpr(&memberSizeof, memberSize)) return false;
-                        totalSize += memberSize;
-                    }
-                }
-                result = totalSize > 0 ? totalSize : 1;
+                // Compute size with padding/align (and basic bitfield packing).
+                result = typeSize(structType);
                 return true;
             }
         }
@@ -195,7 +474,15 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
         switch (unary->op) {
             case AST::UnaryOp::Plus: result = operand; return true;
             case AST::UnaryOp::Negate: result = -operand; return true;
-            case AST::UnaryOp::BitwiseNot: result = ~operand; return true;
+            case AST::UnaryOp::BitwiseNot:
+            {
+                // Perform bitwise NOT at the operand width (e.g., ~(unsigned long)1 differs on i386 vs x86_64)
+                int bits = inferIntWidthBits(unary->operand.get());
+                uint64_t uop = maskUnsigned(static_cast<uint64_t>(operand), bits);
+                uint64_t ures = maskUnsigned(~uop, bits);
+                result = static_cast<long long>(ures);
+                return true;
+            }
             case AST::UnaryOp::LogicalNot: result = !operand ? 1 : 0; return true;
             default: return false;
         }
@@ -216,8 +503,15 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
                 return true;
             case AST::BinaryOp::Mod:
                 if (right == 0) return false;
-                result = left % right;
+            {
+                // Use unsigned arithmetic with the correct target width (important for enum constants on i386 vs x86_64)
+                int bits = inferIntWidthBits(bin->left.get());
+                uint64_t uleft = maskUnsigned(static_cast<uint64_t>(left), bits);
+                uint64_t uright = static_cast<uint64_t>(right);
+                if (uright == 0) return false;
+                result = static_cast<long long>(uleft % uright);
                 return true;
+            }
             case AST::BinaryOp::Equal: result = left == right ? 1 : 0; return true;
             case AST::BinaryOp::NotEqual: result = left != right ? 1 : 0; return true;
             case AST::BinaryOp::Less: result = left < right ? 1 : 0; return true;
@@ -245,9 +539,48 @@ bool SemanticAnalyzer::evaluateConstantExpr(AST::Expression* expr, long long& re
         }
     }
     
-    // Handle cast expression - evaluate the inner expression
+    // Handle cast expression - may need to convert to unsigned
     if (auto* cast = dynamic_cast<AST::CastExpr*>(expr)) {
-        return evaluateConstantExpr(cast->operand.get(), result);
+        if (!evaluateConstantExpr(cast->operand.get(), result)) return false;
+        
+        // Check if casting to unsigned type
+        if (auto* prim = dynamic_cast<AST::PrimitiveType*>(cast->targetType.get())) {
+            switch (prim->kind) {
+                case AST::PrimitiveKind::UnsignedChar:
+                    result = static_cast<long long>(static_cast<uint8_t>(result));
+                    return true;
+                case AST::PrimitiveKind::UnsignedShort:
+                    result = static_cast<long long>(static_cast<uint16_t>(result));
+                    return true;
+                case AST::PrimitiveKind::UnsignedInt:
+                    result = static_cast<long long>(static_cast<uint32_t>(result));
+                    return true;
+                case AST::PrimitiveKind::UnsignedLong:
+                    result = static_cast<long long>(is64bit_ ? static_cast<uint64_t>(result) : static_cast<uint32_t>(result));
+                    return true;
+                case AST::PrimitiveKind::UnsignedLongLong:
+                    result = static_cast<long long>(static_cast<uint64_t>(result));
+                    return true;
+                case AST::PrimitiveKind::SignedChar:
+                    result = static_cast<long long>(static_cast<int8_t>(result));
+                    return true;
+                case AST::PrimitiveKind::Short:
+                    result = static_cast<long long>(static_cast<int16_t>(result));
+                    return true;
+                case AST::PrimitiveKind::Int:
+                    result = static_cast<long long>(static_cast<int32_t>(result));
+                    return true;
+                case AST::PrimitiveKind::Long:
+                    result = static_cast<long long>(is64bit_ ? static_cast<int64_t>(result) : static_cast<int32_t>(result));
+                    return true;
+                case AST::PrimitiveKind::LongLong:
+                    result = static_cast<long long>(static_cast<int64_t>(result));
+                    return true;
+                default:
+                    break;
+            }
+        }
+        return true;
     }
     
     return false;
@@ -336,6 +669,9 @@ void SemanticAnalyzer::processEnumType(AST::EnumType* enumType) {
                 return;
             }
         }
+        
+        // Store computed value in AST
+        enumerator.computedValue = nextValue;
         
         // Register enumerator as constant with its value
         Symbol sym;

@@ -97,6 +97,9 @@ class StructDecl : public Declaration {
 public:
     std::string name;  // Empty for anonymous
     PtrList<VarDecl> members;
+    // If this StructDecl originates from parsing a standalone struct/union definition
+    // (e.g. "struct S { ... };"), keep the full StructType so we don't lose bitfield widths.
+    Ptr<StructType> declaredType;
     bool isUnion = false;
     bool isForwardDecl = false;  // Just "struct S;"
     
@@ -115,9 +118,10 @@ struct EnumeratorDecl {
     Ptr<Expression> value;  // nullptr if no explicit value
     int line, column;
     int equalColumn = 0;  // Position of '=' sign (if present)
+    mutable long long computedValue = 0;  // Computed after semantic analysis
     
     EnumeratorDecl(const std::string& n, int l, int c, int eq = 0)
-        : name(n), line(l), column(c), equalColumn(eq) {}
+        : name(n), line(l), column(c), equalColumn(eq), computedValue(0) {}
 };
 
 class EnumDecl : public Declaration {

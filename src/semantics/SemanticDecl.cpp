@@ -240,10 +240,14 @@ void SemanticAnalyzer::visit(AST::EnumDecl& node) {
             }
         }
         
+        // Store computed value in AST
+        enumerator.computedValue = nextValue;
+        
         // Register enumerator as constant
         Symbol sym;
         sym.name = enumerator.name;
         sym.isEnumConstant = true;
+        sym.enumValue = nextValue;
         sym.line = enumerator.line;
         sym.column = enumerator.column;
         currentScope_->define(enumerator.name, sym, AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Int, 0, 0));

@@ -1,0 +1,165 @@
+Signed Integer Arithmetic and Bitwise Tests:
+Addition:        15 + -3 = 12
+Subtraction:     15 - -3 = 18
+Multiplication:  15 * -3 = -45d
+Division:        15 / 7 = 2
+Division:        15 / -3 = -5
+Modulo:        15 % 7 = 1
+Bitwise AND:     15 & 7 = 7
+Bitwise OR:      15 | 7 = 15
+Bitwise XOR:     15 ^ 7 = 8
+Bitwise NOT:     ~15 = -16
+Shift Left:      15 << 1 = 30
+Shift Right:     15 >> 1 = 7
+
+Unsigned Integer Arithmetic and Bitwise Tests:
+Addition:        15 + 3 = 18
+Subtraction:     15 - 3 = 12
+Multiplication:  15 * 3 = 45
+Division:        15 / 7 = 2
+Modulo:          15 % 7 = 1
+Bitwise AND:     15 & 7 = 7
+Bitwise OR:      15 | 7 = 15
+Bitwise XOR:     15 ^ 7 = 8
+Bitwise NOT:     ~15 = 4294967280
+Shift Left:      15 << 1 = 30
+Shift Right:     15 >> 1 = 7
+
+Float Arithmetic Tests:
+
+a + b:               10.50 + 3.20 = 13.70
+a - b:               10.50 - 3.20 = 7.30
+a * b:               10.50 * 3.20 = 33.60
+a / b:               10.50 / 3.20 = 3.28
+a + c:               10.50 + -2.40 = 8.10
+a - c:               10.50 - -2.40 = 12.90
+a * c:               10.50 * -2.40 = -25.20
+a / c:               10.50 / -2.40 = -4.38
+-a:                  -10.50 = -10.50
+
+Testing Logical Operators (&&, ||) and Ternary Operator (?:)
+
+Testing Logical AND (&&):
+a && b: 1 && 0 = 0 (Expected: 0)
+a && 1: 1 && 1 = 1 (Expected: 1)
+b && c: 0 && 5 = 0 (Expected: 0)
+c && d: 5 && 10 = 1 (Expected: 1)
+0 && 0: 0 && 0 = 0 (Expected: 0)
+1 && 0: 1 && 0 = 0 (Expected: 0)
+1 && 1: 1 && 1 = 1 (Expected: 1)
+Short-circuit test (b && ++c): 0 && ++5 = 0 (Expected: 0, c should not increment)
+Value of c after short-circuit test: 5 (Expected: 5)
+
+Testing Logical OR (||):
+a || b: 1 || 0 = 1 (Expected: 1)
+b || 0: 0 || 0 = 0 (Expected: 0)
+0 || c: 0 || 5 = 1 (Expected: 1)
+c || d: 5 || 10 = 1 (Expected: 1)
+0 || 0: 0 || 0 = 0 (Expected: 0)
+1 || 0: 1 || 0 = 1 (Expected: 1)
+1 || 1: 1 || 1 = 1 (Expected: 1)
+Short-circuit test (a || ++d): 1 || ++10 = 1 (Expected: 1, d should not increment)
+Value of d after short-circuit test: 10 (Expected: 10)
+
+Testing Ternary Operator (?:):
+a ? c : d = 1 ? 5 : 10 = 5 (Expected: 5)
+b ? c : d = 0 ? 5 : 10 = 10 (Expected: 10)
+c > d ? c : d = 5 > 10 ? 5 : 10 = 10 (Expected: 10)
+c < d ? c : d = 5 < 10 ? 5 : 10 = 5 (Expected: 5)
+c == d ? c : d = 5 == 10 ? 5 : 10 = 10 (Expected: 10)
+Short-circuit test in ternary operator:
+result = a ? (c += 2) : d; with a = 1, c = 7 => result = 7 (Expected: 7)
+Value of c after ternary: 7 (Expected: 7)
+result = b ? c : (d += 3); with b = 0, d = 13 => result = 13 (Expected: 13)
+Value of d after ternary: 13 (Expected: 13)
+
+Test with constant expressions:
+Signed Integer Arithmetic and Bitwise Tests:
+Addition:        15 + -3 = 12
+Subtraction:     15 - -3 = 18
+Multiplication:  15 * -3 = -45d
+Division:        15 / 7 = 2
+Division:        15 / -3 = -5
+Modulo:        15 % 7 = 1
+Bitwise AND:     15 & 7 = 7
+Bitwise OR:      15 | 7 = 15
+Bitwise XOR:     15 ^ 7 = 8
+Bitwise NOT:     ~15 = -16
+Shift Left:      15 << 1 = 30
+Shift Right:     15 >> 1 = 7
+
+Unsigned Integer Arithmetic and Bitwise Tests:
+Addition:        15 + 3 = 18
+Subtraction:     15 - 3 = 12
+Multiplication:  15 * 3 = 45
+Division:        15 / 7 = 2
+Modulo:          15 % 7 = 1
+Bitwise AND:     15 & 7 = 7
+Bitwise OR:      15 | 7 = 15
+Bitwise XOR:     15 ^ 7 = 8
+Bitwise NOT:     ~15 = 4294967280
+Shift Left:      15 << 1 = 30
+Shift Right:     15 >> 1 = 7
+
+Float Arithmetic Tests:
+
+a + b:               10.50 + 3.20 = 13.70
+a - b:               10.50 - 3.20 = 7.30
+a * b:               10.50 * 3.20 = 33.60
+a / b:               10.50 / 3.20 = 3.28
+a + c:               10.50 + -2.40 = 8.10
+a - c:               10.50 - -2.40 = 12.90
+a * c:               10.50 * -2.40 = -25.20
+a / c:               10.50 / -2.40 = -4.38
+-a:                  -10.50 = -10.50
+
+Testing Logical Operators (&&, ||) and Ternary Operator (?:)
+
+Testing Logical AND (&&):
+a && b: 1 && 0 = 0 (Expected: 0)
+a && 1: 1 && 1 = 1 (Expected: 1)
+b && c: 0 && 5 = 0 (Expected: 0)
+c && d: 5 && 10 = 1 (Expected: 1)
+0 && 0: 0 && 0 = 0 (Expected: 0)
+1 && 0: 1 && 0 = 0 (Expected: 0)
+1 && 1: 1 && 1 = 1 (Expected: 1)
+
+Testing Logical OR (||):
+a || b: 1 || 0 = 1 (Expected: 1)
+b || 0: 0 || 0 = 0 (Expected: 0)
+0 || c: 0 || 5 = 1 (Expected: 1)
+c || d: 5 || 10 = 1 (Expected: 1)
+0 || 0: 0 || 0 = 0 (Expected: 0)
+1 || 0: 1 || 0 = 1 (Expected: 1)
+1 || 1: 1 || 1 = 1 (Expected: 1)
+
+Testing Ternary Operator (?:):
+a ? c : d = 1 ? 5 : 10 = 5 (Expected: 5)
+b ? c : d = 0 ? 5 : 10 = 10 (Expected: 10)
+c > d ? c : d = 5 > 10 ? 5 : 10 = 10 (Expected: 10)
+c < d ? c : d = 5 < 10 ? 5 : 10 = 5 (Expected: 5)
+c == d ? c : d = 5 == 10 ? 5 : 10 = 10 (Expected: 10)
+
+Operator Precedence Tests:
+
+a + b * c:              10 + 5 * 2 = 20
+a - b / c:              10 - 5 / 2 = 8
+(a + b) * c:            (10 + 5) * 2 = 30
+a + b & c:              10 + 5 & 2 = 10
+a | b * c:              10 | 5 * 2 = 10
+(a | b) * c:            (10 | 5) * 2 = 30
+a << 1 + b >> 1:        10 << 1 + 5 >> 1 = 22
+(a << 1) + (b >> 1):    (10 << 1) + (5 >> 1) = 22
+a < b || b & c:         10 < 5 || 5 & 2 = 0
+a < b || b && c:        10 < 5 || 5 && 2 = 1
+a + (b * c - d):        10 + (5 * 2 - -3) = 23
+(a + b) * (c + d):      (10 + 5) * (2 + -3) = -15
+
+Float Operator Precedence Tests:
+x + y * z:              10.50 + 5.20 * 2.00 = 20.90
+x - y / z:              10.50 - 5.20 / 2.00 = 7.90
+(x + y) * z:            (10.50 + 5.20) * 2.00 = 31.40
+
+Edge Cases with Negative Values:
+d * b / c:              -3 * 5 / 2 = -7
+d + a * -b:             -3 + 10 * -5 = -53

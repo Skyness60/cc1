@@ -345,7 +345,69 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryExpression() {
     if (check(TokenType::IntegerLiteral)) {
         Token tok = current();
         advance();
-        long long value = std::stoll(tok.value);
+        unsigned long long parsed = 0;
+        size_t idx = 0;
+        try {
+            // base=0 lets the standard library handle 0x (hex) and leading-0 (octal).
+            parsed = std::stoull(tok.value, &idx, 0);
+        } catch (...) {
+            errorAt(tok, "invalid integer constant");
+        }
+        // Validate and accept C integer suffixes, if any.
+        // Supported: U, L, LL and combos in either order: UL, LU, ULL, LLU.
+        if (idx < tok.value.size()) {
+            std::string suf = tok.value.substr(idx);
+            for (char& ch : suf) {
+                if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+            }
+
+            auto isValidSuffix = [](const std::string& s) -> bool {
+                if (s.empty()) return true;
+
+                auto parseOne = [&](size_t& p, bool& sawU, int& longCount) -> bool {
+                    while (p < s.size()) {
+                        if (s[p] == 'u') {
+                            if (sawU) return false;
+                            sawU = true;
+                            ++p;
+                            continue;
+                        }
+                        if (s[p] == 'l') {
+                            if (p + 1 < s.size() && s[p + 1] == 'l') {
+                                if (longCount != 0) return false;
+                                longCount = 2;
+                                p += 2;
+                            } else {
+                                if (longCount != 0) return false;
+                                longCount = 1;
+                                ++p;
+                            }
+                            continue;
+                        }
+                        return false;
+                    }
+                    return true;
+                };
+
+                // Accept either order: (u then l/ll) OR (l/ll then u)
+                {
+                    size_t p = 0;
+                    bool sawU = false;
+                    int longCount = 0;
+                    // Try to consume all chars; success means valid
+                    if (parseOne(p, sawU, longCount)) return true;
+                }
+                // The parse above already allows mixed order naturally because it loops; but to be safe,
+                // reject any suffix with more than one U or more than one L/LL.
+                // Any failure falls through.
+                return false;
+            };
+
+            if (!isValidSuffix(suf)) {
+                errorAt(tok, "invalid integer constant suffix");
+            }
+        }
+        long long value = static_cast<long long>(parsed);
         return AST::make<AST::IntegerLiteral>(value, tok.value, tok.line, tok.column);
     }
     

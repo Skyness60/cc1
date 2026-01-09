@@ -10,6 +10,9 @@ struct CompilerOptions {
     bool showVersion = false;
     bool syntaxOnly = false;
     bool preprocessOnly = false;  // -E option
+    bool debugMode = false;        // -debug option
+    bool debugInfo = false;        // -g option (LLVM debug metadata)
+    bool is64bit = false;          // -m64 (default is i386 for now)
     std::vector<std::string> defines;      // -D options
     std::vector<std::string> undefines;    // -U options
     std::vector<std::string> includePaths; // -I options

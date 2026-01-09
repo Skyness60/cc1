@@ -1,0 +1,5 @@
+H: consonant
+e: vowel
+l: consonant
+l: consonant
+o: vowel

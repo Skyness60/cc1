@@ -11,16 +11,47 @@
 #include <iostream>
 #include <sstream>
 
+using cc1::DebugLogger;
+
+static bool endsWith(const std::string& s, const std::string& suffix)
+{
+    if (s.size() < suffix.size())
+        return false;
+    return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+static bool readWholeFile(const std::string& filename, std::string& out)
+{
+    std::ifstream in(filename);
+    if (!in.is_open()) {
+        std::cerr << "Error: Could not open input file " << filename << std::endl;
+        return false;
+    }
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    out = ss.str();
+    return true;
+}
+
 CompilerDriver::CompilerDriver(const CompilerOptions& opts)
     : input_files_(opts.inputFiles),
       output_file_(opts.outputFile),
       syntax_only_(opts.syntaxOnly),
       preprocess_only_(opts.preprocessOnly),
+      debug_mode_(opts.debugMode),
+            debug_info_(opts.debugInfo),
+    is64bit_(opts.is64bit),
       defines_(opts.defines),
       undefines_(opts.undefines),
       include_paths_(opts.includePaths)
 {
     symbols_.reset(new SymbolTable());
+    
+    // Enable debug logging if requested
+    if (debug_mode_) {
+        DebugLogger::instance().setEnabled(true);
+        DebugLogger::instance().setOutputFile("cc1_debug.log");
+    }
 }
 
 CompilerDriver::~CompilerDriver() = default;
@@ -76,7 +107,18 @@ bool CompilerDriver::runPreprocessing()
     // Process all input files
     source_.clear();
     for (const auto& filename : input_files_) {
-        std::string fileSource = preprocessor.preprocess(filename);
+        std::string fileSource;
+
+        // POSIX c17: a .i operand is already the output of preprocessing (-E).
+        // It shall not be preprocessed again when compiled.
+        if (endsWith(filename, ".i")) {
+            if (!readWholeFile(filename, fileSource))
+                return false;
+            source_ += fileSource;
+            continue;
+        }
+
+        fileSource = preprocessor.preprocess(filename);
         
         if (preprocessor.hadError()) {
             return false;
@@ -154,7 +196,7 @@ bool CompilerDriver::runSemantics()
     if (!ast_) return true;
     
     std::string filename = input_files_.empty() ? "<input>" : input_files_[0];
-    cc1::SemanticAnalyzer analyzer(filename, source_);
+    cc1::SemanticAnalyzer analyzer(filename, source_, is64bit_);
     analyzer.analyze(*ast_);
     
     return !analyzer.hadError();
@@ -164,7 +206,11 @@ bool CompilerDriver::runCodeGen()
 {
     if (!ast_) return true;
     
-    cc1::IRGenerator generator;
+    cc1::IRGenerator generator(is64bit_);
+    if (debug_info_) {
+        std::string filename = input_files_.empty() ? std::string("<input>") : input_files_[0];
+        generator.setDebugInfo(true, filename);
+    }
     generator.generate(*ast_);
     
     if (generator.hadError()) {
