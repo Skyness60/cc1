@@ -3,7 +3,6 @@ source_filename = "cc1"
 target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128"
 target triple = "i386-pc-linux-gnu"
 
-@size_t = dso_local global i32 0
 declare void @free(i8*)
 declare i8* @malloc(i32)
 declare i32 @printf(i8*, ...)
@@ -35,6 +34,8 @@ while.end3:
   %11 = load i32, i32* %a.addr1
   store i32 %11, i32* %retval
   br label %return0
+return.dead4:
+  br label %return0
 return0:
   %12 = load i32, i32* %retval
   ret i32 %12
@@ -54,38 +55,40 @@ entry:
   %5 = icmp eq i8* %4, null
   %6 = zext i1 %5 to i32
   %7 = icmp ne i32 %6, 0
-  br label %land.lhs.eval9
-land.lhs.eval9:
-  br i1 %7, label %land.end8, label %land.rhs7
-land.rhs7:
+  br label %land.lhs.eval10
+land.lhs.eval10:
+  br i1 %7, label %land.end9, label %land.rhs8
+land.rhs8:
   %8 = load i8*, i8** %src.addr
   %9 = icmp eq i8* %8, null
   %10 = zext i1 %9 to i32
   %11 = icmp ne i32 %10, 0
-  br label %land.rhs.from10
-land.rhs.from10:
-  br label %land.end8
-land.end8:
-  %12 = phi i1 [ true, %land.lhs.eval9 ], [ %11, %land.rhs.from10 ]
+  br label %land.rhs.from11
+land.rhs.from11:
+  br label %land.end9
+land.end9:
+  %12 = phi i1 [ true, %land.lhs.eval10 ], [ %11, %land.rhs.from11 ]
   %13 = zext i1 %12 to i32
   %14 = icmp ne i32 %13, 0
-  br i1 %14, label %if.then5, label %if.end6
-if.then5:
+  br i1 %14, label %if.then6, label %if.end7
+if.then6:
   %15 = inttoptr i32 0 to i8*
   store i8* %15, i8** %retval
-  br label %return4
-if.end6:
+  br label %return5
+return.dead12:
+  br label %if.end7
+if.end7:
   store i32 0, i32* %i.addr3
-  br label %for.cond11
-for.cond11:
-  %16 = load i32, i32* %n.addr
-  %17 = sdiv i32 %16, 4
-  %18 = load i32, i32* %i.addr3
-  %19 = icmp slt i32 %18, %17
+  br label %for.cond13
+for.cond13:
+  %16 = load i32, i32* %i.addr3
+  %17 = load i32, i32* %n.addr
+  %18 = sdiv i32 %17, 4
+  %19 = icmp slt i32 %16, %18
   %20 = zext i1 %19 to i32
   %21 = icmp ne i32 %20, 0
-  br i1 %21, label %for.body12, label %for.end14
-for.body12:
+  br i1 %21, label %for.body14, label %for.end16
+for.body14:
   %22 = load i8*, i8** %src.addr
   %23 = bitcast i8* %22 to i32*
   %24 = load i32, i32* %i.addr3
@@ -96,25 +99,25 @@ for.body12:
   %29 = load i32, i32* %i.addr3
   %30 = getelementptr inbounds i32, i32* %28, i32 %29
   store i32 %26, i32* %30
-  br label %for.inc13
-for.inc13:
+  br label %for.inc15
+for.inc15:
   %31 = load i32, i32* %i.addr3
   %32 = add i32 %31, 1
   store i32 %32, i32* %i.addr3
-  br label %for.cond11
-for.end14:
+  br label %for.cond13
+for.end16:
   %33 = load i32, i32* %i.addr3
   %34 = mul i32 %33, 4
   store i32 %34, i32* %i.addr3
-  br label %for.cond15
-for.cond15:
+  br label %for.cond17
+for.cond17:
   %35 = load i32, i32* %i.addr3
   %36 = load i32, i32* %n.addr
   %37 = icmp slt i32 %35, %36
   %38 = zext i1 %37 to i32
   %39 = icmp ne i32 %38, 0
-  br i1 %39, label %for.body16, label %for.end18
-for.body16:
+  br i1 %39, label %for.body18, label %for.end20
+for.body18:
   %40 = load i8*, i8** %src.addr
   %41 = load i32, i32* %i.addr3
   %42 = getelementptr inbounds i8, i8* %40, i32 %41
@@ -123,17 +126,19 @@ for.body16:
   %45 = load i32, i32* %i.addr3
   %46 = getelementptr inbounds i8, i8* %44, i32 %45
   store i8 %43, i8* %46
-  br label %for.inc17
-for.inc17:
+  br label %for.inc19
+for.inc19:
   %47 = load i32, i32* %i.addr3
   %48 = add i32 %47, 1
   store i32 %48, i32* %i.addr3
-  br label %for.cond15
-for.end18:
+  br label %for.cond17
+for.end20:
   %49 = load i8*, i8** %dst.addr
   store i8* %49, i8** %retval
-  br label %return4
-return4:
+  br label %return5
+return.dead21:
+  br label %return5
+return5:
   %50 = load i8*, i8** %retval
   ret i8* %50
 }
@@ -154,20 +159,22 @@ entry:
   store i8* %7, i8** %dest.addr1
   %8 = load i8*, i8** %dest.addr1
   %9 = icmp ne i8* %8, null
-  br i1 %9, label %if.then20, label %if.end21
-if.then20:
+  br i1 %9, label %if.then23, label %if.end24
+if.then23:
   %10 = load i8*, i8** %dest.addr1
   %11 = load i8*, i8** %s1.addr
   %12 = load i32, i32* %len.addr2
   %13 = add i32 %12, 1
   %14 = call i8* @ft_memcpy(i8* %10, i8* %11, i32 %13)
   store i8* %14, i8** %dest.addr1
-  br label %if.end21
-if.end21:
+  br label %if.end24
+if.end24:
   %15 = load i8*, i8** %dest.addr1
   store i8* %15, i8** %retval
-  br label %return19
-return19:
+  br label %return22
+return.dead25:
+  br label %return22
+return22:
   %16 = load i8*, i8** %retval
   ret i8* %16
 }
@@ -187,29 +194,33 @@ entry:
   %6 = icmp eq i8* %5, null
   %7 = zext i1 %6 to i32
   %8 = icmp ne i32 %7, 0
-  br label %land.lhs.eval27
-land.lhs.eval27:
-  br i1 %8, label %land.end26, label %land.rhs25
-land.rhs25:
+  br label %land.lhs.eval31
+land.lhs.eval31:
+  br i1 %8, label %land.end30, label %land.rhs29
+land.rhs29:
   %9 = load i8* (i32, i8)*, i8* (i32, i8)** %f.addr
   %10 = icmp eq i8* (i32, i8)* %9, null
   %11 = zext i1 %10 to i32
   %12 = icmp ne i32 %11, 0
-  br label %land.rhs.from28
-land.rhs.from28:
-  br label %land.end26
-land.end26:
-  %13 = phi i1 [ true, %land.lhs.eval27 ], [ %12, %land.rhs.from28 ]
+  br label %land.rhs.from32
+land.rhs.from32:
+  br label %land.end30
+land.end30:
+  %13 = phi i1 [ true, %land.lhs.eval31 ], [ %12, %land.rhs.from32 ]
   %14 = zext i1 %13 to i32
   %15 = icmp ne i32 %14, 0
-  br i1 %15, label %if.then23, label %if.end24
-if.then23:
-  br label %label.end29
-if.end24:
+  br i1 %15, label %if.then27, label %if.end28
+if.then27:
+  br label %label.end33
+goto.dead34:
+  br label %if.end28
+if.end28:
   %16 = sub i32 0, 1
   store i32 %16, i32* %i.addr2
-  br label %label.iamalabel30
-label.map31:
+  br label %label.iamalabel35
+goto.dead36:
+  br label %label.map37
+label.map37:
   %17 = load i8* (i32, i8)*, i8* (i32, i8)** %f.addr
   %18 = load i32, i32* %i.addr2
   %19 = load i8*, i8** %dst.addr3
@@ -220,55 +231,70 @@ label.map31:
   %24 = load i8*, i8** %dst.addr3
   %25 = load i32, i32* %i.addr2
   %26 = getelementptr inbounds i8, i8* %24, i32 %25
-  store i32 %23, i8* %26
-  br label %label.loop32
-label.iamalabel30:
-  %27 = load i8*, i8** %s.addr
-  %28 = call i8* @ft_strdup(i8* %27)
-  store i8* %28, i8** %dst.addr3
-  %29 = load i8*, i8** %dst.addr3
-  %30 = icmp eq i8* %29, null
-  %31 = zext i1 %30 to i32
-  %32 = icmp ne i32 %31, 0
-  br i1 %32, label %if.then33, label %if.end34
-if.then33:
-  br label %label.end29
-if.end34:
-  br label %for.cond35
-for.cond35:
-  br label %for.body36
-for.body36:
-  br label %label.cond39
-label.loop32:
-  br label %for.inc37
-label.cond39:
-  %33 = load i32, i32* %i.addr2
-  %34 = add i32 %33, 1
-  store i32 %34, i32* %i.addr2
-  %35 = load i8*, i8** %dst.addr3
-  %36 = getelementptr inbounds i8, i8* %35, i32 %34
-  %37 = load i8, i8* %36
-  %38 = icmp eq i8 %37, 0
-  %39 = zext i1 %38 to i32
-  %40 = icmp ne i32 %39, 0
-  br i1 %40, label %if.then40, label %if.else41
+  %27 = trunc i32 %23 to i8
+  store i8 %27, i8* %26
+  br label %label.loop38
+goto.dead39:
+  br label %label.iamalabel35
+label.iamalabel35:
+  %28 = load i8*, i8** %s.addr
+  %29 = call i8* @ft_strdup(i8* %28)
+  store i8* %29, i8** %dst.addr3
+  %30 = load i8*, i8** %dst.addr3
+  %31 = icmp eq i8* %30, null
+  %32 = zext i1 %31 to i32
+  %33 = icmp ne i32 %32, 0
+  br i1 %33, label %if.then40, label %if.end41
 if.then40:
-  br label %for.end38
-if.else41:
-  br label %label.map31
-if.end42:
-  br label %for.inc37
-for.inc37:
-  br label %for.cond35
-for.end38:
-  br label %label.end29
-label.end29:
-  %41 = load i8*, i8** %dst.addr3
-  store i8* %41, i8** %retval
-  br label %return22
-return22:
-  %42 = load i8*, i8** %retval
-  ret i8* %42
+  br label %label.end33
+goto.dead42:
+  br label %if.end41
+if.end41:
+  br label %for.cond43
+for.cond43:
+  br label %for.body44
+for.body44:
+  br label %label.cond47
+goto.dead48:
+  br label %label.loop38
+label.loop38:
+  br label %for.inc45
+continue.dead49:
+  br label %label.cond47
+label.cond47:
+  %34 = load i32, i32* %i.addr2
+  %35 = add i32 %34, 1
+  store i32 %35, i32* %i.addr2
+  %36 = load i8*, i8** %dst.addr3
+  %37 = getelementptr inbounds i8, i8* %36, i32 %35
+  %38 = load i8, i8* %37
+  %39 = icmp eq i8 %38, 0
+  %40 = zext i1 %39 to i32
+  %41 = icmp ne i32 %40, 0
+  br i1 %41, label %if.then50, label %if.else51
+if.then50:
+  br label %for.end46
+break.dead53:
+  br label %if.end52
+if.else51:
+  br label %label.map37
+goto.dead54:
+  br label %if.end52
+if.end52:
+  br label %for.inc45
+for.inc45:
+  br label %for.cond43
+for.end46:
+  br label %label.end33
+label.end33:
+  %42 = load i8*, i8** %dst.addr3
+  store i8* %42, i8** %retval
+  br label %return26
+return.dead55:
+  br label %return26
+return26:
+  %43 = load i8*, i8** %retval
+  ret i8* %43
 }
 
 define dso_local i32 @factorial(i32 %0) {
@@ -278,19 +304,23 @@ entry:
   %retval = alloca i32
   %1 = load i32, i32* %n.addr
   %2 = icmp ne i32 %1, 0
-  br i1 %2, label %if.then44, label %if.end45
-if.then44:
+  br i1 %2, label %if.then57, label %if.end58
+if.then57:
   %3 = load i32, i32* %n.addr
-  %4 = sub i32 %3, 1
-  %5 = call i32 @factorial(i32 %4)
-  %6 = load i32, i32* %n.addr
-  %7 = mul i32 %6, %5
+  %4 = load i32, i32* %n.addr
+  %5 = sub i32 %4, 1
+  %6 = call i32 @factorial(i32 %5)
+  %7 = mul i32 %3, %6
   store i32 %7, i32* %retval
-  br label %return43
-if.end45:
+  br label %return56
+return.dead59:
+  br label %if.end58
+if.end58:
   store i32 1, i32* %retval
-  br label %return43
-return43:
+  br label %return56
+return.dead60:
+  br label %return56
+return56:
   %8 = load i32, i32* %retval
   ret i32 %8
 }
@@ -308,24 +338,26 @@ entry:
   %5 = icmp sge i32 %3, %4
   %6 = zext i1 %5 to i32
   %7 = icmp ne i32 %6, 0
-  br label %land.lhs.eval49
-land.lhs.eval49:
-  br i1 %7, label %land.rhs47, label %land.end48
-land.rhs47:
+  br label %land.lhs.eval64
+land.lhs.eval64:
+  br i1 %7, label %land.rhs62, label %land.end63
+land.rhs62:
   %8 = load i32, i32* %c.addr
   %9 = sext i8 122 to i32
   %10 = icmp sle i32 %8, %9
   %11 = zext i1 %10 to i32
   %12 = icmp ne i32 %11, 0
-  br label %land.rhs.from50
-land.rhs.from50:
-  br label %land.end48
-land.end48:
-  %13 = phi i1 [ false, %land.lhs.eval49 ], [ %12, %land.rhs.from50 ]
+  br label %land.rhs.from65
+land.rhs.from65:
+  br label %land.end63
+land.end63:
+  %13 = phi i1 [ false, %land.lhs.eval64 ], [ %12, %land.rhs.from65 ]
   %14 = zext i1 %13 to i32
   store i32 %14, i32* %retval
-  br label %return46
-return46:
+  br label %return61
+return.dead66:
+  br label %return61
+return61:
   %15 = load i32, i32* %retval
   ret i32 %15
 }
@@ -342,22 +374,24 @@ entry:
   %4 = icmp eq i32 %3, 0
   %5 = zext i1 %4 to i32
   %6 = icmp ne i32 %5, 0
-  br i1 %6, label %if.then52, label %if.end53
-if.then52:
+  br i1 %6, label %if.then68, label %if.end69
+if.then68:
   %7 = load i8, i8* %c.addr
   store i8 %7, i8* %retval
-  br label %return51
-if.end53:
+  br label %return67
+return.dead70:
+  br label %if.end69
+if.end69:
   %8 = load i8, i8* %c.addr
   %9 = icmp sle i8 %8, 90
   %10 = zext i1 %9 to i32
   %11 = icmp ne i32 %10, 0
-  br i1 %11, label %if.then54, label %if.else55
-if.then54:
-  %12 = sext i8 65 to i32
-  %13 = load i8, i8* %c.addr
-  %14 = sext i8 %13 to i32
-  %15 = sub i32 %14, %12
+  br i1 %11, label %if.then71, label %if.else72
+if.then71:
+  %12 = load i8, i8* %c.addr
+  %13 = sext i8 65 to i32
+  %14 = sext i8 %12 to i32
+  %15 = sub i32 %14, %13
   %16 = load i32, i32* %n.addr
   %17 = srem i32 %16, 10
   %18 = call i32 @factorial(i32 %17)
@@ -370,12 +404,14 @@ if.then54:
   %25 = add i32 %24, %23
   %26 = trunc i32 %25 to i8
   store i8 %26, i8* %retval
-  br label %return51
-if.else55:
-  %27 = sext i8 97 to i32
-  %28 = load i8, i8* %c.addr
-  %29 = sext i8 %28 to i32
-  %30 = sub i32 %29, %27
+  br label %return67
+return.dead74:
+  br label %if.end73
+if.else72:
+  %27 = load i8, i8* %c.addr
+  %28 = sext i8 97 to i32
+  %29 = sext i8 %27 to i32
+  %30 = sub i32 %29, %28
   %31 = load i32, i32* %n.addr
   %32 = srem i32 %31, 10
   %33 = call i32 @factorial(i32 %32)
@@ -388,10 +424,12 @@ if.else55:
   %40 = add i32 %39, %38
   %41 = trunc i32 %40 to i8
   store i8 %41, i8* %retval
-  br label %return51
-if.end56:
-  br label %return51
-return51:
+  br label %return67
+return.dead75:
+  br label %if.end73
+if.end73:
+  br label %return67
+return67:
   %42 = load i8, i8* %retval
   ret i8 %42
 }
@@ -406,15 +444,15 @@ entry:
   store i32 0, i32* %retval
   %i.addr2 = alloca i32
   store i32 1, i32* %i.addr2
-  br label %while.cond58
-while.cond58:
+  br label %while.cond77
+while.cond77:
   %3 = load i32, i32* %i.addr2
   %4 = load i32, i32* %ac.addr
   %5 = icmp slt i32 %3, %4
   %6 = zext i1 %5 to i32
   %7 = icmp ne i32 %6, 0
-  br i1 %7, label %while.body59, label %while.end60
-while.body59:
+  br i1 %7, label %while.body78, label %while.end79
+while.body78:
   %s.addr8 = alloca i8*
   %9 = load i8**, i8*** %av.addr
   %10 = load i32, i32* %i.addr2
@@ -429,10 +467,10 @@ while.body59:
   %17 = load i32, i32* %i.addr2
   %18 = add i32 %17, 1
   store i32 %18, i32* %i.addr2
-  br label %while.cond58
-while.end60:
-  br label %return57
-return57:
+  br label %while.cond77
+while.end79:
+  br label %return76
+return76:
   %19 = load i32, i32* %retval
   ret i32 %19
 }

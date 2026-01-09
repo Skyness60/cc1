@@ -21,6 +21,25 @@ test_simple() {
     fi
 }
 
+# Tests avec arguments (ignore la 1ère ligne de sortie, utile pour argv[0])
+test_with_args_ignore_first_line() {
+    local n=$1
+    local name=$2
+    shift 2
+    local args="$@"
+    if [ -f "comparison_output/cc1_$n" ] && [ -f "comparison_output/clang_$n" ]; then
+        comparison_output/cc1_$n $args > /tmp/cc1_$n.txt 2>&1
+        comparison_output/clang_$n $args > /tmp/clang_$n.txt 2>&1
+        if diff -q <(tail -n +2 /tmp/cc1_$n.txt) <(tail -n +2 /tmp/clang_$n.txt) > /dev/null 2>&1; then
+            echo "✅ Programme $n ($name): OK"
+        else
+            echo "❌ Programme $n ($name): DIFFÉRENT"
+        fi
+    else
+        echo "⚠️  Programme $n ($name): NON COMPILÉ"
+    fi
+}
+
 # Tests avec arguments
 test_with_args() {
     local n=$1
@@ -42,7 +61,7 @@ test_with_args() {
 
 test_simple 0 "return 42"
 test_simple 1 "hello world"
-test_with_args 2 "print args" arg1 arg2
+test_with_args_ignore_first_line 2 "print args" arg1 arg2
 test_simple 3 "arithmetic"
 test_with_args 4 "vowels" Hello
 test_simple 5 "test 5"

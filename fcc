@@ -1,0 +1,560 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# fcc - Forty-two Compiler Collection
+# Driver: cc1 (with internal preprocessor) -> llc -> as -> clang (link)
+
+print_usage() {
+  cat <<'EOF'
+NAME
+       fcc - C compiler driver using cc1 (C89 -> LLVM IR)
+
+SYNOPSIS
+       fcc [OPTIONS] file...
+
+DESCRIPTION
+       fcc runs the full compilation toolchain:
+         1) Preprocess C sources using: cc1 -E
+         2) Compile to LLVM IR using:   cc1
+         3) Lower to assembly using:    llc
+         4) Assemble to objects using:  as -c
+         5) Link using:                 clang -m32 (or default for -m64)
+
+OPTIONS
+       -E
+              Preprocess only; write preprocessed output to stdout or -o.
+
+       -c
+              Compile and assemble, but do not link. Produce .o files.
+
+       -S
+              Compile only; produce assembly (.s) and stop.
+
+       -o file
+              Write output to file.
+
+       -I dir
+              Add include directory (passed to preprocessor).
+
+       -D name[=value]
+              Define macro (passed to preprocessor).
+
+       -U name
+              Undefine macro (passed to preprocessor).
+
+       -L dir
+              Add library search directory (passed to linker).
+
+       -l lib
+              Link with library (passed to linker).
+
+       -s
+              Strip symbols (passed to linker).
+
+       -O level
+              Optimization level (passed to llc). Example: -O0, -O1, -O2, -O3.
+
+       -m32
+              Target i386.
+
+       -m64
+              Target x86_64.
+
+       -v
+              Verbose: print the executed commands.
+
+      -g
+        Emit debug information (DWARF via LLVM debug metadata).
+
+       -h, --help
+              Display this help and exit.
+
+STDIN
+  If an input operand is '-', fcc reads C source from standard input.
+  Only one '-' operand is supported.
+
+EXIT STATUS
+       0 on success, non-zero on error.
+
+NOTES
+  This driver accepts many common compiler options for compatibility.
+  Unsupported/irrelevant options are ignored (and may be shown with -v).
+EOF
+}
+
+verbose=0
+debug_info=0
+ignored_opts=()
+run() {
+  if [[ $verbose -eq 1 ]]; then
+    printf '+ %q ' "$@"; printf '\n'
+  fi
+  "$@"
+}
+
+# Tool locations
+cc1_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cc1"
+
+# Options
+mode_link=1
+mode_preprocess_only=0
+mode_compile_only=0   # -S
+output_file=""
+
+cpp_I_flags=()
+cpp_D_flags=()
+cpp_U_flags=()
+llc_flags=()
+cc1_flags=()
+
+# Extra flags accepted for compatibility.
+clang_flags=()
+
+arch="m32"  # default stays i386 to match mandatory
+
+inputs=()
+link_sequence=()
+link_only_operands=()
+stdin_used=0
+any_operands=0
+
+is_obj_operand() {
+  [[ "$1" == *.o ]]
+}
+
+is_lib_operand() {
+  [[ "$1" == *.a || "$1" == *.so ]]
+}
+
+add_operand() {
+  local op="$1"
+  any_operands=1
+
+  if is_obj_operand "$op" || is_lib_operand "$op"; then
+    link_only_operands+=("$op")
+    link_sequence+=("$op")
+    return
+  fi
+
+  local idx=${#inputs[@]}
+  inputs+=("$op")
+  link_sequence+=("__FCC_SRC_${idx}__")
+}
+
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    -v)
+      verbose=1
+      shift
+      ;;
+    -g)
+      cc1_flags+=("-g")
+      debug_info=1
+      shift
+      ;;
+    -B)
+      # POSIX c17: -B mode (e.g. -B dynamic). Not required by the subject.
+      # Consume the mode argument so it isn't treated as an input operand.
+      if [[ $# -lt 2 ]]; then
+        echo "fcc: error: missing argument for -B" >&2
+        exit 1
+      fi
+      ignored_opts+=("-B" "$2")
+      shift 2
+      ;;
+    -B*)
+      # Non-standard grouped form (e.g. -Bdynamic). Accept/ignore.
+      ignored_opts+=("$1")
+      shift
+      ;;
+    -G)
+      # POSIX c17: create a shared library. Not required by the subject.
+      ignored_opts+=("-G")
+      shift
+      ;;
+    -R)
+      # POSIX c17: runtime library search path. Not required by the subject.
+      # Consume the directory argument so it isn't treated as an input operand.
+      if [[ $# -lt 2 ]]; then
+        echo "fcc: error: missing argument for -R" >&2
+        exit 1
+      fi
+      ignored_opts+=("-R" "$2")
+      shift 2
+      ;;
+    -E)
+      mode_preprocess_only=1
+      mode_link=0
+      shift
+      ;;
+    -c)
+      mode_link=0
+      shift
+      ;;
+    -S)
+      mode_compile_only=1
+      mode_link=0
+      shift
+      ;;
+    -pipe|-ansi|-pedantic|-pedantic-errors)
+      ignored_opts+=("$1")
+      shift
+      ;;
+    -std=*)
+      # cc1 is C89-only; accept but ignore.
+      ignored_opts+=("$1")
+      shift
+      ;;
+    -Wl,*)
+      # Forward linker flags.
+      link_sequence+=("$1")
+      shift
+      ;;
+    -Xlinker)
+      if [[ $# -lt 2 ]]; then
+        echo "fcc: error: missing argument for -Xlinker" >&2
+        exit 1
+      fi
+      link_sequence+=("-Xlinker" "$2")
+      shift 2
+      ;;
+    -W*|-f*)
+      # Accept common warning/feature flags for compatibility.
+      ignored_opts+=("$1")
+      shift
+      ;;
+    -o)
+      if [[ $# -lt 2 ]]; then
+        echo "fcc: error: missing argument for -o" >&2
+        exit 1
+      fi
+      output_file="$2"
+      shift 2
+      ;;
+    -I*)
+      if [[ "$1" == "-I" ]]; then
+        if [[ $# -lt 2 ]]; then
+          echo "fcc: error: missing argument for -I" >&2
+          exit 1
+        fi
+        cpp_I_flags+=("-I" "$2")
+        shift 2
+      else
+        cpp_I_flags+=("$1")
+        shift
+      fi
+      ;;
+    -D*)
+      if [[ "$1" == "-D" ]]; then
+        if [[ $# -lt 2 ]]; then
+          echo "fcc: error: missing argument for -D" >&2
+          exit 1
+        fi
+        cpp_D_flags+=("-D" "$2")
+        shift 2
+      else
+        cpp_D_flags+=("$1")
+        shift
+      fi
+      ;;
+    -U*)
+      if [[ "$1" == "-U" ]]; then
+        if [[ $# -lt 2 ]]; then
+          echo "fcc: error: missing argument for -U" >&2
+          exit 1
+        fi
+        cpp_U_flags+=("-U" "$2")
+        shift 2
+      else
+        cpp_U_flags+=("$1")
+        shift
+      fi
+      ;;
+    -L*)
+      if [[ "$1" == "-L" ]]; then
+        if [[ $# -lt 2 ]]; then
+          echo "fcc: error: missing argument for -L" >&2
+          exit 1
+        fi
+        link_sequence+=("-L" "$2")
+        shift 2
+      else
+        link_sequence+=("$1")
+        shift
+      fi
+      ;;
+    -l)
+      if [[ $# -lt 2 ]]; then
+        echo "fcc: error: missing argument for -l" >&2
+        exit 1
+      fi
+      link_sequence+=("-l" "$2")
+      shift 2
+      ;;
+    -s)
+      link_sequence+=("-s")
+      shift
+      ;;
+    -O*)
+      # pass-through to llc; accept -O0..-O3 or -O with separate arg
+      if [[ "$1" == "-O" ]]; then
+        if [[ $# -lt 2 ]]; then
+          echo "fcc: error: missing argument for -O" >&2
+          exit 1
+        fi
+        llc_flags+=("-O$2")
+        shift 2
+      else
+        llc_flags+=("$1")
+        shift
+      fi
+      ;;
+    -m32)
+      arch="m32"
+      shift
+      ;;
+    -m64)
+      arch="m64"
+      shift
+      ;;
+    -x)
+      # Common compiler extension (gcc/clang). Accept and ignore.
+      if [[ $# -lt 2 ]]; then
+        echo "fcc: error: missing argument for -x" >&2
+        exit 1
+      fi
+      ignored_opts+=("-x" "$2")
+      shift 2
+      ;;
+    --)
+      shift
+      while [[ $# -gt 0 ]]; do
+        add_operand "$1"
+        shift
+      done
+      ;;
+    -)
+      # Input from stdin.
+      add_operand "-"
+      shift
+      ;;
+    -*)
+      # Compatibility mode: ignore unknown options rather than failing.
+      ignored_opts+=("$1")
+      shift
+      ;;
+    *)
+      add_operand "$1"
+      shift
+      ;;
+  esac
+
+done
+
+if [[ $verbose -eq 1 && ${#ignored_opts[@]} -gt 0 ]]; then
+  for o in "${ignored_opts[@]}"; do
+    echo "fcc: note: ignoring option: $o" >&2
+  done
+fi
+
+if [[ $any_operands -eq 0 ]]; then
+  echo "fcc: error: no input files" >&2
+  exit 1
+fi
+
+if [[ $mode_link -eq 0 && ${#link_only_operands[@]} -gt 0 ]]; then
+  echo "fcc: error: object/library operands are not allowed without linking" >&2
+  exit 1
+fi
+
+if [[ ! -x "$cc1_bin" ]]; then
+  echo "fcc: error: cc1 not found or not executable at: $cc1_bin" >&2
+  exit 1
+fi
+
+workdir="$(mktemp -d -t fcc.XXXXXX)"
+cleanup() { rm -rf "$workdir"; }
+trap cleanup EXIT
+
+cpp_flags=("${cpp_I_flags[@]}" "${cpp_D_flags[@]}" "${cpp_U_flags[@]}")
+compiled_objs=()
+link_operands=()
+
+# Compile each input to object (or assembly)
+for idx in "${!inputs[@]}"; do
+  src="${inputs[$idx]}"
+  if [[ "$src" == "-" ]]; then
+    if [[ $stdin_used -eq 1 ]]; then
+      echo "fcc: error: multiple '-' inputs are not supported" >&2
+      exit 1
+    fi
+    stdin_used=1
+    src="$workdir/stdin.c"
+    cat > "$src"
+  fi
+
+  if [[ ! -f "$src" ]]; then
+    echo "fcc: error: input not found: $src" >&2
+    exit 1
+  fi
+
+  # POSIX c17 accepts object files and libraries as operands to the link phase.
+  if is_obj_operand "$src"; then
+    if [[ $mode_link -eq 1 ]]; then
+      objs+=("$src")
+      continue
+    fi
+    echo "fcc: error: object operand not allowed without linking: $src" >&2
+    exit 1
+  fi
+
+  if is_lib_operand "$src"; then
+    if [[ $mode_link -eq 1 ]]; then
+      link_operands+=("$src")
+      continue
+    fi
+    echo "fcc: error: library operand not allowed without linking: $src" >&2
+    exit 1
+  fi
+
+  base="$(basename "$src")"
+  stem="${base%.*}"
+
+  pp="$workdir/$stem.i"
+  ll="$workdir/$stem.ll"
+  sfile="$workdir/$stem.s"
+  ofile="$workdir/$stem.o"
+
+  if [[ $mode_preprocess_only -eq 1 ]]; then
+    # Preprocess using cc1's internal preprocessor (bonus).
+    # For strict mandatory wording, you can set FCC_USE_CLANG_CPP=1 to use clang -E -std=c89.
+    cc1_pp_args=()
+    if [[ "$arch" == "m64" ]]; then
+      cc1_pp_args+=("-m64")
+    else
+      cc1_pp_args+=("-m32")
+    fi
+    if [[ "${FCC_USE_CLANG_CPP:-0}" == "1" ]]; then
+      if [[ "$arch" == "m64" ]]; then
+        run clang -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
+      else
+        run clang -m32 -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
+      fi
+    else
+      cc1_pp_args+=("${cc1_flags[@]}" "-E" "${cpp_flags[@]}" "$src" -o "$pp")
+      run "$cc1_bin" "${cc1_pp_args[@]}"
+    fi
+
+    if [[ -n "$output_file" ]]; then
+      # If multiple inputs, concatenate (simple behavior)
+      cat "$pp" >> "$output_file"
+    else
+      cat "$pp"
+    fi
+    continue
+  fi
+
+  # cc1: C -> LLVM IR (includes internal preprocessing)
+  cc1_args=()
+  if [[ "$arch" == "m64" ]]; then
+    cc1_args+=("-m64")
+  else
+    cc1_args+=("-m32")
+  fi
+  cc1_args+=("${cc1_flags[@]}")
+  cc1_args+=("${cpp_flags[@]}")
+  run "$cc1_bin" "${cc1_args[@]}" "$src" -o "$ll"
+
+  # llc: LLVM IR -> asm
+  if [[ "$arch" == "m64" ]]; then
+    run llc -march=x86-64 "${llc_flags[@]}" "$ll" -o "$sfile"
+  else
+    run llc -march=x86 -relocation-model=pic -mattr=+sse2 "${llc_flags[@]}" "$ll" -o "$sfile"
+  fi
+
+  if [[ $mode_compile_only -eq 1 ]]; then
+    out_s="$sfile"
+    if [[ -n "$output_file" ]]; then
+      out_s="$output_file"
+    else
+      out_s="${stem}.s"
+    fi
+    run cp "$sfile" "$out_s"
+    continue
+  fi
+
+  # as: asm -> object
+  if [[ $debug_info -eq 1 ]]; then
+    # clang's assembler is more tolerant of llc DWARF directives on some systems.
+    if [[ "$arch" == "m64" ]]; then
+      run clang -c "$sfile" -o "$ofile"
+    else
+      run clang -m32 -c "$sfile" -o "$ofile"
+    fi
+  else
+    if [[ "$arch" == "m64" ]]; then
+      run as -c "$sfile" -o "$ofile"
+    else
+      run as --32 -c "$sfile" -o "$ofile"
+    fi
+  fi
+
+  if [[ $mode_link -eq 0 ]]; then
+    out_o="$ofile"
+    if [[ -n "$output_file" ]]; then
+      if [[ ${#inputs[@]} -ne 1 ]]; then
+        echo "fcc: error: -o with multiple inputs requires linking" >&2
+        exit 1
+      fi
+      out_o="$output_file"
+    else
+      out_o="${stem}.o"
+    fi
+    run cp "$ofile" "$out_o"
+  else
+    compiled_objs[$idx]="$ofile"
+  fi
+
+done
+
+# If preprocessing-only or -S, we're done.
+if [[ $mode_preprocess_only -eq 1 || $mode_compile_only -eq 1 ]]; then
+  exit 0
+fi
+
+# Link
+if [[ $mode_link -eq 1 ]]; then
+  out_a="a.out"
+  if [[ -n "$output_file" ]]; then
+    out_a="$output_file"
+  fi
+
+  if [[ "$arch" == "m64" ]]; then
+    link_args=()
+    for tok in "${link_sequence[@]}"; do
+      if [[ "$tok" =~ ^__FCC_SRC_([0-9]+)__$ ]]; then
+        src_i="${BASH_REMATCH[1]}"
+        link_args+=("${compiled_objs[$src_i]}")
+      else
+        link_args+=("$tok")
+      fi
+    done
+    run clang -no-pie "${link_args[@]}" "${clang_flags[@]}" -o "$out_a"
+  else
+    link_args=()
+    for tok in "${link_sequence[@]}"; do
+      if [[ "$tok" =~ ^__FCC_SRC_([0-9]+)__$ ]]; then
+        src_i="${BASH_REMATCH[1]}"
+        link_args+=("${compiled_objs[$src_i]}")
+      else
+        link_args+=("$tok")
+      fi
+    done
+    run clang -m32 -no-pie "${link_args[@]}" "${clang_flags[@]}" -o "$out_a"
+  fi
+fi

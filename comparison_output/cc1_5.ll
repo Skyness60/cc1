@@ -24,78 +24,81 @@ entry:
 if.then1:
   store i32 1, i32* %retval
   br label %return0
+return.dead3:
+  br label %if.end2
 if.end2:
   %8 = load i8*, i8** %array.addr0
   %9 = getelementptr inbounds i8, i8* %8, i32 100
-  store i32 0, i8* %9
-  br label %while.cond3
-while.cond3:
-  %10 = load i32, i32* %i.addr1
-  %11 = icmp slt i32 %10, 100
-  %12 = zext i1 %11 to i32
-  %13 = icmp ne i32 %12, 0
-  br i1 %13, label %while.body4, label %while.end5
-while.body4:
-  %14 = load i32, i32* %i.addr1
-  %15 = add i32 %14, 1
-  store i32 %15, i32* %i.addr1
-  %16 = load i8*, i8** %array.addr0
-  %17 = getelementptr inbounds i8, i8* %16, i32 %14
-  store i8 48, i8* %17
-  br label %while.cond3
-while.end5:
+  %10 = trunc i32 0 to i8
+  store i8 %10, i8* %9
+  br label %while.cond4
+while.cond4:
+  %11 = load i32, i32* %i.addr1
+  %12 = icmp slt i32 %11, 100
+  %13 = zext i1 %12 to i32
+  %14 = icmp ne i32 %13, 0
+  br i1 %14, label %while.body5, label %while.end6
+while.body5:
+  %15 = load i32, i32* %i.addr1
+  %16 = add i32 %15, 1
+  store i32 %16, i32* %i.addr1
+  %17 = load i8*, i8** %array.addr0
+  %18 = getelementptr inbounds i8, i8* %17, i32 %15
+  store i8 48, i8* %18
+  br label %while.cond4
+while.end6:
   store i32 0, i32* %i.addr1
-  br label %while.cond6
-while.cond6:
-  %18 = sdiv i32 100, 2
+  br label %while.cond7
+while.cond7:
   %19 = load i32, i32* %i.addr1
-  %20 = icmp slt i32 %19, %18
-  %21 = zext i1 %20 to i32
-  %22 = icmp ne i32 %21, 0
-  br i1 %22, label %while.body7, label %while.end8
-while.body7:
-  %23 = load i8*, i8** %array.addr0
-  %24 = bitcast i8* %23 to i16*
-  %25 = load i32, i32* %i.addr1
-  %26 = add i32 %25, 1
-  store i32 %26, i32* %i.addr1
-  %27 = getelementptr inbounds i16, i16* %24, i32 %25
-  %28 = load i16, i16* %27
-  %29 = add i16 %28, 1
-  store i16 %29, i16* %27
-  br label %while.cond6
-while.end8:
-  %30 = load i8*, i8** %array.addr0
-  %31 = bitcast i8* %30 to i32*
-  store i32* %31, i32** %p.addr2
-  br label %while.cond9
-while.cond9:
-  %32 = load i32*, i32** %p.addr2
-  %33 = bitcast i32* %32 to i8*
-  %34 = load i8*, i8** %array.addr0
-  %35 = getelementptr inbounds i8, i8* %34, i32 100
-  %36 = icmp ult i8* %33, %35
-  %37 = zext i1 %36 to i32
-  %38 = icmp ne i32 %37, 0
-  br i1 %38, label %while.body10, label %while.end11
-while.body10:
-  %39 = load i32*, i32** %p.addr2
-  %40 = getelementptr inbounds i32, i32* %39, i32 1
-  store i32* %40, i32** %p.addr2
-  %41 = load i32, i32* %39
-  %42 = add i32 %41, 1
-  store i32 %42, i32* %39
-  br label %while.cond9
-while.end11:
-  %43 = load i8*, i8** %array.addr0
-  %44 = getelementptr inbounds i8, i8* %43, i32 5
-  store i8 42, i8* %44
-  %45 = load i8*, i8** %array.addr0
-  %46 = call i32 @puts(i8* %45)
+  %20 = sdiv i32 100, 2
+  %21 = icmp slt i32 %19, %20
+  %22 = zext i1 %21 to i32
+  %23 = icmp ne i32 %22, 0
+  br i1 %23, label %while.body8, label %while.end9
+while.body8:
+  %24 = load i8*, i8** %array.addr0
+  %25 = bitcast i8* %24 to i16*
+  %26 = load i32, i32* %i.addr1
+  %27 = add i32 %26, 1
+  store i32 %27, i32* %i.addr1
+  %28 = getelementptr inbounds i16, i16* %25, i32 %26
+  %29 = load i16, i16* %28
+  %30 = add i16 %29, 1
+  store i16 %30, i16* %28
+  br label %while.cond7
+while.end9:
+  %31 = load i8*, i8** %array.addr0
+  %32 = bitcast i8* %31 to i32*
+  store i32* %32, i32** %p.addr2
+  br label %while.cond10
+while.cond10:
+  %33 = load i32*, i32** %p.addr2
+  %34 = bitcast i32* %33 to i8*
+  %35 = load i8*, i8** %array.addr0
+  %36 = getelementptr inbounds i8, i8* %35, i32 100
+  %37 = icmp ult i8* %34, %36
+  %38 = zext i1 %37 to i32
+  %39 = icmp ne i32 %38, 0
+  br i1 %39, label %while.body11, label %while.end12
+while.body11:
+  %40 = load i32*, i32** %p.addr2
+  %41 = getelementptr inbounds i32, i32* %40, i32 1
+  store i32* %41, i32** %p.addr2
+  %42 = load i32, i32* %40
+  %43 = add i32 %42, 1
+  store i32 %43, i32* %40
+  br label %while.cond10
+while.end12:
+  %44 = load i8*, i8** %array.addr0
+  %45 = getelementptr inbounds i8, i8* %44, i32 5
+  store i8 42, i8* %45
+  %46 = load i8*, i8** %array.addr0
+  %47 = call i32 @puts(i8* %46)
   br label %return0
 return0:
-  %47 = load i32, i32* %retval
-  ret i32 %47
+  %48 = load i32, i32* %retval
+  ret i32 %48
 }
 !llvm.module.flags = !{!0, !1}
 !0 = !{i32 8, !"PIC Level", i32 2}

@@ -8,233 +8,258 @@ static_test_signed_int_operations:      # @static_test_signed_int_operations
 # %bb.0:                                # %entry
 	pushl	%ebx
 	.cfi_def_cfa_offset 8
-	subl	$8, %esp
+	pushl	%esi
+	.cfi_def_cfa_offset 12
+	pushl	%eax
 	.cfi_def_cfa_offset 16
+	.cfi_offset %esi, -12
 	.cfi_offset %ebx, -8
+	calll	.L0$pb
+	.cfi_adjust_cfa_offset 4
+.L0$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp0:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp0-.L0$pb), %ebx
+	leal	.L.str.0@GOTOFF(%ebx), %eax
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
-	pushl	$.L.str.0
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	xorl	%ebx, %ebx
+	leal	.L.str.1@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_1:                                # %do.body1
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.0
+	pushl	static_test_signed_int_operations.val.0@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$-3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.1
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_1
 # %bb.2:                                # %do.end3
-	xorl	%ebx, %ebx
+	leal	.L.str.2@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_3:                                # %do.body4
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.1
+	pushl	static_test_signed_int_operations.val.1@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$-3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.2
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_3
 # %bb.4:                                # %do.end6
-	xorl	%ebx, %ebx
+	leal	.L.str.3@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_5:                                # %do.body7
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.2
+	pushl	static_test_signed_int_operations.val.2@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$-3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.3
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_5
 # %bb.6:                                # %do.end9
-	xorl	%ebx, %ebx
+	leal	.L.str.4@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_7:                                # %do.body10
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.3
+	pushl	static_test_signed_int_operations.val.3@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.4
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_7
 # %bb.8:                                # %do.end12
-	xorl	%ebx, %ebx
+	leal	.L.str.5@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_9:                                # %do.body13
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.4
+	pushl	static_test_signed_int_operations.val.4@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$-3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.5
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_9
 # %bb.10:                               # %do.end15
-	xorl	%ebx, %ebx
+	leal	.L.str.6@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_11:                               # %do.body16
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.5
+	pushl	static_test_signed_int_operations.val.5@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.6
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_11
 # %bb.12:                               # %do.end18
-	xorl	%ebx, %ebx
+	leal	.L.str.7@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_13:                               # %do.body19
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.6
+	pushl	static_test_signed_int_operations.val.6@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.7
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_13
 # %bb.14:                               # %do.end21
-	xorl	%ebx, %ebx
+	leal	.L.str.8@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_15:                               # %do.body22
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.7
+	pushl	static_test_signed_int_operations.val.7@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.8
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_15
 # %bb.16:                               # %do.end24
-	xorl	%ebx, %ebx
+	leal	.L.str.9@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_17:                               # %do.body25
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_signed_int_operations.val.8
+	pushl	static_test_signed_int_operations.val.8@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.9
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_17
 # %bb.18:                               # %do.end27
-	xorl	%ebx, %ebx
+	leal	.L.str.10@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_19:                               # %do.body28
                                         # =>This Inner Loop Header: Depth=1
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
-	pushl	static_test_signed_int_operations.val.9
+	pushl	static_test_signed_int_operations.val.9@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.10
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_19
 # %bb.20:                               # %do.end30
-	xorl	%ebx, %ebx
+	leal	.L.str.11@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_21:                               # %do.body31
                                         # =>This Inner Loop Header: Depth=1
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
-	pushl	static_test_signed_int_operations.val.10
+	pushl	static_test_signed_int_operations.val.10@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.11
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_21
 # %bb.22:                               # %do.end33
-	xorl	%ebx, %ebx
+	leal	.L.str.12@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB0_23:                               # %do.body34
                                         # =>This Inner Loop Header: Depth=1
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
-	pushl	static_test_signed_int_operations.val.11
+	pushl	static_test_signed_int_operations.val.11@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.12
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB0_23
 # %bb.24:                               # %do.end36
-	addl	$8, %esp
+	addl	$4, %esp
+	.cfi_def_cfa_offset 12
+	popl	%esi
 	.cfi_def_cfa_offset 8
 	popl	%ebx
 	.cfi_def_cfa_offset 4
@@ -251,215 +276,239 @@ static_test_unsigned_int_operations:    # @static_test_unsigned_int_operations
 # %bb.0:                                # %entry
 	pushl	%ebx
 	.cfi_def_cfa_offset 8
-	subl	$8, %esp
+	pushl	%esi
+	.cfi_def_cfa_offset 12
+	pushl	%eax
 	.cfi_def_cfa_offset 16
+	.cfi_offset %esi, -12
 	.cfi_offset %ebx, -8
+	calll	.L1$pb
+	.cfi_adjust_cfa_offset 4
+.L1$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp1:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp1-.L1$pb), %ebx
+	leal	.L.str.13@GOTOFF(%ebx), %eax
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
-	pushl	$.L.str.13
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	xorl	%ebx, %ebx
+	leal	.L.str.14@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_1:                                # %do.body38
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.12
+	pushl	static_test_unsigned_int_operations.val.12@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.14
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_1
 # %bb.2:                                # %do.end40
-	xorl	%ebx, %ebx
+	leal	.L.str.15@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_3:                                # %do.body41
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.13
+	pushl	static_test_unsigned_int_operations.val.13@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.15
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_3
 # %bb.4:                                # %do.end43
-	xorl	%ebx, %ebx
+	leal	.L.str.16@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_5:                                # %do.body44
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.14
+	pushl	static_test_unsigned_int_operations.val.14@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$3
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.16
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_5
 # %bb.6:                                # %do.end46
-	xorl	%ebx, %ebx
+	leal	.L.str.17@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_7:                                # %do.body47
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.15
+	pushl	static_test_unsigned_int_operations.val.15@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.17
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_7
 # %bb.8:                                # %do.end49
-	xorl	%ebx, %ebx
+	leal	.L.str.18@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_9:                                # %do.body50
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.16
+	pushl	static_test_unsigned_int_operations.val.16@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.18
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_9
 # %bb.10:                               # %do.end52
-	xorl	%ebx, %ebx
+	leal	.L.str.19@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_11:                               # %do.body53
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.17
+	pushl	static_test_unsigned_int_operations.val.17@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.19
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_11
 # %bb.12:                               # %do.end55
-	xorl	%ebx, %ebx
+	leal	.L.str.20@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_13:                               # %do.body56
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.18
+	pushl	static_test_unsigned_int_operations.val.18@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.20
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_13
 # %bb.14:                               # %do.end58
-	xorl	%ebx, %ebx
+	leal	.L.str.21@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_15:                               # %do.body59
                                         # =>This Inner Loop Header: Depth=1
-	pushl	static_test_unsigned_int_operations.val.19
+	pushl	static_test_unsigned_int_operations.val.19@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$7
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.21
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_15
 # %bb.16:                               # %do.end61
-	xorl	%ebx, %ebx
+	leal	.L.str.22@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_17:                               # %do.body62
                                         # =>This Inner Loop Header: Depth=1
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
-	pushl	static_test_unsigned_int_operations.val.20
+	pushl	static_test_unsigned_int_operations.val.20@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.22
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_17
 # %bb.18:                               # %do.end64
-	xorl	%ebx, %ebx
+	leal	.L.str.23@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_19:                               # %do.body65
                                         # =>This Inner Loop Header: Depth=1
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
-	pushl	static_test_unsigned_int_operations.val.21
+	pushl	static_test_unsigned_int_operations.val.21@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.23
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_19
 # %bb.20:                               # %do.end67
-	xorl	%ebx, %ebx
+	leal	.L.str.24@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB1_21:                               # %do.body68
                                         # =>This Inner Loop Header: Depth=1
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
-	pushl	static_test_unsigned_int_operations.val.22
+	pushl	static_test_unsigned_int_operations.val.22@GOTOFF(%ebx)
 	.cfi_adjust_cfa_offset 4
 	pushl	$15
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.24
+	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB1_21
 # %bb.22:                               # %do.end70
-	addl	$8, %esp
+	addl	$4, %esp
+	.cfi_def_cfa_offset 12
+	popl	%esi
 	.cfi_def_cfa_offset 8
 	popl	%ebx
 	.cfi_def_cfa_offset 4
@@ -482,19 +531,30 @@ static_test_logical_operators:          # @static_test_logical_operators
 	.cfi_def_cfa_offset 16
 	.cfi_offset %esi, -12
 	.cfi_offset %ebx, -8
+	calll	.L2$pb
+	.cfi_adjust_cfa_offset 4
+.L2$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp2:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp2-.L2$pb), %ebx
+	leal	.L.str.25@GOTOFF(%ebx), %eax
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
-	pushl	$.L.str.25
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$4, %esp
-	.cfi_adjust_cfa_offset -4
-	pushl	$.L.str.26
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.27, %eax
+	leal	.L.str.26@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.27@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	pushl	$0
@@ -508,7 +568,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.28, %eax
+	leal	.L.str.28@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	jne	.LBB2_2
@@ -527,7 +587,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.29, %eax
+	leal	.L.str.29@GOTOFF(%ebx), %eax
 	movb	$1, %cl
 	testb	%cl, %cl
 	je	.LBB2_4
@@ -546,7 +606,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.30, %eax
+	leal	.L.str.30@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	jne	.LBB2_6
@@ -565,7 +625,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.31, %eax
+	leal	.L.str.31@GOTOFF(%ebx), %eax
 	movb	$1, %cl
 	testb	%cl, %cl
 	pushl	$0
@@ -579,7 +639,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.32, %eax
+	leal	.L.str.32@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	pushl	$0
@@ -593,7 +653,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.33, %eax
+	leal	.L.str.33@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	jne	.LBB2_8
@@ -610,16 +670,19 @@ static_test_logical_operators:          # @static_test_logical_operators
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
-	addl	$4, %esp
-	.cfi_adjust_cfa_offset -4
-	pushl	$.L.str.34
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.34@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.35, %eax
-	movb	$1, %bl
-	testb	%bl, %bl
+	leal	.L.str.35@GOTOFF(%ebx), %eax
+	movb	$1, %cl
+	testb	%cl, %cl
 	movb	$1, %cl
 	jne	.LBB2_10
 # %bb.9:                                # %land.rhs100
@@ -637,14 +700,15 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.36, %eax
+	leal	.L.str.36@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
+	movb	$1, %cl
 	jne	.LBB2_12
 # %bb.11:                               # %land.rhs104
-	xorl	%ebx, %ebx
+	xorl	%ecx, %ecx
 .LBB2_12:                               # %land.end105
-	movzbl	%bl, %ecx
+	movzbl	%cl, %ecx
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
 	pushl	%ecx
@@ -656,11 +720,12 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.37, %eax
-	movb	$1, %bl
+	leal	.L.str.37@GOTOFF(%ebx), %eax
+	movb	$1, %dl
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
-	movzbl	%bl, %ecx
+	movb	%dl, 3(%esp)                    # 1-byte Spill
+	movzbl	%dl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	$5
@@ -670,11 +735,12 @@ static_test_logical_operators:          # @static_test_logical_operators
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
+	movzbl	19(%esp), %ecx                  # 1-byte Folded Reload
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.38, %eax
-	testb	%bl, %bl
-	movzbl	%bl, %ecx
+	leal	.L.str.38@GOTOFF(%ebx), %eax
+	testb	%cl, %cl
+	movzbl	%cl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	$10
@@ -686,8 +752,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.39, %eax
-	movb	$1, %bl
+	leal	.L.str.39@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	movb	$1, %cl
@@ -707,13 +772,15 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.40, %eax
-	testb	%bl, %bl
+	leal	.L.str.40@GOTOFF(%ebx), %eax
+	movb	$1, %cl
+	testb	%cl, %cl
+	movb	$1, %cl
 	jne	.LBB2_16
 # %bb.15:                               # %land.rhs120
-	xorl	%ebx, %ebx
+	xorl	%ecx, %ecx
 .LBB2_16:                               # %land.end121
-	movzbl	%bl, %ecx
+	movzbl	%cl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	$0
@@ -725,10 +792,11 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.41, %eax
-	movb	$1, %bl
-	testb	%bl, %bl
-	movzbl	%bl, %ecx
+	leal	.L.str.41@GOTOFF(%ebx), %eax
+	movb	$1, %cl
+	testb	%cl, %cl
+	movb	%cl, 3(%esp)                    # 1-byte Spill
+	movzbl	%cl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	$1
@@ -738,16 +806,19 @@ static_test_logical_operators:          # @static_test_logical_operators
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
-	addl	$4, %esp
-	.cfi_adjust_cfa_offset -4
-	pushl	$.L.str.42
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.42@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.43, %eax
+	leal	.L.str.43@GOTOFF(%ebx), %eax
 	movl	$5, %esi
-	testb	%bl, %bl
+	cmpb	$0, 3(%esp)                     # 1-byte Folded Reload
 	movl	$5, %ecx
 	jne	.LBB2_18
 # %bb.17:                               # %cond.false129
@@ -768,7 +839,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.44, %eax
+	leal	.L.str.44@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	jne	.LBB2_20
@@ -790,7 +861,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.45, %eax
+	leal	.L.str.45@GOTOFF(%ebx), %eax
 	movl	$5, %esi
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
@@ -816,7 +887,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.46, %eax
+	leal	.L.str.46@GOTOFF(%ebx), %eax
 	movb	$1, %cl
 	testb	%cl, %cl
 	jne	.LBB2_24
@@ -840,7 +911,7 @@ static_test_logical_operators:          # @static_test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.47, %eax
+	leal	.L.str.47@GOTOFF(%ebx), %eax
 	movl	$5, %ecx
 	xorl	%edx, %edx
 	testb	%dl, %dl
@@ -882,145 +953,176 @@ static_test_float_operations:           # @static_test_float_operations
 # %bb.0:                                # %entry
 	pushl	%ebx
 	.cfi_def_cfa_offset 8
-	subl	$40, %esp
+	pushl	%esi
+	.cfi_def_cfa_offset 12
+	subl	$36, %esp
 	.cfi_def_cfa_offset 48
+	.cfi_offset %esi, -12
 	.cfi_offset %ebx, -8
-	movl	$.L.str.48, (%esp)
+	calll	.L3$pb
+	.cfi_adjust_cfa_offset 4
+.L3$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp3:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp3-.L3$pb), %ebx
+	leal	.L.str.48@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
-	xorl	%ebx, %ebx
+	leal	.L.str.49@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_1:                                # %do.body154
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.23
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.23@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$1074370969, 16(%esp)           # imm = 0x40099999
 	movl	$-1717986918, 12(%esp)          # imm = 0x9999999A
-	movl	$.L.str.49, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_1
 # %bb.2:                                # %do.end156
-	xorl	%ebx, %ebx
+	leal	.L.str.50@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_3:                                # %do.body157
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.24
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.24@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$1074370969, 16(%esp)           # imm = 0x40099999
 	movl	$-1717986918, 12(%esp)          # imm = 0x9999999A
-	movl	$.L.str.50, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_3
 # %bb.4:                                # %do.end159
-	xorl	%ebx, %ebx
+	leal	.L.str.51@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_5:                                # %do.body160
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.25
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.25@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$1074370969, 16(%esp)           # imm = 0x40099999
 	movl	$-1717986918, 12(%esp)          # imm = 0x9999999A
-	movl	$.L.str.51, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_5
 # %bb.6:                                # %do.end162
-	xorl	%ebx, %ebx
+	leal	.L.str.52@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_7:                                # %do.body163
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.26
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.26@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$1074370969, 16(%esp)           # imm = 0x40099999
 	movl	$-1717986918, 12(%esp)          # imm = 0x9999999A
-	movl	$.L.str.52, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_7
 # %bb.8:                                # %do.end165
-	xorl	%ebx, %ebx
+	leal	.L.str.53@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_9:                                # %do.body166
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.27
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.27@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$-1073532109, 16(%esp)          # imm = 0xC0033333
 	movl	$858993459, 12(%esp)            # imm = 0x33333333
-	movl	$.L.str.53, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_9
 # %bb.10:                               # %do.end168
-	xorl	%ebx, %ebx
+	leal	.L.str.54@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_11:                               # %do.body169
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.28
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.28@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$-1073532109, 16(%esp)          # imm = 0xC0033333
 	movl	$858993459, 12(%esp)            # imm = 0x33333333
-	movl	$.L.str.54, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_11
 # %bb.12:                               # %do.end171
-	xorl	%ebx, %ebx
+	leal	.L.str.55@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_13:                               # %do.body172
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.29
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.29@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$-1073532109, 16(%esp)          # imm = 0xC0033333
 	movl	$858993459, 12(%esp)            # imm = 0x33333333
-	movl	$.L.str.55, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_13
 # %bb.14:                               # %do.end174
-	xorl	%ebx, %ebx
+	leal	.L.str.56@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_15:                               # %do.body175
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.30
-	fstpl	20(%esp)
+	movss	static_test_float_operations.val.30@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 20(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
 	movl	$-1073532109, 16(%esp)          # imm = 0xC0033333
 	movl	$858993459, 12(%esp)            # imm = 0x33333333
-	movl	$.L.str.56, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_15
 # %bb.16:                               # %do.end177
-	xorl	%ebx, %ebx
+	leal	.L.str.57@GOTOFF(%ebx), %esi
 	.p2align	4
 .LBB3_17:                               # %do.body178
                                         # =>This Inner Loop Header: Depth=1
-	flds	static_test_float_operations.val.31
-	fstpl	12(%esp)
+	movss	static_test_float_operations.val.31@GOTOFF(%ebx), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 12(%esp)
+	movl	%esi, (%esp)
 	movl	$1076166656, 8(%esp)            # imm = 0x40250000
 	movl	$0, 4(%esp)
-	movl	$.L.str.57, (%esp)
 	calll	printf@PLT
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB3_17
 # %bb.18:                               # %do.end180
-	addl	$40, %esp
+	addl	$36, %esp
+	.cfi_def_cfa_offset 12
+	popl	%esi
 	.cfi_def_cfa_offset 8
 	popl	%ebx
 	.cfi_def_cfa_offset 4
@@ -1035,39 +1137,53 @@ static_test_float_operations:           # @static_test_float_operations
 test_operator_precedence:               # @test_operator_precedence
 	.cfi_startproc
 # %bb.0:                                # %entry
-	pushl	%ebx
+	pushl	%ebp
 	.cfi_def_cfa_offset 8
-	pushl	%edi
+	pushl	%ebx
 	.cfi_def_cfa_offset 12
-	pushl	%esi
+	pushl	%edi
 	.cfi_def_cfa_offset 16
-	subl	$32, %esp
-	.cfi_def_cfa_offset 48
-	.cfi_offset %esi, -16
-	.cfi_offset %edi, -12
-	.cfi_offset %ebx, -8
-	movl	$10, 12(%esp)
-	movl	$-3, 16(%esp)
-	movl	$2, 8(%esp)
-	movl	$5, 4(%esp)
-	movl	$1093140480, 28(%esp)           # imm = 0x41280000
-	movl	$1073741824, 24(%esp)           # imm = 0x40000000
-	movl	$1084647014, 20(%esp)           # imm = 0x40A66666
+	pushl	%esi
+	.cfi_def_cfa_offset 20
+	subl	$44, %esp
+	.cfi_def_cfa_offset 64
+	.cfi_offset %esi, -20
+	.cfi_offset %edi, -16
+	.cfi_offset %ebx, -12
+	.cfi_offset %ebp, -8
+	calll	.L4$pb
+	.cfi_adjust_cfa_offset 4
+.L4$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp4:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp4-.L4$pb), %ebx
+	movl	$10, 20(%esp)
+	movl	$-3, 24(%esp)
+	movl	$2, 16(%esp)
+	movl	$5, 12(%esp)
+	movl	$1093140480, 40(%esp)           # imm = 0x41280000
+	movl	$1073741824, 36(%esp)           # imm = 0x40000000
+	movl	$1084647014, 32(%esp)           # imm = 0x40A66666
+	leal	.L.str.58@GOTOFF(%ebx), %eax
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
-	pushl	$.L.str.58
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
-	movl	%ecx, %esi
-	imull	%edx, %esi
-	addl	%eax, %esi
+	leal	.L.str.59@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
+	movl	%edx, %edi
+	imull	%esi, %edi
+	addl	%ecx, %edi
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -1076,41 +1192,43 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.59
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %esi
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edi
+	leal	.L.str.60@GOTOFF(%ebx), %esi
+	movl	20(%esp), %edi
+	movl	12(%esp), %ecx
+	movl	16(%esp), %ebp
 	movl	%ecx, %eax
 	cltd
-	idivl	%edi
-	movl	%esi, %edx
+	idivl	%ebp
+	movl	%edi, %edx
 	subl	%eax, %edx
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
 	pushl	%edx
 	.cfi_adjust_cfa_offset 4
+	pushl	%ebp
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
 	pushl	%edi
 	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
 	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.60
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
-	leal	(%eax,%ecx), %esi
-	imull	%edx, %esi
+	leal	.L.str.61@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
+	leal	(%ecx,%edx), %edi
+	imull	%esi, %edi
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -1119,19 +1237,20 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.61
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
-	movl	%ecx, %esi
-	andl	%edx, %esi
-	addl	%eax, %esi
+	leal	.L.str.62@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
+	movl	%edx, %edi
+	andl	%esi, %edi
+	addl	%ecx, %edi
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -1140,19 +1259,20 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.62
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
-	movl	%ecx, %esi
-	imull	%edx, %esi
-	orl	%eax, %esi
+	leal	.L.str.63@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
+	movl	%edx, %edi
+	imull	%esi, %edi
+	orl	%ecx, %edi
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -1161,19 +1281,20 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.63
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
-	movl	%eax, %esi
-	orl	%ecx, %esi
-	imull	%edx, %esi
+	leal	.L.str.64@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
+	movl	%ecx, %edi
+	orl	%edx, %edi
+	imull	%esi, %edi
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -1182,54 +1303,55 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.64
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	%ecx, %edx
-	sarl	%edx
-	leal	(%edx,%eax,2), %edx
+	leal	.L.str.65@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	%edx, %esi
+	sarl	%esi
+	leal	(%esi,%ecx,2), %esi
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
 	pushl	%edx
 	.cfi_adjust_cfa_offset 4
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.65
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	%ecx, %edx
-	sarl	%edx
-	leal	(%edx,%eax,2), %edx
+	leal	.L.str.66@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	%edx, %esi
+	sarl	%esi
+	leal	(%esi,%ecx,2), %esi
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
 	pushl	%edx
 	.cfi_adjust_cfa_offset 4
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.66
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.67, %edi
-	movl	12(%esp), %ecx
-	movl	4(%esp), %edx
-	movl	8(%esp), %esi
+	leal	.L.str.67@GOTOFF(%ebx), %edi
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
 	cmpl	%edx, %ecx
-	movb	$1, %bl
+	movb	$1, %al
+	movl	%eax, 28(%esp)                  # 4-byte Spill
 	movb	$1, %al
 	jl	.LBB4_2
 # %bb.1:                                # %land.rhs182
-	movl	4(%esp), %eax
-	testl	%eax, 8(%esp)
+	movl	12(%esp), %eax
+	testl	%eax, 16(%esp)
 	setne	%al
 .LBB4_2:                                # %land.end183
 	movzbl	%al, %eax
@@ -1250,23 +1372,24 @@ test_operator_precedence:               # @test_operator_precedence
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.68, %eax
-	movl	12(%esp), %ecx
-	movl	4(%esp), %edx
-	movl	8(%esp), %esi
+	leal	.L.str.68@GOTOFF(%ebx), %ebp
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
+	movl	16(%esp), %esi
 	cmpl	%edx, %ecx
 	jl	.LBB4_6
 # %bb.3:                                # %land.rhs186
-	cmpl	$0, 4(%esp)
+	cmpl	$0, 12(%esp)
 	je	.LBB4_4
 # %bb.5:                                # %land.rhs189
-	cmpl	$0, 8(%esp)
-	setne	%bl
+	cmpl	$0, 16(%esp)
+	setne	%al
+	movl	%eax, 28(%esp)                  # 4-byte Spill
 	jmp	.LBB4_6
 .LBB4_4:
-	xorl	%ebx, %ebx
+	movl	$0, 28(%esp)                    # 4-byte Folded Spill
 .LBB4_6:                                # %land.end187
-	movzbl	%bl, %edi
+	movzbl	28(%esp), %edi                  # 1-byte Folded Reload
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
 	pushl	%edi
@@ -1279,21 +1402,24 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
-	pushl	%eax
+	pushl	%ebp
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
+	leal	.L.str.69@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	movl	12(%esp), %edx
 	movl	16(%esp), %esi
-	movl	%ecx, %edi
-	imull	%edx, %edi
-	subl	%esi, %edi
-	addl	%eax, %edi
+	movl	24(%esp), %edi
+	movl	%edx, %ebp
+	imull	%esi, %ebp
+	subl	%edi, %ebp
+	addl	%ecx, %ebp
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
+	pushl	%ebp
+	.cfi_adjust_cfa_offset 4
 	pushl	%edi
 	.cfi_adjust_cfa_offset 4
 	pushl	%esi
@@ -1304,133 +1430,21 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.69
-	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	12(%esp), %eax
-	movl	4(%esp), %ecx
-	movl	8(%esp), %edx
-	movl	16(%esp), %esi
-	leal	(%eax,%ecx), %edi
-	leal	(%edx,%esi), %ebx
-	imull	%ebx, %edi
-	subl	$8, %esp
-	.cfi_adjust_cfa_offset 8
-	pushl	%edi
-	.cfi_adjust_cfa_offset 4
-	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	%edx
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.70
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$20, %esp
-	.cfi_adjust_cfa_offset -20
-	pushl	$.L.str.71
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	flds	28(%esp)
-	flds	20(%esp)
-	flds	24(%esp)
-	fld	%st(1)
-	fmul	%st(1), %st
-	fadd	%st(3), %st
-	subl	$48, %esp
-	.cfi_adjust_cfa_offset 48
-	fxch	%st(1)
-	fstpl	20(%esp)
-	fxch	%st(1)
-	fstpl	12(%esp)
-	fxch	%st(1)
-	fstpl	4(%esp)
-	fstpl	28(%esp)
-	movl	$.L.str.72, (%esp)
-	calll	printf@PLT
-	addl	$48, %esp
-	.cfi_adjust_cfa_offset -48
-	flds	28(%esp)
-	flds	20(%esp)
-	flds	24(%esp)
-	fld	%st(1)
-	fdiv	%st(1), %st
-	fsubr	%st(3), %st
-	subl	$48, %esp
-	.cfi_adjust_cfa_offset 48
-	fxch	%st(1)
-	fstpl	20(%esp)
-	fxch	%st(1)
-	fstpl	12(%esp)
-	fxch	%st(1)
-	fstpl	4(%esp)
-	fstpl	28(%esp)
-	movl	$.L.str.73, (%esp)
-	calll	printf@PLT
-	addl	$48, %esp
-	.cfi_adjust_cfa_offset -48
-	flds	28(%esp)
-	flds	20(%esp)
-	flds	24(%esp)
-	fld	%st(2)
-	fadd	%st(2), %st
-	fmul	%st(1), %st
-	subl	$48, %esp
-	.cfi_adjust_cfa_offset 48
-	fxch	%st(1)
-	fstpl	20(%esp)
-	fxch	%st(1)
-	fstpl	12(%esp)
-	fxch	%st(1)
-	fstpl	4(%esp)
-	fstpl	28(%esp)
-	movl	$.L.str.74, (%esp)
-	calll	printf@PLT
-	addl	$36, %esp
-	.cfi_adjust_cfa_offset -36
-	pushl	$.L.str.75
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	16(%esp), %ecx
-	movl	4(%esp), %esi
-	movl	8(%esp), %edi
-	movl	%ecx, %eax
-	imull	%esi, %eax
-	cltd
-	idivl	%edi
-	subl	$12, %esp
-	.cfi_adjust_cfa_offset 12
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	pushl	%edi
-	.cfi_adjust_cfa_offset 4
-	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.76
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$32, %esp
-	.cfi_adjust_cfa_offset -32
-	movl	16(%esp), %eax
+	movl	20(%esp), %eax
 	movl	12(%esp), %ecx
-	movl	4(%esp), %edx
-	movl	%edx, %esi
-	negl	%esi
-	imull	%ecx, %esi
-	addl	%eax, %esi
-	subl	$12, %esp
-	.cfi_adjust_cfa_offset 12
+	movl	16(%esp), %edx
+	movl	24(%esp), %esi
+	leal	(%eax,%ecx), %edi
+	leal	(%edx,%esi), %ebp
+	imull	%ebp, %edi
+	leal	.L.str.70@GOTOFF(%ebx), %ebp
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -1439,16 +1453,147 @@ test_operator_precedence:               # @test_operator_precedence
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.77
+	pushl	%ebp
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
-	addl	$64, %esp
-	.cfi_adjust_cfa_offset -64
+	addl	$32, %esp
+	.cfi_adjust_cfa_offset -32
+	leal	.L.str.71@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.72@GOTOFF(%ebx), %eax
+	movss	40(%esp), %xmm0                 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm1
+	movss	32(%esp), %xmm2                 # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm3
+	movss	36(%esp), %xmm4                 # xmm4 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm4, %xmm5
+	mulss	%xmm4, %xmm2
+	addss	%xmm0, %xmm2
+	xorps	%xmm0, %xmm0
+	cvtss2sd	%xmm2, %xmm0
+	subl	$48, %esp
+	.cfi_adjust_cfa_offset 48
+	movsd	%xmm5, 20(%esp)
+	movsd	%xmm3, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%eax, (%esp)
+	movsd	%xmm0, 28(%esp)
+	calll	printf@PLT
+	addl	$48, %esp
+	.cfi_adjust_cfa_offset -48
+	leal	.L.str.73@GOTOFF(%ebx), %eax
+	movss	40(%esp), %xmm0                 # xmm0 = mem[0],zero,zero,zero
+	xorps	%xmm1, %xmm1
+	cvtss2sd	%xmm0, %xmm1
+	movss	32(%esp), %xmm2                 # xmm2 = mem[0],zero,zero,zero
+	xorps	%xmm3, %xmm3
+	cvtss2sd	%xmm2, %xmm3
+	movss	36(%esp), %xmm4                 # xmm4 = mem[0],zero,zero,zero
+	xorps	%xmm5, %xmm5
+	cvtss2sd	%xmm4, %xmm5
+	divss	%xmm4, %xmm2
+	subss	%xmm2, %xmm0
+	cvtss2sd	%xmm0, %xmm0
+	subl	$48, %esp
+	.cfi_adjust_cfa_offset 48
+	movsd	%xmm5, 20(%esp)
+	movsd	%xmm3, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%eax, (%esp)
+	movsd	%xmm0, 28(%esp)
+	calll	printf@PLT
+	addl	$48, %esp
+	.cfi_adjust_cfa_offset -48
+	leal	.L.str.74@GOTOFF(%ebx), %eax
+	movss	40(%esp), %xmm0                 # xmm0 = mem[0],zero,zero,zero
+	xorps	%xmm1, %xmm1
+	cvtss2sd	%xmm0, %xmm1
+	movss	32(%esp), %xmm2                 # xmm2 = mem[0],zero,zero,zero
+	xorps	%xmm3, %xmm3
+	cvtss2sd	%xmm2, %xmm3
+	movss	36(%esp), %xmm4                 # xmm4 = mem[0],zero,zero,zero
+	xorps	%xmm5, %xmm5
+	cvtss2sd	%xmm4, %xmm5
+	addss	%xmm2, %xmm0
+	mulss	%xmm4, %xmm0
+	cvtss2sd	%xmm0, %xmm0
+	subl	$48, %esp
+	.cfi_adjust_cfa_offset 48
+	movsd	%xmm5, 20(%esp)
+	movsd	%xmm3, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%eax, (%esp)
+	movsd	%xmm0, 28(%esp)
+	calll	printf@PLT
+	addl	$48, %esp
+	.cfi_adjust_cfa_offset -48
+	leal	.L.str.75@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.76@GOTOFF(%ebx), %ecx
+	movl	24(%esp), %esi
+	movl	12(%esp), %edi
+	movl	16(%esp), %ebp
+	movl	%esi, %eax
+	imull	%edi, %eax
+	cltd
+	idivl	%ebp
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	pushl	%ebp
+	.cfi_adjust_cfa_offset 4
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$32, %esp
+	.cfi_adjust_cfa_offset -32
+	leal	.L.str.77@GOTOFF(%ebx), %eax
+	movl	24(%esp), %ecx
+	movl	20(%esp), %edx
+	movl	12(%esp), %esi
+	movl	%esi, %edi
+	negl	%edi
+	imull	%edx, %edi
+	addl	%ecx, %edi
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%edi
+	.cfi_adjust_cfa_offset 4
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
+	pushl	%edx
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$76, %esp
+	.cfi_adjust_cfa_offset -76
 	popl	%esi
-	.cfi_def_cfa_offset 12
+	.cfi_def_cfa_offset 16
 	popl	%edi
-	.cfi_def_cfa_offset 8
+	.cfi_def_cfa_offset 12
 	popl	%ebx
+	.cfi_def_cfa_offset 8
+	popl	%ebp
 	.cfi_def_cfa_offset 4
 	retl
 .Lfunc_end4:
@@ -1461,21 +1606,36 @@ test_operator_precedence:               # @test_operator_precedence
 static_main:                            # @static_main
 	.cfi_startproc
 # %bb.0:                                # %entry
-	subl	$12, %esp
+	pushl	%ebx
+	.cfi_def_cfa_offset 8
+	subl	$8, %esp
 	.cfi_def_cfa_offset 16
+	.cfi_offset %ebx, -8
+	calll	.L5$pb
+	.cfi_adjust_cfa_offset 4
+.L5$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp5:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp5-.L5$pb), %ebx
 	calll	static_test_signed_int_operations
-	movl	$.L.str.78, (%esp)
+	leal	.L.str.78@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	static_test_unsigned_int_operations
-	movl	$.L.str.79, (%esp)
+	leal	.L.str.79@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	static_test_float_operations
-	movl	$.L.str.80, (%esp)
+	leal	.L.str.80@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	static_test_logical_operators
-	movl	$0, 8(%esp)
+	movl	$0, 4(%esp)
 	xorl	%eax, %eax
-	addl	$12, %esp
+	addl	$8, %esp
+	.cfi_def_cfa_offset 8
+	popl	%ebx
 	.cfi_def_cfa_offset 4
 	retl
 .Lfunc_end5:
@@ -1494,235 +1654,256 @@ test_signed_int_operations:             # @test_signed_int_operations
 	movl	%esp, %ebp
 	.cfi_def_cfa_register %ebp
 	pushl	%ebx
-	subl	$20, %esp
+	pushl	%esi
+	subl	$16, %esp
+	.cfi_offset %esi, -16
 	.cfi_offset %ebx, -12
-	movl	$15, -8(%ebp)
-	movl	$7, -12(%ebp)
-	movl	$-3, -16(%ebp)
+	calll	.L6$pb
+.L6$pb:
+	popl	%ebx
+.Ltmp6:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp6-.L6$pb), %ebx
+	movl	$15, -12(%ebp)
+	movl	$7, -16(%ebp)
+	movl	$-3, -20(%ebp)
+	leal	.L.str.81@GOTOFF(%ebx), %eax
 	subl	$12, %esp
-	pushl	$.L.str.81
-	calll	printf@PLT
-	addl	$16, %esp
-	xorl	%ebx, %ebx
-	.p2align	4
-.LBB6_1:                                # %do.body196
-                                        # =>This Inner Loop Header: Depth=1
-	movl	%esp, %eax
-	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	addl	-16(%ebp), %ecx
-	movl	%ecx, -16(%eax)
-	pushl	%ecx
-	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.82
-	calll	printf@PLT
-	addl	$16, %esp
-	testb	%bl, %bl
-	jne	.LBB6_1
-# %bb.2:                                # %do.end198
-	xorl	%ebx, %ebx
-	.p2align	4
-.LBB6_3:                                # %do.body199
-                                        # =>This Inner Loop Header: Depth=1
-	movl	%esp, %eax
-	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	subl	-16(%ebp), %ecx
-	movl	%ecx, -16(%eax)
-	pushl	%ecx
-	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.83
-	calll	printf@PLT
-	addl	$16, %esp
-	testb	%bl, %bl
-	jne	.LBB6_3
-# %bb.4:                                # %do.end201
-	xorl	%ebx, %ebx
-	.p2align	4
-.LBB6_5:                                # %do.body202
-                                        # =>This Inner Loop Header: Depth=1
-	movl	%esp, %eax
-	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	imull	-16(%ebp), %ecx
-	movl	%ecx, -16(%eax)
-	pushl	%ecx
-	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.84
-	calll	printf@PLT
-	addl	$16, %esp
-	testb	%bl, %bl
-	jne	.LBB6_5
-# %bb.6:                                # %do.end204
-	xorl	%ebx, %ebx
-	.p2align	4
-.LBB6_7:                                # %do.body205
-                                        # =>This Inner Loop Header: Depth=1
-	movl	%esp, %ecx
-	leal	-16(%ecx), %esp
-	movl	-8(%ebp), %eax
-	cltd
-	idivl	-12(%ebp)
-	movl	%eax, -16(%ecx)
 	pushl	%eax
-	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.85
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
-	jne	.LBB6_7
-# %bb.8:                                # %do.end207
-	xorl	%ebx, %ebx
+	leal	.L.str.82@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_9:                                # %do.body208
+.LBB6_1:                                # %do.body197
+                                        # =>This Inner Loop Header: Depth=1
+	movl	%esp, %eax
+	leal	-16(%eax), %esp
+	movl	-12(%ebp), %ecx
+	addl	-20(%ebp), %ecx
+	movl	%ecx, -16(%eax)
+	pushl	%ecx
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
+	calll	printf@PLT
+	addl	$16, %esp
+	xorl	%eax, %eax
+	testb	%al, %al
+	jne	.LBB6_1
+# %bb.2:                                # %do.end199
+	leal	.L.str.83@GOTOFF(%ebx), %esi
+	.p2align	4
+.LBB6_3:                                # %do.body200
+                                        # =>This Inner Loop Header: Depth=1
+	movl	%esp, %eax
+	leal	-16(%eax), %esp
+	movl	-12(%ebp), %ecx
+	subl	-20(%ebp), %ecx
+	movl	%ecx, -16(%eax)
+	pushl	%ecx
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
+	calll	printf@PLT
+	addl	$16, %esp
+	xorl	%eax, %eax
+	testb	%al, %al
+	jne	.LBB6_3
+# %bb.4:                                # %do.end202
+	leal	.L.str.84@GOTOFF(%ebx), %esi
+	.p2align	4
+.LBB6_5:                                # %do.body203
+                                        # =>This Inner Loop Header: Depth=1
+	movl	%esp, %eax
+	leal	-16(%eax), %esp
+	movl	-12(%ebp), %ecx
+	imull	-20(%ebp), %ecx
+	movl	%ecx, -16(%eax)
+	pushl	%ecx
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
+	calll	printf@PLT
+	addl	$16, %esp
+	xorl	%eax, %eax
+	testb	%al, %al
+	jne	.LBB6_5
+# %bb.6:                                # %do.end205
+	leal	.L.str.85@GOTOFF(%ebx), %esi
+	.p2align	4
+.LBB6_7:                                # %do.body206
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %ecx
 	leal	-16(%ecx), %esp
-	movl	-8(%ebp), %eax
+	movl	-12(%ebp), %eax
 	cltd
 	idivl	-16(%ebp)
 	movl	%eax, -16(%ecx)
 	pushl	%eax
 	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.86
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
-	jne	.LBB6_9
-# %bb.10:                               # %do.end210
-	xorl	%ebx, %ebx
+	xorl	%eax, %eax
+	testb	%al, %al
+	jne	.LBB6_7
+# %bb.8:                                # %do.end208
+	leal	.L.str.86@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_11:                               # %do.body211
+.LBB6_9:                                # %do.body209
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %ecx
 	leal	-16(%ecx), %esp
-	movl	-8(%ebp), %eax
+	movl	-12(%ebp), %eax
 	cltd
-	idivl	-12(%ebp)
+	idivl	-20(%ebp)
+	movl	%eax, -16(%ecx)
+	pushl	%eax
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
+	calll	printf@PLT
+	addl	$16, %esp
+	xorl	%eax, %eax
+	testb	%al, %al
+	jne	.LBB6_9
+# %bb.10:                               # %do.end211
+	leal	.L.str.87@GOTOFF(%ebx), %esi
+	.p2align	4
+.LBB6_11:                               # %do.body212
+                                        # =>This Inner Loop Header: Depth=1
+	movl	%esp, %ecx
+	leal	-16(%ecx), %esp
+	movl	-12(%ebp), %eax
+	cltd
+	idivl	-16(%ebp)
 	movl	%edx, -16(%ecx)
 	pushl	%edx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.87
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_11
-# %bb.12:                               # %do.end213
-	xorl	%ebx, %ebx
+# %bb.12:                               # %do.end214
+	leal	.L.str.88@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_13:                               # %do.body214
+.LBB6_13:                               # %do.body215
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	andl	-12(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	andl	-16(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.88
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_13
-# %bb.14:                               # %do.end216
-	xorl	%ebx, %ebx
+# %bb.14:                               # %do.end217
+	leal	.L.str.89@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_15:                               # %do.body217
+.LBB6_15:                               # %do.body218
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	orl	-12(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	orl	-16(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.89
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_15
-# %bb.16:                               # %do.end219
-	xorl	%ebx, %ebx
+# %bb.16:                               # %do.end220
+	leal	.L.str.90@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_17:                               # %do.body220
+.LBB6_17:                               # %do.body221
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	xorl	-12(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	xorl	-16(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.90
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_17
-# %bb.18:                               # %do.end222
-	xorl	%ebx, %ebx
+# %bb.18:                               # %do.end223
+	leal	.L.str.91@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_19:                               # %do.body223
+.LBB6_19:                               # %do.body224
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
+	movl	-12(%ebp), %ecx
 	notl	%ecx
 	movl	%ecx, -16(%eax)
 	subl	$4, %esp
 	pushl	%ecx
-	pushl	-8(%ebp)
-	pushl	$.L.str.91
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_19
-# %bb.20:                               # %do.end225
-	xorl	%ebx, %ebx
+# %bb.20:                               # %do.end226
+	leal	.L.str.92@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_21:                               # %do.body226
+.LBB6_21:                               # %do.body227
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
+	movl	-12(%ebp), %ecx
 	addl	%ecx, %ecx
 	movl	%ecx, -16(%eax)
 	subl	$4, %esp
 	pushl	%ecx
-	pushl	-8(%ebp)
-	pushl	$.L.str.92
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_21
-# %bb.22:                               # %do.end228
-	xorl	%ebx, %ebx
+# %bb.22:                               # %do.end229
+	leal	.L.str.93@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB6_23:                               # %do.body229
+.LBB6_23:                               # %do.body230
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
+	movl	-12(%ebp), %ecx
 	sarl	%ecx
 	movl	%ecx, -16(%eax)
 	subl	$4, %esp
 	pushl	%ecx
-	pushl	-8(%ebp)
-	pushl	$.L.str.93
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB6_23
-# %bb.24:                               # %do.end231
-	leal	-4(%ebp), %esp
+# %bb.24:                               # %do.end232
+	leal	-8(%ebp), %esp
+	popl	%esi
 	popl	%ebx
 	popl	%ebp
 	.cfi_def_cfa %esp, 4
@@ -1743,216 +1924,236 @@ test_unsigned_int_operations:           # @test_unsigned_int_operations
 	movl	%esp, %ebp
 	.cfi_def_cfa_register %ebp
 	pushl	%ebx
-	subl	$20, %esp
+	pushl	%esi
+	subl	$16, %esp
+	.cfi_offset %esi, -16
 	.cfi_offset %ebx, -12
-	movl	$15, -8(%ebp)
-	movl	$7, -12(%ebp)
-	movl	$3, -16(%ebp)
+	calll	.L7$pb
+.L7$pb:
+	popl	%ebx
+.Ltmp7:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp7-.L7$pb), %ebx
+	movl	$15, -12(%ebp)
+	movl	$7, -16(%ebp)
+	movl	$3, -20(%ebp)
+	leal	.L.str.94@GOTOFF(%ebx), %eax
 	subl	$12, %esp
-	pushl	$.L.str.94
+	pushl	%eax
 	calll	printf@PLT
 	addl	$16, %esp
-	xorl	%ebx, %ebx
+	leal	.L.str.95@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_1:                                # %do.body233
+.LBB7_1:                                # %do.body234
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	addl	-16(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	addl	-20(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
-	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.95
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_1
-# %bb.2:                                # %do.end235
-	xorl	%ebx, %ebx
+# %bb.2:                                # %do.end236
+	leal	.L.str.96@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_3:                                # %do.body236
+.LBB7_3:                                # %do.body237
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	subl	-16(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	subl	-20(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
-	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.96
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_3
-# %bb.4:                                # %do.end238
-	xorl	%ebx, %ebx
+# %bb.4:                                # %do.end239
+	leal	.L.str.97@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_5:                                # %do.body239
+.LBB7_5:                                # %do.body240
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	imull	-16(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	imull	-20(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
-	pushl	-16(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.97
+	pushl	-20(%ebp)
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_5
-# %bb.6:                                # %do.end241
-	xorl	%ebx, %ebx
+# %bb.6:                                # %do.end242
+	leal	.L.str.98@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_7:                                # %do.body242
+.LBB7_7:                                # %do.body243
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %ecx
 	leal	-16(%ecx), %esp
-	movl	-8(%ebp), %eax
+	movl	-12(%ebp), %eax
 	cltd
-	idivl	-12(%ebp)
+	idivl	-16(%ebp)
 	movl	%eax, -16(%ecx)
 	pushl	%eax
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.98
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_7
-# %bb.8:                                # %do.end244
-	xorl	%ebx, %ebx
+# %bb.8:                                # %do.end245
+	leal	.L.str.99@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_9:                                # %do.body245
+.LBB7_9:                                # %do.body246
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %ecx
 	leal	-16(%ecx), %esp
-	movl	-8(%ebp), %eax
+	movl	-12(%ebp), %eax
 	cltd
-	idivl	-12(%ebp)
+	idivl	-16(%ebp)
 	movl	%edx, -16(%ecx)
 	pushl	%edx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.99
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_9
-# %bb.10:                               # %do.end247
-	xorl	%ebx, %ebx
+# %bb.10:                               # %do.end248
+	leal	.L.str.100@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_11:                               # %do.body248
+.LBB7_11:                               # %do.body249
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	andl	-12(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	andl	-16(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.100
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_11
-# %bb.12:                               # %do.end250
-	xorl	%ebx, %ebx
+# %bb.12:                               # %do.end251
+	leal	.L.str.101@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_13:                               # %do.body251
+.LBB7_13:                               # %do.body252
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	orl	-12(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	orl	-16(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.101
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_13
-# %bb.14:                               # %do.end253
-	xorl	%ebx, %ebx
+# %bb.14:                               # %do.end254
+	leal	.L.str.102@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_15:                               # %do.body254
+.LBB7_15:                               # %do.body255
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
-	xorl	-12(%ebp), %ecx
+	movl	-12(%ebp), %ecx
+	xorl	-16(%ebp), %ecx
 	movl	%ecx, -16(%eax)
 	pushl	%ecx
+	pushl	-16(%ebp)
 	pushl	-12(%ebp)
-	pushl	-8(%ebp)
-	pushl	$.L.str.102
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_15
-# %bb.16:                               # %do.end256
-	xorl	%ebx, %ebx
+# %bb.16:                               # %do.end257
+	leal	.L.str.103@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_17:                               # %do.body257
+.LBB7_17:                               # %do.body258
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
+	movl	-12(%ebp), %ecx
 	notl	%ecx
 	movl	%ecx, -16(%eax)
 	subl	$4, %esp
 	pushl	%ecx
-	pushl	-8(%ebp)
-	pushl	$.L.str.103
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_17
-# %bb.18:                               # %do.end259
-	xorl	%ebx, %ebx
+# %bb.18:                               # %do.end260
+	leal	.L.str.104@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_19:                               # %do.body260
+.LBB7_19:                               # %do.body261
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
+	movl	-12(%ebp), %ecx
 	addl	%ecx, %ecx
 	movl	%ecx, -16(%eax)
 	subl	$4, %esp
 	pushl	%ecx
-	pushl	-8(%ebp)
-	pushl	$.L.str.104
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_19
-# %bb.20:                               # %do.end262
-	xorl	%ebx, %ebx
+# %bb.20:                               # %do.end263
+	leal	.L.str.105@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB7_21:                               # %do.body263
+.LBB7_21:                               # %do.body264
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-8(%ebp), %ecx
+	movl	-12(%ebp), %ecx
 	sarl	%ecx
 	movl	%ecx, -16(%eax)
 	subl	$4, %esp
 	pushl	%ecx
-	pushl	-8(%ebp)
-	pushl	$.L.str.105
+	pushl	-12(%ebp)
+	pushl	%esi
 	calll	printf@PLT
 	addl	$16, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB7_21
-# %bb.22:                               # %do.end265
-	leal	-4(%ebp), %esp
+# %bb.22:                               # %do.end266
+	leal	-8(%ebp), %esp
+	popl	%esi
 	popl	%ebx
 	popl	%ebp
 	.cfi_def_cfa %esp, 4
@@ -1978,210 +2179,45 @@ test_logical_operators:                 # @test_logical_operators
 	.cfi_offset %esi, -16
 	.cfi_offset %edi, -12
 	.cfi_offset %ebx, -8
+	calll	.L8$pb
+	.cfi_adjust_cfa_offset 4
+.L8$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp8:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp8-.L8$pb), %ebx
 	movl	$1, 24(%esp)
 	movl	$10, 16(%esp)
-	movl	$5, 12(%esp)
+	movl	$5, 8(%esp)
 	movl	$0, 20(%esp)
+	leal	.L.str.106@GOTOFF(%ebx), %eax
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
-	pushl	$.L.str.106
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$4, %esp
-	.cfi_adjust_cfa_offset -4
-	pushl	$.L.str.107
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.108, %eax
+	leal	.L.str.107@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.108@GOTOFF(%ebx), %esi
 	movl	24(%esp), %ecx
 	movl	20(%esp), %edx
 	testl	%ecx, %ecx
 	je	.LBB8_1
-# %bb.2:                                # %land.rhs267
-	cmpl	$0, 20(%esp)
-	setne	%bl
-	jmp	.LBB8_3
-.LBB8_1:
-	xorl	%ebx, %ebx
-.LBB8_3:                                # %land.end268
-	movzbl	%bl, %esi
-	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	%edx
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.109, %eax
-	movl	24(%esp), %ecx
-	testl	%ecx, %ecx
-	je	.LBB8_4
-# %bb.5:                                # %land.rhs271
-	movb	$1, %dl
-	jmp	.LBB8_6
-.LBB8_4:
-	xorl	%edx, %edx
-.LBB8_6:                                # %land.end272
-	movzbl	%dl, %edx
-	subl	$4, %esp
-	.cfi_adjust_cfa_offset 4
-	pushl	%edx
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.110, %eax
-	movl	20(%esp), %ecx
-	movl	12(%esp), %edx
-	testl	%ecx, %ecx
-	je	.LBB8_7
-# %bb.8:                                # %land.rhs275
-	cmpl	$0, 12(%esp)
-	setne	%bl
-	jmp	.LBB8_9
-.LBB8_7:
-	xorl	%ebx, %ebx
-.LBB8_9:                                # %land.end276
-	movzbl	%bl, %esi
-	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	%edx
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.111, %eax
-	movl	12(%esp), %ecx
-	movl	16(%esp), %edx
-	testl	%ecx, %ecx
-	je	.LBB8_10
-# %bb.11:                               # %land.rhs279
-	cmpl	$0, 16(%esp)
-	setne	%bl
-	jmp	.LBB8_12
-.LBB8_10:
-	xorl	%ebx, %ebx
-.LBB8_12:                               # %land.end280
-	movzbl	%bl, %esi
-	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	%edx
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.112, %eax
-	movb	$1, %cl
-	testb	%cl, %cl
-	pushl	$0
-	.cfi_adjust_cfa_offset 4
-	pushl	$0
-	.cfi_adjust_cfa_offset 4
-	pushl	$0
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.113, %eax
-	xorl	%ecx, %ecx
-	testb	%cl, %cl
-	pushl	$0
-	.cfi_adjust_cfa_offset 4
-	pushl	$0
-	.cfi_adjust_cfa_offset 4
-	pushl	$1
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.114, %eax
-	xorl	%ecx, %ecx
-	testb	%cl, %cl
-	jne	.LBB8_14
-# %bb.13:                               # %land.rhs291
-	movb	$1, %cl
-.LBB8_14:                               # %land.end292
-	movzbl	%cl, %ecx
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	$1
-	.cfi_adjust_cfa_offset 4
-	pushl	$1
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.115, %eax
-	movl	20(%esp), %ecx
-	movl	12(%esp), %edx
-	testl	%ecx, %ecx
-	je	.LBB8_15
-# %bb.16:                               # %land.rhs295
-	incl	12(%esp)
-	setne	%bl
-	jmp	.LBB8_17
-.LBB8_15:
-	xorl	%ebx, %ebx
-.LBB8_17:                               # %land.end296
-	movzbl	%bl, %esi
-	pushl	%esi
-	.cfi_adjust_cfa_offset 4
-	pushl	%edx
-	.cfi_adjust_cfa_offset 4
-	pushl	%ecx
-	.cfi_adjust_cfa_offset 4
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	20(%esp)
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.116
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$4, %esp
-	.cfi_adjust_cfa_offset -4
-	pushl	$.L.str.117
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$16, %esp
-	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.118, %esi
-	movl	24(%esp), %ecx
-	movl	20(%esp), %edx
-	movb	$1, %bl
-	testl	%ecx, %ecx
-	movb	$1, %al
-	jne	.LBB8_19
-# %bb.18:                               # %land.rhs299
+# %bb.2:                                # %land.rhs268
 	cmpl	$0, 20(%esp)
 	setne	%al
-.LBB8_19:                               # %land.end300
+	jmp	.LBB8_3
+.LBB8_1:
+	xorl	%eax, %eax
+.LBB8_3:                                # %land.end269
 	movzbl	%al, %eax
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
@@ -2194,14 +2230,17 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.119, %eax
-	movl	20(%esp), %ecx
+	leal	.L.str.109@GOTOFF(%ebx), %eax
+	movl	24(%esp), %ecx
 	testl	%ecx, %ecx
-	jne	.LBB8_21
-# %bb.20:                               # %land.rhs303
-	xorl	%ebx, %ebx
-.LBB8_21:                               # %land.end304
-	movzbl	%bl, %edx
+	je	.LBB8_4
+# %bb.5:                                # %land.rhs272
+	movb	$1, %dl
+	jmp	.LBB8_6
+.LBB8_4:
+	xorl	%edx, %edx
+.LBB8_6:                                # %land.end273
+	movzbl	%dl, %edx
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -2213,17 +2252,196 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.120, %eax
-	movl	12(%esp), %ecx
-	movb	$1, %bl
+	leal	.L.str.110@GOTOFF(%ebx), %esi
+	movl	20(%esp), %ecx
+	movl	8(%esp), %edx
+	testl	%ecx, %ecx
+	je	.LBB8_7
+# %bb.8:                                # %land.rhs276
+	cmpl	$0, 8(%esp)
+	setne	%al
+	jmp	.LBB8_9
+.LBB8_7:
+	xorl	%eax, %eax
+.LBB8_9:                                # %land.end277
+	movzbl	%al, %eax
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	pushl	%edx
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.111@GOTOFF(%ebx), %esi
+	movl	8(%esp), %ecx
+	movl	16(%esp), %edx
+	testl	%ecx, %ecx
+	je	.LBB8_10
+# %bb.11:                               # %land.rhs280
+	cmpl	$0, 16(%esp)
+	setne	%al
+	jmp	.LBB8_12
+.LBB8_10:
+	xorl	%eax, %eax
+.LBB8_12:                               # %land.end281
+	movzbl	%al, %eax
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	pushl	%edx
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.112@GOTOFF(%ebx), %eax
+	movb	$1, %cl
+	testb	%cl, %cl
+	pushl	$0
+	.cfi_adjust_cfa_offset 4
+	pushl	$0
+	.cfi_adjust_cfa_offset 4
+	pushl	$0
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.113@GOTOFF(%ebx), %eax
+	xorl	%ecx, %ecx
+	testb	%cl, %cl
+	pushl	$0
+	.cfi_adjust_cfa_offset 4
+	pushl	$0
+	.cfi_adjust_cfa_offset 4
+	pushl	$1
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.114@GOTOFF(%ebx), %eax
+	xorl	%ecx, %ecx
+	testb	%cl, %cl
+	jne	.LBB8_14
+# %bb.13:                               # %land.rhs292
+	movb	$1, %cl
+.LBB8_14:                               # %land.end293
+	movzbl	%cl, %ecx
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	$1
+	.cfi_adjust_cfa_offset 4
+	pushl	$1
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.115@GOTOFF(%ebx), %esi
+	movl	20(%esp), %ecx
+	movl	8(%esp), %edx
+	testl	%ecx, %ecx
+	je	.LBB8_15
+# %bb.16:                               # %land.rhs296
+	incl	8(%esp)
+	setne	%al
+	jmp	.LBB8_17
+.LBB8_15:
+	xorl	%eax, %eax
+.LBB8_17:                               # %land.end297
+	movzbl	%al, %eax
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	pushl	%edx
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.116@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	16(%esp)
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.117@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.118@GOTOFF(%ebx), %esi
+	movl	24(%esp), %ecx
+	movl	20(%esp), %edx
+	testl	%ecx, %ecx
+	movb	$1, %al
+	jne	.LBB8_19
+# %bb.18:                               # %land.rhs300
+	cmpl	$0, 20(%esp)
+	setne	%al
+.LBB8_19:                               # %land.end301
+	movzbl	%al, %eax
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	pushl	%edx
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	%esi
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.119@GOTOFF(%ebx), %eax
+	movl	20(%esp), %ecx
+	testl	%ecx, %ecx
+	movb	$1, %dl
+	jne	.LBB8_21
+# %bb.20:                               # %land.rhs304
+	xorl	%edx, %edx
+.LBB8_21:                               # %land.end305
+	movzbl	%dl, %edx
+	subl	$4, %esp
+	.cfi_adjust_cfa_offset 4
+	pushl	%edx
+	.cfi_adjust_cfa_offset 4
+	pushl	%ecx
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.120@GOTOFF(%ebx), %eax
+	movl	8(%esp), %ecx
+	movb	$1, 15(%esp)                    # 1-byte Folded Spill
 	xorl	%edx, %edx
 	testb	%dl, %dl
 	movb	$1, %dl
 	jne	.LBB8_23
-# %bb.22:                               # %land.rhs307
-	cmpl	$0, 12(%esp)
+# %bb.22:                               # %land.rhs308
+	cmpl	$0, 8(%esp)
 	setne	%dl
-.LBB8_23:                               # %land.end308
+.LBB8_23:                               # %land.end309
 	movzbl	%dl, %edx
 	pushl	%edx
 	.cfi_adjust_cfa_offset 4
@@ -2236,16 +2454,16 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.121, %eax
-	movl	12(%esp), %ecx
+	leal	.L.str.121@GOTOFF(%ebx), %eax
+	movl	8(%esp), %ecx
 	movl	16(%esp), %edx
 	testl	%ecx, %ecx
 	jne	.LBB8_25
-# %bb.24:                               # %land.rhs311
+# %bb.24:                               # %land.rhs312
 	cmpl	$0, 16(%esp)
-	setne	%bl
-.LBB8_25:                               # %land.end312
-	movzbl	%bl, %esi
+	setne	15(%esp)                        # 1-byte Folded Spill
+.LBB8_25:                               # %land.end313
+	movzbl	15(%esp), %esi                  # 1-byte Folded Reload
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -2257,15 +2475,14 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.122, %eax
-	movb	$1, %bl
+	leal	.L.str.122@GOTOFF(%ebx), %eax
 	xorl	%ecx, %ecx
 	testb	%cl, %cl
 	movb	$1, %cl
 	jne	.LBB8_27
-# %bb.26:                               # %land.rhs315
+# %bb.26:                               # %land.rhs316
 	xorl	%ecx, %ecx
-.LBB8_27:                               # %land.end316
+.LBB8_27:                               # %land.end317
 	movzbl	%cl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
@@ -2278,13 +2495,15 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.123, %eax
-	testb	%bl, %bl
+	leal	.L.str.123@GOTOFF(%ebx), %eax
+	movb	$1, %cl
+	testb	%cl, %cl
+	movb	$1, %cl
 	jne	.LBB8_29
-# %bb.28:                               # %land.rhs319
-	xorl	%ebx, %ebx
-.LBB8_29:                               # %land.end320
-	movzbl	%bl, %ecx
+# %bb.28:                               # %land.rhs320
+	xorl	%ecx, %ecx
+.LBB8_29:                               # %land.end321
+	movzbl	%cl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	$0
@@ -2296,10 +2515,11 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.124, %eax
-	movb	$1, %bl
-	testb	%bl, %bl
-	movzbl	%bl, %ecx
+	leal	.L.str.124@GOTOFF(%ebx), %eax
+	movb	$1, %cl
+	testb	%cl, %cl
+	movb	%cl, 15(%esp)                   # 1-byte Spill
+	movzbl	%cl, %ecx
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	$1
@@ -2311,16 +2531,16 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.125, %eax
+	leal	.L.str.125@GOTOFF(%ebx), %eax
 	movl	24(%esp), %ecx
 	movl	16(%esp), %edx
 	testl	%ecx, %ecx
 	jne	.LBB8_31
-# %bb.30:                               # %land.rhs327
+# %bb.30:                               # %land.rhs328
 	incl	16(%esp)
-	setne	%bl
-.LBB8_31:                               # %land.end328
-	movzbl	%bl, %esi
+	setne	15(%esp)                        # 1-byte Folded Spill
+.LBB8_31:                               # %land.end329
+	movzbl	15(%esp), %esi                  # 1-byte Folded Reload
 	pushl	%esi
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
@@ -2328,34 +2548,40 @@ test_logical_operators:                 # @test_logical_operators
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	24(%esp)
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.126
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$4, %esp
-	.cfi_adjust_cfa_offset -4
-	pushl	$.L.str.127
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$.L.str.128, %eax
+	leal	.L.str.126@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	24(%esp)
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.127@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.128@GOTOFF(%ebx), %eax
 	movl	24(%esp), %ecx
-	movl	12(%esp), %edx
+	movl	8(%esp), %edx
 	movl	16(%esp), %esi
 	testl	%ecx, %ecx
 	je	.LBB8_33
-# %bb.32:                               # %cond.true331
-	movl	12(%esp), %edi
+# %bb.32:                               # %cond.true332
+	movl	8(%esp), %edi
 	jmp	.LBB8_34
-.LBB8_33:                               # %cond.false332
+.LBB8_33:                               # %cond.false333
 	movl	16(%esp), %edi
-.LBB8_34:                               # %cond.end333
+.LBB8_34:                               # %cond.end334
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
 	pushl	%edi
@@ -2371,18 +2597,18 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.129, %eax
+	leal	.L.str.129@GOTOFF(%ebx), %eax
 	movl	20(%esp), %ecx
-	movl	12(%esp), %edx
+	movl	8(%esp), %edx
 	movl	16(%esp), %esi
 	testl	%ecx, %ecx
 	je	.LBB8_36
-# %bb.35:                               # %cond.true336
-	movl	12(%esp), %edi
+# %bb.35:                               # %cond.true337
+	movl	8(%esp), %edi
 	jmp	.LBB8_37
-.LBB8_36:                               # %cond.false337
+.LBB8_36:                               # %cond.false338
 	movl	16(%esp), %edi
-.LBB8_37:                               # %cond.end338
+.LBB8_37:                               # %cond.end339
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
 	pushl	%edi
@@ -2398,17 +2624,17 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.130, %eax
-	movl	12(%esp), %ecx
+	leal	.L.str.130@GOTOFF(%ebx), %eax
+	movl	8(%esp), %ecx
 	movl	16(%esp), %edx
 	cmpl	%edx, %ecx
 	jle	.LBB8_39
-# %bb.38:                               # %cond.true341
-	movl	12(%esp), %esi
+# %bb.38:                               # %cond.true342
+	movl	8(%esp), %esi
 	jmp	.LBB8_40
-.LBB8_39:                               # %cond.false342
+.LBB8_39:                               # %cond.false343
 	movl	16(%esp), %esi
-.LBB8_40:                               # %cond.end343
+.LBB8_40:                               # %cond.end344
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
 	pushl	%esi
@@ -2426,17 +2652,17 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.131, %eax
-	movl	12(%esp), %ecx
+	leal	.L.str.131@GOTOFF(%ebx), %eax
+	movl	8(%esp), %ecx
 	movl	16(%esp), %edx
 	cmpl	%edx, %ecx
 	jge	.LBB8_42
-# %bb.41:                               # %cond.true346
-	movl	12(%esp), %esi
+# %bb.41:                               # %cond.true347
+	movl	8(%esp), %esi
 	jmp	.LBB8_43
-.LBB8_42:                               # %cond.false347
+.LBB8_42:                               # %cond.false348
 	movl	16(%esp), %esi
-.LBB8_43:                               # %cond.end348
+.LBB8_43:                               # %cond.end349
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
 	pushl	%esi
@@ -2454,17 +2680,17 @@ test_logical_operators:                 # @test_logical_operators
 	calll	printf@PLT
 	addl	$32, %esp
 	.cfi_adjust_cfa_offset -32
-	movl	$.L.str.132, %eax
-	movl	12(%esp), %ecx
+	leal	.L.str.132@GOTOFF(%ebx), %eax
+	movl	8(%esp), %ecx
 	movl	16(%esp), %edx
 	cmpl	%edx, %ecx
 	jne	.LBB8_45
-# %bb.44:                               # %cond.true351
-	movl	12(%esp), %esi
+# %bb.44:                               # %cond.true352
+	movl	8(%esp), %esi
 	jmp	.LBB8_46
-.LBB8_45:                               # %cond.false352
+.LBB8_45:                               # %cond.false353
 	movl	16(%esp), %esi
-.LBB8_46:                               # %cond.end353
+.LBB8_46:                               # %cond.end354
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
 	pushl	%esi
@@ -2480,68 +2706,79 @@ test_logical_operators:                 # @test_logical_operators
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
-	addl	$20, %esp
-	.cfi_adjust_cfa_offset -20
-	pushl	$.L.str.133
+	addl	$32, %esp
+	.cfi_adjust_cfa_offset -32
+	leal	.L.str.133@GOTOFF(%ebx), %eax
+	subl	$12, %esp
+	.cfi_adjust_cfa_offset 12
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
 	cmpl	$0, 24(%esp)
 	je	.LBB8_48
-# %bb.47:                               # %cond.true356
-	movl	12(%esp), %eax
+# %bb.47:                               # %cond.true357
+	movl	8(%esp), %eax
 	addl	$2, %eax
-	movl	%eax, 12(%esp)
+	movl	%eax, 8(%esp)
 	jmp	.LBB8_49
-.LBB8_48:                               # %cond.false357
+.LBB8_48:                               # %cond.false358
 	movl	16(%esp), %eax
-.LBB8_49:                               # %cond.end358
+.LBB8_49:                               # %cond.end359
 	movl	%eax, 28(%esp)
+	leal	.L.str.134@GOTOFF(%ebx), %ecx
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-	pushl	16(%esp)
+	pushl	12(%esp)
 	.cfi_adjust_cfa_offset 4
 	pushl	32(%esp)
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.134
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	20(%esp)
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.135
+	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	$5, 12(%esp)
+	leal	.L.str.135@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	16(%esp)
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	movl	$5, 8(%esp)
 	cmpl	$0, 20(%esp)
 	je	.LBB8_51
-# %bb.50:                               # %cond.true361
-	movl	12(%esp), %eax
+# %bb.50:                               # %cond.true362
+	movl	8(%esp), %eax
 	jmp	.LBB8_52
-.LBB8_51:                               # %cond.false362
+.LBB8_51:                               # %cond.false363
 	movl	16(%esp), %eax
 	addl	$3, %eax
 	movl	%eax, 16(%esp)
-.LBB8_52:                               # %cond.end363
+.LBB8_52:                               # %cond.end364
 	movl	%eax, 28(%esp)
+	leal	.L.str.136@GOTOFF(%ebx), %ecx
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	pushl	20(%esp)
 	.cfi_adjust_cfa_offset 4
 	pushl	28(%esp)
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.136
+	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.137@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
 	pushl	24(%esp)
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.137
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$48, %esp
@@ -2557,7 +2794,15 @@ test_logical_operators:                 # @test_logical_operators
 	.size	test_logical_operators, .Lfunc_end8-test_logical_operators
 	.cfi_endproc
                                         # -- End function
-	.globl	test_float_operations           # -- Begin function test_float_operations
+	.section	.rodata.cst16,"aM",@progbits,16
+	.p2align	4, 0x0                          # -- Begin function test_float_operations
+.LCPI9_0:
+	.long	0x80000000                      # float -0
+	.long	0x80000000                      # float -0
+	.long	0x80000000                      # float -0
+	.long	0x80000000                      # float -0
+	.text
+	.globl	test_float_operations
 	.p2align	4
 	.type	test_float_operations,@function
 test_float_operations:                  # @test_float_operations
@@ -2570,213 +2815,246 @@ test_float_operations:                  # @test_float_operations
 	.cfi_def_cfa_register %ebp
 	pushl	%ebx
 	pushl	%esi
-	subl	$16, %esp
+	subl	$32, %esp
 	.cfi_offset %esi, -16
 	.cfi_offset %ebx, -12
+	calll	.L9$pb
+.L9$pb:
+	popl	%ebx
+.Ltmp9:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp9-.L9$pb), %ebx
 	movl	$1093140480, -12(%ebp)          # imm = 0x41280000
 	movl	$-1072064102, -20(%ebp)         # imm = 0xC019999A
 	movl	$1078774989, -16(%ebp)          # imm = 0x404CCCCD
+	leal	.L.str.138@GOTOFF(%ebx), %eax
 	subl	$12, %esp
-	pushl	$.L.str.138
+	pushl	%eax
 	calll	printf@PLT
 	addl	$16, %esp
-	xorl	%ebx, %ebx
+	leal	.L.str.139@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_1:                                # %do.body367
+.LBB9_1:                                # %do.body368
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fadds	-16(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-16(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	addss	-16(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-16(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.139, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_1
-# %bb.2:                                # %do.end369
-	xorl	%ebx, %ebx
+# %bb.2:                                # %do.end370
+	leal	.L.str.140@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_3:                                # %do.body370
+.LBB9_3:                                # %do.body371
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fsubs	-16(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-16(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	subss	-16(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-16(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.140, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_3
-# %bb.4:                                # %do.end372
-	xorl	%ebx, %ebx
+# %bb.4:                                # %do.end373
+	leal	.L.str.141@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_5:                                # %do.body373
+.LBB9_5:                                # %do.body374
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fmuls	-16(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-16(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	mulss	-16(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-16(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.141, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_5
-# %bb.6:                                # %do.end375
-	xorl	%ebx, %ebx
+# %bb.6:                                # %do.end376
+	leal	.L.str.142@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_7:                                # %do.body376
+.LBB9_7:                                # %do.body377
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fdivs	-16(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-16(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	divss	-16(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-16(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.142, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_7
-# %bb.8:                                # %do.end378
-	xorl	%ebx, %ebx
+# %bb.8:                                # %do.end379
+	leal	.L.str.143@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_9:                                # %do.body379
+.LBB9_9:                                # %do.body380
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fadds	-20(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-20(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	addss	-20(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-20(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.143, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_9
-# %bb.10:                               # %do.end381
-	xorl	%ebx, %ebx
+# %bb.10:                               # %do.end382
+	leal	.L.str.144@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_11:                               # %do.body382
+.LBB9_11:                               # %do.body383
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fsubs	-20(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-20(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	subss	-20(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-20(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.144, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_11
-# %bb.12:                               # %do.end384
-	xorl	%ebx, %ebx
+# %bb.12:                               # %do.end385
+	leal	.L.str.145@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_13:                               # %do.body385
+.LBB9_13:                               # %do.body386
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fmuls	-20(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-20(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	mulss	-20(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-20(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.145, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_13
-# %bb.14:                               # %do.end387
-	xorl	%ebx, %ebx
+# %bb.14:                               # %do.end388
+	leal	.L.str.146@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_15:                               # %do.body388
+.LBB9_15:                               # %do.body389
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	flds	-12(%ebp)
-	fdivs	-20(%ebp)
-	fstps	-16(%eax)
-	flds	-12(%ebp)
-	flds	-20(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	divss	-20(%ebp), %xmm0
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	movss	-20(%ebp), %xmm2                # xmm2 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm2, %xmm2
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	20(%esp)
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.146, (%esp)
+	movsd	%xmm0, 20(%esp)
+	movsd	%xmm2, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_15
-# %bb.16:                               # %do.end390
-	movl	$-2147483648, %esi              # imm = 0x80000000
-	xorl	%ebx, %ebx
+# %bb.16:                               # %do.end391
+	movaps	.LCPI9_0@GOTOFF(%ebx), %xmm0    # xmm0 = [-0.0E+0,-0.0E+0,-0.0E+0,-0.0E+0]
+	movaps	%xmm0, -40(%ebp)                # 16-byte Spill
+	leal	.L.str.147@GOTOFF(%ebx), %esi
 	.p2align	4
-.LBB9_17:                               # %do.body391
+.LBB9_17:                               # %do.body392
                                         # =>This Inner Loop Header: Depth=1
 	movl	%esp, %eax
 	leal	-16(%eax), %esp
-	movl	-12(%ebp), %ecx
-	xorl	%esi, %ecx
-	movl	%ecx, -16(%eax)
-	flds	-12(%ebp)
-	flds	-16(%eax)
+	movss	-12(%ebp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	xorps	-40(%ebp), %xmm0                # 16-byte Folded Reload
+	movss	%xmm0, -16(%eax)
+	movss	-12(%ebp), %xmm1                # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	cvtss2sd	%xmm0, %xmm0
 	subl	$32, %esp
-	fstpl	12(%esp)
-	fstpl	4(%esp)
-	movl	$.L.str.147, (%esp)
+	movsd	%xmm0, 12(%esp)
+	movsd	%xmm1, 4(%esp)
+	movl	%esi, (%esp)
 	calll	printf@PLT
 	addl	$32, %esp
-	testb	%bl, %bl
+	xorl	%eax, %eax
+	testb	%al, %al
 	jne	.LBB9_17
-# %bb.18:                               # %do.end393
+# %bb.18:                               # %do.end394
 	leal	-8(%ebp), %esp
 	popl	%esi
 	popl	%ebx
@@ -2793,30 +3071,48 @@ test_float_operations:                  # @test_float_operations
 main:                                   # @main
 	.cfi_startproc
 # %bb.0:                                # %entry
-	subl	$12, %esp
+	pushl	%ebx
+	.cfi_def_cfa_offset 8
+	subl	$8, %esp
 	.cfi_def_cfa_offset 16
-	movl	$0, 8(%esp)
+	.cfi_offset %ebx, -8
+	calll	.L10$pb
+	.cfi_adjust_cfa_offset 4
+.L10$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp10:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp10-.L10$pb), %ebx
+	movl	$0, 4(%esp)
 	calll	test_signed_int_operations
-	movl	$.L.str.148, (%esp)
+	leal	.L.str.148@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	test_unsigned_int_operations
-	movl	$.L.str.149, (%esp)
+	leal	.L.str.149@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	test_float_operations
-	movl	$.L.str.150, (%esp)
+	leal	.L.str.150@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	test_logical_operators
-	movl	$.L.str.151, (%esp)
+	leal	.L.str.151@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
-	movl	$.L.str.152, (%esp)
+	leal	.L.str.152@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	static_main
-	movl	$.L.str.153, (%esp)
+	leal	.L.str.153@GOTOFF(%ebx), %eax
+	movl	%eax, (%esp)
 	calll	printf@PLT
 	calll	test_operator_precedence
-	movl	$0, 8(%esp)
+	movl	$0, 4(%esp)
 	xorl	%eax, %eax
-	addl	$12, %esp
+	addl	$8, %esp
+	.cfi_def_cfa_offset 8
+	popl	%ebx
 	.cfi_def_cfa_offset 4
 	retl
 .Lfunc_end10:
@@ -2965,19 +3261,19 @@ static_test_unsigned_int_operations.val.22:
 	.type	static_test_float_operations.val.23,@object # @static_test_float_operations.val.23
 	.p2align	2, 0x0
 static_test_float_operations.val.23:
-	.long	0x415b3330                      # float 13.6999969
+	.long	0x415b3333                      # float 13.6999998
 	.size	static_test_float_operations.val.23, 4
 
 	.type	static_test_float_operations.val.24,@object # @static_test_float_operations.val.24
 	.p2align	2, 0x0
 static_test_float_operations.val.24:
-	.long	0x40e99998                      # float 7.29999924
+	.long	0x40e9999a                      # float 7.30000019
 	.size	static_test_float_operations.val.24, 4
 
 	.type	static_test_float_operations.val.25,@object # @static_test_float_operations.val.25
 	.p2align	2, 0x0
 static_test_float_operations.val.25:
-	.long	0x42066660                      # float 33.5999756
+	.long	0x42066666                      # float 33.5999985
 	.size	static_test_float_operations.val.25, 4
 
 	.type	static_test_float_operations.val.26,@object # @static_test_float_operations.val.26
@@ -2989,19 +3285,19 @@ static_test_float_operations.val.26:
 	.type	static_test_float_operations.val.27,@object # @static_test_float_operations.val.27
 	.p2align	2, 0x0
 static_test_float_operations.val.27:
-	.long	0x41019998                      # float 8.09999847
+	.long	0x4101999a                      # float 8.10000038
 	.size	static_test_float_operations.val.27, 4
 
 	.type	static_test_float_operations.val.28,@object # @static_test_float_operations.val.28
 	.p2align	2, 0x0
 static_test_float_operations.val.28:
-	.long	0x414e6660                      # float 12.8999939
+	.long	0x414e6666                      # float 12.8999996
 	.size	static_test_float_operations.val.28, 4
 
 	.type	static_test_float_operations.val.29,@object # @static_test_float_operations.val.29
 	.p2align	2, 0x0
 static_test_float_operations.val.29:
-	.long	0xc1c99998                      # float -25.1999969
+	.long	0xc1c9999a                      # float -25.2000008
 	.size	static_test_float_operations.val.29, 4
 
 	.type	static_test_float_operations.val.30,@object # @static_test_float_operations.val.30

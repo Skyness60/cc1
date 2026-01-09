@@ -97,6 +97,9 @@ class StructDecl : public Declaration {
 public:
     std::string name;  // Empty for anonymous
     PtrList<VarDecl> members;
+    // If this StructDecl originates from parsing a standalone struct/union definition
+    // (e.g. "struct S { ... };"), keep the full StructType so we don't lose bitfield widths.
+    Ptr<StructType> declaredType;
     bool isUnion = false;
     bool isForwardDecl = false;  // Just "struct S;"
     

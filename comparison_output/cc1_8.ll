@@ -3,8 +3,10 @@ source_filename = "cc1"
 target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128"
 target triple = "i386-pc-linux-gnu"
 
-%struct.s = type { i8, i16, { i32, i8 } }
-%struct.u = type { i8 }
+%struct.anon.0 = type { i32, i8, [3 x i8] }
+%struct.anon.1 = type { i32, i8, [3 x i8] }
+%struct.s = type { i8, [1 x i8], i16, %struct.anon.0 }
+%struct.u = type { %struct.anon.1 }
 @s1 = dso_local global [1337 x %struct.s] zeroinitializer
 @.str.0 = private unnamed_addr constant [19 x i8] c"size of char: %zu\0A\00"
 @.str.1 = private unnamed_addr constant [24 x i8] c"size of short int: %zu\0A\00"

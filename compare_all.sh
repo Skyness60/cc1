@@ -133,10 +133,18 @@ compare_output() {
     fi
     
     # Exécuter les deux versions
-    comparison_output/cc1_${name} $args > comparison_output/out_cc1_${name}.txt 2>&1
-    local exit_cc1=$?
-    comparison_output/clang_${name} $args > comparison_output/out_clang_${name}.txt 2>&1
-    local exit_clang=$?
+    # Programme 10 lit sur stdin (getchar) : fournir une entrée minimale pour éviter un blocage.
+    if [ "$name" = "10" ]; then
+        printf '"a"' | comparison_output/cc1_${name} $args > comparison_output/out_cc1_${name}.txt 2>&1
+        local exit_cc1=$?
+        printf '"a"' | comparison_output/clang_${name} $args > comparison_output/out_clang_${name}.txt 2>&1
+        local exit_clang=$?
+    else
+        comparison_output/cc1_${name} $args > comparison_output/out_cc1_${name}.txt 2>&1
+        local exit_cc1=$?
+        comparison_output/clang_${name} $args > comparison_output/out_clang_${name}.txt 2>&1
+        local exit_clang=$?
+    fi
     
     # Comparer les codes de sortie
     if [ $exit_cc1 -eq $exit_clang ]; then

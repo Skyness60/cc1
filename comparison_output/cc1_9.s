@@ -6,9 +6,19 @@
 main:                                   # @main
 	.cfi_startproc
 # %bb.0:                                # %entry
-	subl	$12, %esp
+	pushl	%ebx
+	.cfi_def_cfa_offset 8
+	subl	$8, %esp
 	.cfi_def_cfa_offset 16
-	movl	$0, 8(%esp)
+	.cfi_offset %ebx, -8
+	calll	.L0$pb
+	.cfi_adjust_cfa_offset 4
+.L0$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp0:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp0-.L0$pb), %ebx
+	movl	$0, 4(%esp)
 	cmpl	$2, 16(%esp)
 	movb	$1, %al
 	movb	$1, %cl
@@ -37,7 +47,7 @@ main:                                   # @main
 .LBB0_6:                                # %if.end2
 	movl	20(%esp), %eax
 	movl	4(%eax), %eax
-	movzbl	(%eax), %eax
+	movsbl	(%eax), %eax
 	movb	%al, (%esp)
 	subl	$12, %esp
 	.cfi_adjust_cfa_offset 12
@@ -49,51 +59,49 @@ main:                                   # @main
 	testl	%eax, %eax
 	jne	.LBB0_8
 .LBB0_3:                                # %if.then1
-	movl	$1, 8(%esp)
+	movl	$1, 4(%esp)
 .LBB0_15:                               # %return0
-	movl	8(%esp), %eax
-	addl	$12, %esp
+	movl	4(%esp), %eax
+	addl	$8, %esp
+	.cfi_def_cfa_offset 8
+	popl	%ebx
 	.cfi_def_cfa_offset 4
 	retl
-.LBB0_8:                                # %if.end12
+.LBB0_8:                                # %if.end13
 	.cfi_def_cfa_offset 16
 	btl	$6, (%esp)
 	jae	.LBB0_11
-# %bb.9:                                # %if.then13
-	movl	$.L.str.0, %eax
+# %bb.9:                                # %if.then15
+	leal	.L.str.0@GOTOFF(%ebx), %eax
 	movzbl	(%esp), %edx
 	movl	%edx, %ecx
 	andl	$31, %ecx
 	decl	%ecx
 	btl	$5, %edx
 	jae	.LBB0_12
-# %bb.10:                               # %cond.true16
-	movl	$.L.str.1, %edx
+# %bb.10:                               # %cond.true18
+	leal	.L.str.1@GOTOFF(%ebx), %edx
 	jmp	.LBB0_13
-.LBB0_11:                               # %if.else14
-	movzbl	(%esp), %eax
-	andb	$15, %al
+.LBB0_11:                               # %if.else16
+	leal	.L.str.3@GOTOFF(%ebx), %eax
+	movzbl	(%esp), %ecx
+	andl	$15, %ecx
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
-	movzbl	%al, %eax
-	pushl	%eax
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.3
-	.cfi_adjust_cfa_offset 4
 	jmp	.LBB0_14
-.LBB0_12:                               # %cond.false17
+.LBB0_12:                               # %cond.false19
 	.cfi_def_cfa_offset 16
-	movl	$.L.str.2, %edx
-.LBB0_13:                               # %cond.end18
+	leal	.L.str.2@GOTOFF(%ebx), %edx
+.LBB0_13:                               # %cond.end20
 	subl	$4, %esp
 	.cfi_adjust_cfa_offset 4
 	pushl	%edx
 	.cfi_adjust_cfa_offset 4
+.LBB0_14:                               # %return0
 	pushl	%ecx
 	.cfi_adjust_cfa_offset 4
 	pushl	%eax
 	.cfi_adjust_cfa_offset 4
-.LBB0_14:                               # %return0
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16

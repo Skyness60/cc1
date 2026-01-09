@@ -26,15 +26,15 @@ target triple = "i386-pc-linux-gnu"
 @static_test_unsigned_int_operations.val.20 = internal global i32 -16
 @static_test_unsigned_int_operations.val.21 = internal global i32 30
 @static_test_unsigned_int_operations.val.22 = internal global i32 7
-@static_test_float_operations.val.23 = internal global float 0x402B666600000000
-@static_test_float_operations.val.24 = internal global float 0x401D333300000000
-@static_test_float_operations.val.25 = internal global float 0x4040CCCC00000000
-@static_test_float_operations.val.26 = internal global float 0x400A400000000000
-@static_test_float_operations.val.27 = internal global float 0x4020333300000000
-@static_test_float_operations.val.28 = internal global float 0x4029CCCC00000000
-@static_test_float_operations.val.29 = internal global float 0xC039333300000000
-@static_test_float_operations.val.30 = internal global float 0xC011800000000000
-@static_test_float_operations.val.31 = internal global float 0xC025000000000000
+@static_test_float_operations.val.23 = internal global float 0x402b666660000000
+@static_test_float_operations.val.24 = internal global float 0x401d333340000000
+@static_test_float_operations.val.25 = internal global float 0x4040ccccc0000000
+@static_test_float_operations.val.26 = internal global float 0x400a400000000000
+@static_test_float_operations.val.27 = internal global float 0x4020333340000000
+@static_test_float_operations.val.28 = internal global float 0x4029ccccc0000000
+@static_test_float_operations.val.29 = internal global float 0xc039333340000000
+@static_test_float_operations.val.30 = internal global float 0xc011800000000000
+@static_test_float_operations.val.31 = internal global float 0xc025000000000000
 @.str.0 = private unnamed_addr constant [46 x i8] c"Signed Integer Arithmetic and Bitwise Tests:\0A\00"
 @.str.1 = private unnamed_addr constant [31 x i8] c"Addition:        %d + %d = %d\0A\00"
 @.str.2 = private unnamed_addr constant [31 x i8] c"Subtraction:     %d - %d = %d\0A\00"
@@ -868,21 +868,21 @@ entry:
   %14 = load i32, i32* %a.addr0
   %15 = load i32, i32* %b.addr4
   %16 = load i32, i32* %c.addr3
-  %17 = load i32, i32* %b.addr4
-  %18 = load i32, i32* %c.addr3
-  %19 = mul i32 %17, %18
-  %20 = load i32, i32* %a.addr0
-  %21 = add i32 %20, %19
+  %17 = load i32, i32* %a.addr0
+  %18 = load i32, i32* %b.addr4
+  %19 = load i32, i32* %c.addr3
+  %20 = mul i32 %18, %19
+  %21 = add i32 %17, %20
   %22 = call i32 @printf(i8* %13, i32 %14, i32 %15, i32 %16, i32 %21)
   %23 = getelementptr inbounds [43 x i8], [43 x i8]* @.str.60, i32 0, i32 0
   %24 = load i32, i32* %a.addr0
   %25 = load i32, i32* %b.addr4
   %26 = load i32, i32* %c.addr3
-  %27 = load i32, i32* %b.addr4
-  %28 = load i32, i32* %c.addr3
-  %29 = sdiv i32 %27, %28
-  %30 = load i32, i32* %a.addr0
-  %31 = sub i32 %30, %29
+  %27 = load i32, i32* %a.addr0
+  %28 = load i32, i32* %b.addr4
+  %29 = load i32, i32* %c.addr3
+  %30 = sdiv i32 %28, %29
+  %31 = sub i32 %27, %30
   %32 = call i32 @printf(i8* %23, i32 %24, i32 %25, i32 %26, i32 %31)
   %33 = getelementptr inbounds [45 x i8], [45 x i8]* @.str.61, i32 0, i32 0
   %34 = load i32, i32* %a.addr0
@@ -898,21 +898,21 @@ entry:
   %44 = load i32, i32* %a.addr0
   %45 = load i32, i32* %b.addr4
   %46 = load i32, i32* %c.addr3
-  %47 = load i32, i32* %b.addr4
-  %48 = load i32, i32* %c.addr3
-  %49 = and i32 %47, %48
-  %50 = load i32, i32* %a.addr0
-  %51 = add i32 %50, %49
+  %47 = load i32, i32* %a.addr0
+  %48 = load i32, i32* %b.addr4
+  %49 = load i32, i32* %c.addr3
+  %50 = and i32 %48, %49
+  %51 = add i32 %47, %50
   %52 = call i32 @printf(i8* %43, i32 %44, i32 %45, i32 %46, i32 %51)
   %53 = getelementptr inbounds [43 x i8], [43 x i8]* @.str.63, i32 0, i32 0
   %54 = load i32, i32* %a.addr0
   %55 = load i32, i32* %b.addr4
   %56 = load i32, i32* %c.addr3
-  %57 = load i32, i32* %b.addr4
-  %58 = load i32, i32* %c.addr3
-  %59 = mul i32 %57, %58
-  %60 = load i32, i32* %a.addr0
-  %61 = or i32 %60, %59
+  %57 = load i32, i32* %a.addr0
+  %58 = load i32, i32* %b.addr4
+  %59 = load i32, i32* %c.addr3
+  %60 = mul i32 %58, %59
+  %61 = or i32 %57, %60
   %62 = call i32 @printf(i8* %53, i32 %54, i32 %55, i32 %56, i32 %61)
   %63 = getelementptr inbounds [45 x i8], [45 x i8]* @.str.64, i32 0, i32 0
   %64 = load i32, i32* %a.addr0
@@ -1008,13 +1008,13 @@ land.end187:
   %130 = load i32, i32* %b.addr4
   %131 = load i32, i32* %c.addr3
   %132 = load i32, i32* %d.addr1
-  %133 = load i32, i32* %b.addr4
-  %134 = load i32, i32* %c.addr3
-  %135 = mul i32 %133, %134
-  %136 = load i32, i32* %d.addr1
-  %137 = sub i32 %135, %136
-  %138 = load i32, i32* %a.addr0
-  %139 = add i32 %138, %137
+  %133 = load i32, i32* %a.addr0
+  %134 = load i32, i32* %b.addr4
+  %135 = load i32, i32* %c.addr3
+  %136 = mul i32 %134, %135
+  %137 = load i32, i32* %d.addr1
+  %138 = sub i32 %136, %137
+  %139 = add i32 %133, %138
   %140 = call i32 @printf(i8* %128, i32 %129, i32 %130, i32 %131, i32 %132, i32 %139)
   %141 = getelementptr inbounds [52 x i8], [52 x i8]* @.str.70, i32 0, i32 0
   %142 = load i32, i32* %a.addr0
@@ -1038,11 +1038,11 @@ land.end187:
   %160 = fpext float %159 to double
   %161 = load float, float* %z.addr7
   %162 = fpext float %161 to double
-  %163 = load float, float* %y.addr9
-  %164 = load float, float* %z.addr7
-  %165 = fmul float %163, %164
-  %166 = load float, float* %x.addr5
-  %167 = fadd float %166, %165
+  %163 = load float, float* %x.addr5
+  %164 = load float, float* %y.addr9
+  %165 = load float, float* %z.addr7
+  %166 = fmul float %164, %165
+  %167 = fadd float %163, %166
   %168 = fpext float %167 to double
   %169 = call i32 @printf(i8* %156, double %158, double %160, double %162, double %168)
   %170 = getelementptr inbounds [51 x i8], [51 x i8]* @.str.73, i32 0, i32 0
@@ -1052,11 +1052,11 @@ land.end187:
   %174 = fpext float %173 to double
   %175 = load float, float* %z.addr7
   %176 = fpext float %175 to double
-  %177 = load float, float* %y.addr9
-  %178 = load float, float* %z.addr7
-  %179 = fdiv float %177, %178
-  %180 = load float, float* %x.addr5
-  %181 = fsub float %180, %179
+  %177 = load float, float* %x.addr5
+  %178 = load float, float* %y.addr9
+  %179 = load float, float* %z.addr7
+  %180 = fdiv float %178, %179
+  %181 = fsub float %177, %180
   %182 = fpext float %181 to double
   %183 = call i32 @printf(i8* %170, double %172, double %174, double %176, double %182)
   %184 = getelementptr inbounds [53 x i8], [53 x i8]* @.str.74, i32 0, i32 0
@@ -1089,12 +1089,12 @@ land.end187:
   %211 = load i32, i32* %d.addr1
   %212 = load i32, i32* %a.addr0
   %213 = load i32, i32* %b.addr4
-  %214 = load i32, i32* %b.addr4
-  %215 = sub i32 0, %214
-  %216 = load i32, i32* %a.addr0
-  %217 = mul i32 %216, %215
-  %218 = load i32, i32* %d.addr1
-  %219 = add i32 %218, %217
+  %214 = load i32, i32* %d.addr1
+  %215 = load i32, i32* %a.addr0
+  %216 = load i32, i32* %b.addr4
+  %217 = sub i32 0, %216
+  %218 = mul i32 %215, %217
+  %219 = add i32 %214, %218
   %220 = call i32 @printf(i8* %210, i32 %211, i32 %212, i32 %213, i32 %219)
   br label %return181
 return181:
@@ -1116,6 +1116,8 @@ entry:
   call void @static_test_logical_operators()
   store i32 0, i32* %retval
   br label %return194
+return.dead195:
+  br label %return194
 return194:
   %6 = load i32, i32* %retval
   ret i32 %6
@@ -1132,8 +1134,8 @@ entry:
   store i32 %3, i32* %b.addr2
   %4 = getelementptr inbounds [46 x i8], [46 x i8]* @.str.81, i32 0, i32 0
   %5 = call i32 @printf(i8* %4)
-  br label %do.body196
-do.body196:
+  br label %do.body197
+do.body197:
   %val.addr6 = alloca i32
   %7 = load i32, i32* %a.addr0
   %8 = load i32, i32* %b.addr2
@@ -1144,13 +1146,13 @@ do.body196:
   %12 = load i32, i32* %b.addr2
   %13 = load i32, i32* %val.addr6
   %14 = call i32 @printf(i8* %10, i32 %11, i32 %12, i32 %13)
-  br label %do.cond197
-do.cond197:
+  br label %do.cond198
+do.cond198:
   %15 = icmp ne i32 0, 0
-  br i1 %15, label %do.body196, label %do.end198
-do.end198:
-  br label %do.body199
-do.body199:
+  br i1 %15, label %do.body197, label %do.end199
+do.end199:
+  br label %do.body200
+do.body200:
   %val.addr16 = alloca i32
   %17 = load i32, i32* %a.addr0
   %18 = load i32, i32* %b.addr2
@@ -1161,13 +1163,13 @@ do.body199:
   %22 = load i32, i32* %b.addr2
   %23 = load i32, i32* %val.addr16
   %24 = call i32 @printf(i8* %20, i32 %21, i32 %22, i32 %23)
-  br label %do.cond200
-do.cond200:
+  br label %do.cond201
+do.cond201:
   %25 = icmp ne i32 0, 0
-  br i1 %25, label %do.body199, label %do.end201
-do.end201:
-  br label %do.body202
-do.body202:
+  br i1 %25, label %do.body200, label %do.end202
+do.end202:
+  br label %do.body203
+do.body203:
   %val.addr26 = alloca i32
   %27 = load i32, i32* %a.addr0
   %28 = load i32, i32* %b.addr2
@@ -1178,13 +1180,13 @@ do.body202:
   %32 = load i32, i32* %b.addr2
   %33 = load i32, i32* %val.addr26
   %34 = call i32 @printf(i8* %30, i32 %31, i32 %32, i32 %33)
-  br label %do.cond203
-do.cond203:
+  br label %do.cond204
+do.cond204:
   %35 = icmp ne i32 0, 0
-  br i1 %35, label %do.body202, label %do.end204
-do.end204:
-  br label %do.body205
-do.body205:
+  br i1 %35, label %do.body203, label %do.end205
+do.end205:
+  br label %do.body206
+do.body206:
   %val.addr36 = alloca i32
   %37 = load i32, i32* %a.addr0
   %38 = load i32, i32* %c.addr1
@@ -1195,13 +1197,13 @@ do.body205:
   %42 = load i32, i32* %c.addr1
   %43 = load i32, i32* %val.addr36
   %44 = call i32 @printf(i8* %40, i32 %41, i32 %42, i32 %43)
-  br label %do.cond206
-do.cond206:
+  br label %do.cond207
+do.cond207:
   %45 = icmp ne i32 0, 0
-  br i1 %45, label %do.body205, label %do.end207
-do.end207:
-  br label %do.body208
-do.body208:
+  br i1 %45, label %do.body206, label %do.end208
+do.end208:
+  br label %do.body209
+do.body209:
   %val.addr46 = alloca i32
   %47 = load i32, i32* %a.addr0
   %48 = load i32, i32* %b.addr2
@@ -1212,13 +1214,13 @@ do.body208:
   %52 = load i32, i32* %b.addr2
   %53 = load i32, i32* %val.addr46
   %54 = call i32 @printf(i8* %50, i32 %51, i32 %52, i32 %53)
-  br label %do.cond209
-do.cond209:
+  br label %do.cond210
+do.cond210:
   %55 = icmp ne i32 0, 0
-  br i1 %55, label %do.body208, label %do.end210
-do.end210:
-  br label %do.body211
-do.body211:
+  br i1 %55, label %do.body209, label %do.end211
+do.end211:
+  br label %do.body212
+do.body212:
   %val.addr56 = alloca i32
   %57 = load i32, i32* %a.addr0
   %58 = load i32, i32* %c.addr1
@@ -1229,13 +1231,13 @@ do.body211:
   %62 = load i32, i32* %c.addr1
   %63 = load i32, i32* %val.addr56
   %64 = call i32 @printf(i8* %60, i32 %61, i32 %62, i32 %63)
-  br label %do.cond212
-do.cond212:
+  br label %do.cond213
+do.cond213:
   %65 = icmp ne i32 0, 0
-  br i1 %65, label %do.body211, label %do.end213
-do.end213:
-  br label %do.body214
-do.body214:
+  br i1 %65, label %do.body212, label %do.end214
+do.end214:
+  br label %do.body215
+do.body215:
   %val.addr66 = alloca i32
   %67 = load i32, i32* %a.addr0
   %68 = load i32, i32* %c.addr1
@@ -1246,13 +1248,13 @@ do.body214:
   %72 = load i32, i32* %c.addr1
   %73 = load i32, i32* %val.addr66
   %74 = call i32 @printf(i8* %70, i32 %71, i32 %72, i32 %73)
-  br label %do.cond215
-do.cond215:
+  br label %do.cond216
+do.cond216:
   %75 = icmp ne i32 0, 0
-  br i1 %75, label %do.body214, label %do.end216
-do.end216:
-  br label %do.body217
-do.body217:
+  br i1 %75, label %do.body215, label %do.end217
+do.end217:
+  br label %do.body218
+do.body218:
   %val.addr76 = alloca i32
   %77 = load i32, i32* %a.addr0
   %78 = load i32, i32* %c.addr1
@@ -1263,13 +1265,13 @@ do.body217:
   %82 = load i32, i32* %c.addr1
   %83 = load i32, i32* %val.addr76
   %84 = call i32 @printf(i8* %80, i32 %81, i32 %82, i32 %83)
-  br label %do.cond218
-do.cond218:
+  br label %do.cond219
+do.cond219:
   %85 = icmp ne i32 0, 0
-  br i1 %85, label %do.body217, label %do.end219
-do.end219:
-  br label %do.body220
-do.body220:
+  br i1 %85, label %do.body218, label %do.end220
+do.end220:
+  br label %do.body221
+do.body221:
   %val.addr86 = alloca i32
   %87 = load i32, i32* %a.addr0
   %88 = load i32, i32* %c.addr1
@@ -1280,13 +1282,13 @@ do.body220:
   %92 = load i32, i32* %c.addr1
   %93 = load i32, i32* %val.addr86
   %94 = call i32 @printf(i8* %90, i32 %91, i32 %92, i32 %93)
-  br label %do.cond221
-do.cond221:
+  br label %do.cond222
+do.cond222:
   %95 = icmp ne i32 0, 0
-  br i1 %95, label %do.body220, label %do.end222
-do.end222:
-  br label %do.body223
-do.body223:
+  br i1 %95, label %do.body221, label %do.end223
+do.end223:
+  br label %do.body224
+do.body224:
   %val.addr96 = alloca i32
   %97 = load i32, i32* %a.addr0
   %98 = xor i32 %97, -1
@@ -1295,13 +1297,13 @@ do.body223:
   %100 = load i32, i32* %a.addr0
   %101 = load i32, i32* %val.addr96
   %102 = call i32 @printf(i8* %99, i32 %100, i32 %101)
-  br label %do.cond224
-do.cond224:
+  br label %do.cond225
+do.cond225:
   %103 = icmp ne i32 0, 0
-  br i1 %103, label %do.body223, label %do.end225
-do.end225:
-  br label %do.body226
-do.body226:
+  br i1 %103, label %do.body224, label %do.end226
+do.end226:
+  br label %do.body227
+do.body227:
   %val.addr104 = alloca i32
   %105 = load i32, i32* %a.addr0
   %106 = shl i32 %105, 1
@@ -1310,13 +1312,13 @@ do.body226:
   %108 = load i32, i32* %a.addr0
   %109 = load i32, i32* %val.addr104
   %110 = call i32 @printf(i8* %107, i32 %108, i32 %109)
-  br label %do.cond227
-do.cond227:
+  br label %do.cond228
+do.cond228:
   %111 = icmp ne i32 0, 0
-  br i1 %111, label %do.body226, label %do.end228
-do.end228:
-  br label %do.body229
-do.body229:
+  br i1 %111, label %do.body227, label %do.end229
+do.end229:
+  br label %do.body230
+do.body230:
   %val.addr112 = alloca i32
   %113 = load i32, i32* %a.addr0
   %114 = ashr i32 %113, 1
@@ -1325,13 +1327,13 @@ do.body229:
   %116 = load i32, i32* %a.addr0
   %117 = load i32, i32* %val.addr112
   %118 = call i32 @printf(i8* %115, i32 %116, i32 %117)
-  br label %do.cond230
-do.cond230:
+  br label %do.cond231
+do.cond231:
   %119 = icmp ne i32 0, 0
-  br i1 %119, label %do.body229, label %do.end231
-do.end231:
-  br label %return195
-return195:
+  br i1 %119, label %do.body230, label %do.end232
+do.end232:
+  br label %return196
+return196:
   ret void
 }
 
@@ -1345,8 +1347,8 @@ entry:
   store i32 3, i32* %b.addr2
   %3 = getelementptr inbounds [48 x i8], [48 x i8]* @.str.94, i32 0, i32 0
   %4 = call i32 @printf(i8* %3)
-  br label %do.body233
-do.body233:
+  br label %do.body234
+do.body234:
   %val.addr5 = alloca i32
   %6 = load i32, i32* %a.addr0
   %7 = load i32, i32* %b.addr2
@@ -1357,13 +1359,13 @@ do.body233:
   %11 = load i32, i32* %b.addr2
   %12 = load i32, i32* %val.addr5
   %13 = call i32 @printf(i8* %9, i32 %10, i32 %11, i32 %12)
-  br label %do.cond234
-do.cond234:
+  br label %do.cond235
+do.cond235:
   %14 = icmp ne i32 0, 0
-  br i1 %14, label %do.body233, label %do.end235
-do.end235:
-  br label %do.body236
-do.body236:
+  br i1 %14, label %do.body234, label %do.end236
+do.end236:
+  br label %do.body237
+do.body237:
   %val.addr15 = alloca i32
   %16 = load i32, i32* %a.addr0
   %17 = load i32, i32* %b.addr2
@@ -1374,13 +1376,13 @@ do.body236:
   %21 = load i32, i32* %b.addr2
   %22 = load i32, i32* %val.addr15
   %23 = call i32 @printf(i8* %19, i32 %20, i32 %21, i32 %22)
-  br label %do.cond237
-do.cond237:
+  br label %do.cond238
+do.cond238:
   %24 = icmp ne i32 0, 0
-  br i1 %24, label %do.body236, label %do.end238
-do.end238:
-  br label %do.body239
-do.body239:
+  br i1 %24, label %do.body237, label %do.end239
+do.end239:
+  br label %do.body240
+do.body240:
   %val.addr25 = alloca i32
   %26 = load i32, i32* %a.addr0
   %27 = load i32, i32* %b.addr2
@@ -1391,13 +1393,13 @@ do.body239:
   %31 = load i32, i32* %b.addr2
   %32 = load i32, i32* %val.addr25
   %33 = call i32 @printf(i8* %29, i32 %30, i32 %31, i32 %32)
-  br label %do.cond240
-do.cond240:
+  br label %do.cond241
+do.cond241:
   %34 = icmp ne i32 0, 0
-  br i1 %34, label %do.body239, label %do.end241
-do.end241:
-  br label %do.body242
-do.body242:
+  br i1 %34, label %do.body240, label %do.end242
+do.end242:
+  br label %do.body243
+do.body243:
   %val.addr35 = alloca i32
   %36 = load i32, i32* %a.addr0
   %37 = load i32, i32* %c.addr1
@@ -1408,13 +1410,13 @@ do.body242:
   %41 = load i32, i32* %c.addr1
   %42 = load i32, i32* %val.addr35
   %43 = call i32 @printf(i8* %39, i32 %40, i32 %41, i32 %42)
-  br label %do.cond243
-do.cond243:
+  br label %do.cond244
+do.cond244:
   %44 = icmp ne i32 0, 0
-  br i1 %44, label %do.body242, label %do.end244
-do.end244:
-  br label %do.body245
-do.body245:
+  br i1 %44, label %do.body243, label %do.end245
+do.end245:
+  br label %do.body246
+do.body246:
   %val.addr45 = alloca i32
   %46 = load i32, i32* %a.addr0
   %47 = load i32, i32* %c.addr1
@@ -1425,13 +1427,13 @@ do.body245:
   %51 = load i32, i32* %c.addr1
   %52 = load i32, i32* %val.addr45
   %53 = call i32 @printf(i8* %49, i32 %50, i32 %51, i32 %52)
-  br label %do.cond246
-do.cond246:
+  br label %do.cond247
+do.cond247:
   %54 = icmp ne i32 0, 0
-  br i1 %54, label %do.body245, label %do.end247
-do.end247:
-  br label %do.body248
-do.body248:
+  br i1 %54, label %do.body246, label %do.end248
+do.end248:
+  br label %do.body249
+do.body249:
   %val.addr55 = alloca i32
   %56 = load i32, i32* %a.addr0
   %57 = load i32, i32* %c.addr1
@@ -1442,13 +1444,13 @@ do.body248:
   %61 = load i32, i32* %c.addr1
   %62 = load i32, i32* %val.addr55
   %63 = call i32 @printf(i8* %59, i32 %60, i32 %61, i32 %62)
-  br label %do.cond249
-do.cond249:
+  br label %do.cond250
+do.cond250:
   %64 = icmp ne i32 0, 0
-  br i1 %64, label %do.body248, label %do.end250
-do.end250:
-  br label %do.body251
-do.body251:
+  br i1 %64, label %do.body249, label %do.end251
+do.end251:
+  br label %do.body252
+do.body252:
   %val.addr65 = alloca i32
   %66 = load i32, i32* %a.addr0
   %67 = load i32, i32* %c.addr1
@@ -1459,13 +1461,13 @@ do.body251:
   %71 = load i32, i32* %c.addr1
   %72 = load i32, i32* %val.addr65
   %73 = call i32 @printf(i8* %69, i32 %70, i32 %71, i32 %72)
-  br label %do.cond252
-do.cond252:
+  br label %do.cond253
+do.cond253:
   %74 = icmp ne i32 0, 0
-  br i1 %74, label %do.body251, label %do.end253
-do.end253:
-  br label %do.body254
-do.body254:
+  br i1 %74, label %do.body252, label %do.end254
+do.end254:
+  br label %do.body255
+do.body255:
   %val.addr75 = alloca i32
   %76 = load i32, i32* %a.addr0
   %77 = load i32, i32* %c.addr1
@@ -1476,13 +1478,13 @@ do.body254:
   %81 = load i32, i32* %c.addr1
   %82 = load i32, i32* %val.addr75
   %83 = call i32 @printf(i8* %79, i32 %80, i32 %81, i32 %82)
-  br label %do.cond255
-do.cond255:
+  br label %do.cond256
+do.cond256:
   %84 = icmp ne i32 0, 0
-  br i1 %84, label %do.body254, label %do.end256
-do.end256:
-  br label %do.body257
-do.body257:
+  br i1 %84, label %do.body255, label %do.end257
+do.end257:
+  br label %do.body258
+do.body258:
   %val.addr85 = alloca i32
   %86 = load i32, i32* %a.addr0
   %87 = xor i32 %86, -1
@@ -1491,13 +1493,13 @@ do.body257:
   %89 = load i32, i32* %a.addr0
   %90 = load i32, i32* %val.addr85
   %91 = call i32 @printf(i8* %88, i32 %89, i32 %90)
-  br label %do.cond258
-do.cond258:
+  br label %do.cond259
+do.cond259:
   %92 = icmp ne i32 0, 0
-  br i1 %92, label %do.body257, label %do.end259
-do.end259:
-  br label %do.body260
-do.body260:
+  br i1 %92, label %do.body258, label %do.end260
+do.end260:
+  br label %do.body261
+do.body261:
   %val.addr93 = alloca i32
   %94 = load i32, i32* %a.addr0
   %95 = shl i32 %94, 1
@@ -1506,13 +1508,13 @@ do.body260:
   %97 = load i32, i32* %a.addr0
   %98 = load i32, i32* %val.addr93
   %99 = call i32 @printf(i8* %96, i32 %97, i32 %98)
-  br label %do.cond261
-do.cond261:
+  br label %do.cond262
+do.cond262:
   %100 = icmp ne i32 0, 0
-  br i1 %100, label %do.body260, label %do.end262
-do.end262:
-  br label %do.body263
-do.body263:
+  br i1 %100, label %do.body261, label %do.end263
+do.end263:
+  br label %do.body264
+do.body264:
   %val.addr101 = alloca i32
   %102 = load i32, i32* %a.addr0
   %103 = ashr i32 %102, 1
@@ -1521,13 +1523,13 @@ do.body263:
   %105 = load i32, i32* %a.addr0
   %106 = load i32, i32* %val.addr101
   %107 = call i32 @printf(i8* %104, i32 %105, i32 %106)
-  br label %do.cond264
-do.cond264:
+  br label %do.cond265
+do.cond265:
   %108 = icmp ne i32 0, 0
-  br i1 %108, label %do.body263, label %do.end265
-do.end265:
-  br label %return232
-return232:
+  br i1 %108, label %do.body264, label %do.end266
+do.end266:
+  br label %return233
+return233:
   ret void
 }
 
@@ -1551,33 +1553,33 @@ entry:
   %11 = load i32, i32* %b.addr3
   %12 = load i32, i32* %a.addr0
   %13 = icmp ne i32 %12, 0
-  br label %land.lhs.eval269
-land.lhs.eval269:
-  br i1 %13, label %land.rhs267, label %land.end268
-land.rhs267:
+  br label %land.lhs.eval270
+land.lhs.eval270:
+  br i1 %13, label %land.rhs268, label %land.end269
+land.rhs268:
   %14 = load i32, i32* %b.addr3
   %15 = icmp ne i32 %14, 0
-  br label %land.rhs.from270
-land.rhs.from270:
-  br label %land.end268
-land.end268:
-  %16 = phi i1 [ false, %land.lhs.eval269 ], [ %15, %land.rhs.from270 ]
+  br label %land.rhs.from271
+land.rhs.from271:
+  br label %land.end269
+land.end269:
+  %16 = phi i1 [ false, %land.lhs.eval270 ], [ %15, %land.rhs.from271 ]
   %17 = zext i1 %16 to i32
   %18 = call i32 @printf(i8* %9, i32 %10, i32 %11, i32 %17)
   %19 = getelementptr inbounds [36 x i8], [36 x i8]* @.str.109, i32 0, i32 0
   %20 = load i32, i32* %a.addr0
   %21 = load i32, i32* %a.addr0
   %22 = icmp ne i32 %21, 0
-  br label %land.lhs.eval273
-land.lhs.eval273:
-  br i1 %22, label %land.rhs271, label %land.end272
-land.rhs271:
+  br label %land.lhs.eval274
+land.lhs.eval274:
+  br i1 %22, label %land.rhs272, label %land.end273
+land.rhs272:
   %23 = icmp ne i32 1, 0
-  br label %land.rhs.from274
-land.rhs.from274:
-  br label %land.end272
-land.end272:
-  %24 = phi i1 [ false, %land.lhs.eval273 ], [ %23, %land.rhs.from274 ]
+  br label %land.rhs.from275
+land.rhs.from275:
+  br label %land.end273
+land.end273:
+  %24 = phi i1 [ false, %land.lhs.eval274 ], [ %23, %land.rhs.from275 ]
   %25 = zext i1 %24 to i32
   %26 = call i32 @printf(i8* %19, i32 %20, i32 %25)
   %27 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.110, i32 0, i32 0
@@ -1585,17 +1587,17 @@ land.end272:
   %29 = load i32, i32* %c.addr2
   %30 = load i32, i32* %b.addr3
   %31 = icmp ne i32 %30, 0
-  br label %land.lhs.eval277
-land.lhs.eval277:
-  br i1 %31, label %land.rhs275, label %land.end276
-land.rhs275:
+  br label %land.lhs.eval278
+land.lhs.eval278:
+  br i1 %31, label %land.rhs276, label %land.end277
+land.rhs276:
   %32 = load i32, i32* %c.addr2
   %33 = icmp ne i32 %32, 0
-  br label %land.rhs.from278
-land.rhs.from278:
-  br label %land.end276
-land.end276:
-  %34 = phi i1 [ false, %land.lhs.eval277 ], [ %33, %land.rhs.from278 ]
+  br label %land.rhs.from279
+land.rhs.from279:
+  br label %land.end277
+land.end277:
+  %34 = phi i1 [ false, %land.lhs.eval278 ], [ %33, %land.rhs.from279 ]
   %35 = zext i1 %34 to i32
   %36 = call i32 @printf(i8* %27, i32 %28, i32 %29, i32 %35)
   %37 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.111, i32 0, i32 0
@@ -1603,59 +1605,59 @@ land.end276:
   %39 = load i32, i32* %d.addr1
   %40 = load i32, i32* %c.addr2
   %41 = icmp ne i32 %40, 0
-  br label %land.lhs.eval281
-land.lhs.eval281:
-  br i1 %41, label %land.rhs279, label %land.end280
-land.rhs279:
+  br label %land.lhs.eval282
+land.lhs.eval282:
+  br i1 %41, label %land.rhs280, label %land.end281
+land.rhs280:
   %42 = load i32, i32* %d.addr1
   %43 = icmp ne i32 %42, 0
-  br label %land.rhs.from282
-land.rhs.from282:
-  br label %land.end280
-land.end280:
-  %44 = phi i1 [ false, %land.lhs.eval281 ], [ %43, %land.rhs.from282 ]
+  br label %land.rhs.from283
+land.rhs.from283:
+  br label %land.end281
+land.end281:
+  %44 = phi i1 [ false, %land.lhs.eval282 ], [ %43, %land.rhs.from283 ]
   %45 = zext i1 %44 to i32
   %46 = call i32 @printf(i8* %37, i32 %38, i32 %39, i32 %45)
   %47 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.112, i32 0, i32 0
   %48 = icmp ne i32 0, 0
-  br label %land.lhs.eval285
-land.lhs.eval285:
-  br i1 %48, label %land.rhs283, label %land.end284
-land.rhs283:
+  br label %land.lhs.eval286
+land.lhs.eval286:
+  br i1 %48, label %land.rhs284, label %land.end285
+land.rhs284:
   %49 = icmp ne i32 0, 0
-  br label %land.rhs.from286
-land.rhs.from286:
-  br label %land.end284
-land.end284:
-  %50 = phi i1 [ false, %land.lhs.eval285 ], [ %49, %land.rhs.from286 ]
+  br label %land.rhs.from287
+land.rhs.from287:
+  br label %land.end285
+land.end285:
+  %50 = phi i1 [ false, %land.lhs.eval286 ], [ %49, %land.rhs.from287 ]
   %51 = zext i1 %50 to i32
   %52 = call i32 @printf(i8* %47, i32 0, i32 0, i32 %51)
   %53 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.113, i32 0, i32 0
   %54 = icmp ne i32 1, 0
-  br label %land.lhs.eval289
-land.lhs.eval289:
-  br i1 %54, label %land.rhs287, label %land.end288
-land.rhs287:
+  br label %land.lhs.eval290
+land.lhs.eval290:
+  br i1 %54, label %land.rhs288, label %land.end289
+land.rhs288:
   %55 = icmp ne i32 0, 0
-  br label %land.rhs.from290
-land.rhs.from290:
-  br label %land.end288
-land.end288:
-  %56 = phi i1 [ false, %land.lhs.eval289 ], [ %55, %land.rhs.from290 ]
+  br label %land.rhs.from291
+land.rhs.from291:
+  br label %land.end289
+land.end289:
+  %56 = phi i1 [ false, %land.lhs.eval290 ], [ %55, %land.rhs.from291 ]
   %57 = zext i1 %56 to i32
   %58 = call i32 @printf(i8* %53, i32 1, i32 0, i32 %57)
   %59 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.114, i32 0, i32 0
   %60 = icmp ne i32 1, 0
-  br label %land.lhs.eval293
-land.lhs.eval293:
-  br i1 %60, label %land.rhs291, label %land.end292
-land.rhs291:
+  br label %land.lhs.eval294
+land.lhs.eval294:
+  br i1 %60, label %land.rhs292, label %land.end293
+land.rhs292:
   %61 = icmp ne i32 1, 0
-  br label %land.rhs.from294
-land.rhs.from294:
-  br label %land.end292
-land.end292:
-  %62 = phi i1 [ false, %land.lhs.eval293 ], [ %61, %land.rhs.from294 ]
+  br label %land.rhs.from295
+land.rhs.from295:
+  br label %land.end293
+land.end293:
+  %62 = phi i1 [ false, %land.lhs.eval294 ], [ %61, %land.rhs.from295 ]
   %63 = zext i1 %62 to i32
   %64 = call i32 @printf(i8* %59, i32 1, i32 1, i32 %63)
   %65 = getelementptr inbounds [86 x i8], [86 x i8]* @.str.115, i32 0, i32 0
@@ -1663,19 +1665,19 @@ land.end292:
   %67 = load i32, i32* %c.addr2
   %68 = load i32, i32* %b.addr3
   %69 = icmp ne i32 %68, 0
-  br label %land.lhs.eval297
-land.lhs.eval297:
-  br i1 %69, label %land.rhs295, label %land.end296
-land.rhs295:
+  br label %land.lhs.eval298
+land.lhs.eval298:
+  br i1 %69, label %land.rhs296, label %land.end297
+land.rhs296:
   %70 = load i32, i32* %c.addr2
   %71 = add i32 %70, 1
   store i32 %71, i32* %c.addr2
   %72 = icmp ne i32 %71, 0
-  br label %land.rhs.from298
-land.rhs.from298:
-  br label %land.end296
-land.end296:
-  %73 = phi i1 [ false, %land.lhs.eval297 ], [ %72, %land.rhs.from298 ]
+  br label %land.rhs.from299
+land.rhs.from299:
+  br label %land.end297
+land.end297:
+  %73 = phi i1 [ false, %land.lhs.eval298 ], [ %72, %land.rhs.from299 ]
   %74 = zext i1 %73 to i32
   %75 = call i32 @printf(i8* %65, i32 %66, i32 %67, i32 %74)
   %76 = getelementptr inbounds [55 x i8], [55 x i8]* @.str.116, i32 0, i32 0
@@ -1688,49 +1690,49 @@ land.end296:
   %83 = load i32, i32* %b.addr3
   %84 = load i32, i32* %a.addr0
   %85 = icmp ne i32 %84, 0
-  br label %land.lhs.eval301
-land.lhs.eval301:
-  br i1 %85, label %land.end300, label %land.rhs299
-land.rhs299:
+  br label %land.lhs.eval302
+land.lhs.eval302:
+  br i1 %85, label %land.end301, label %land.rhs300
+land.rhs300:
   %86 = load i32, i32* %b.addr3
   %87 = icmp ne i32 %86, 0
-  br label %land.rhs.from302
-land.rhs.from302:
-  br label %land.end300
-land.end300:
-  %88 = phi i1 [ true, %land.lhs.eval301 ], [ %87, %land.rhs.from302 ]
+  br label %land.rhs.from303
+land.rhs.from303:
+  br label %land.end301
+land.end301:
+  %88 = phi i1 [ true, %land.lhs.eval302 ], [ %87, %land.rhs.from303 ]
   %89 = zext i1 %88 to i32
   %90 = call i32 @printf(i8* %81, i32 %82, i32 %83, i32 %89)
   %91 = getelementptr inbounds [36 x i8], [36 x i8]* @.str.119, i32 0, i32 0
   %92 = load i32, i32* %b.addr3
   %93 = load i32, i32* %b.addr3
   %94 = icmp ne i32 %93, 0
-  br label %land.lhs.eval305
-land.lhs.eval305:
-  br i1 %94, label %land.end304, label %land.rhs303
-land.rhs303:
+  br label %land.lhs.eval306
+land.lhs.eval306:
+  br i1 %94, label %land.end305, label %land.rhs304
+land.rhs304:
   %95 = icmp ne i32 0, 0
-  br label %land.rhs.from306
-land.rhs.from306:
-  br label %land.end304
-land.end304:
-  %96 = phi i1 [ true, %land.lhs.eval305 ], [ %95, %land.rhs.from306 ]
+  br label %land.rhs.from307
+land.rhs.from307:
+  br label %land.end305
+land.end305:
+  %96 = phi i1 [ true, %land.lhs.eval306 ], [ %95, %land.rhs.from307 ]
   %97 = zext i1 %96 to i32
   %98 = call i32 @printf(i8* %91, i32 %92, i32 %97)
   %99 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.120, i32 0, i32 0
   %100 = load i32, i32* %c.addr2
   %101 = icmp ne i32 0, 0
-  br label %land.lhs.eval309
-land.lhs.eval309:
-  br i1 %101, label %land.end308, label %land.rhs307
-land.rhs307:
+  br label %land.lhs.eval310
+land.lhs.eval310:
+  br i1 %101, label %land.end309, label %land.rhs308
+land.rhs308:
   %102 = load i32, i32* %c.addr2
   %103 = icmp ne i32 %102, 0
-  br label %land.rhs.from310
-land.rhs.from310:
-  br label %land.end308
-land.end308:
-  %104 = phi i1 [ true, %land.lhs.eval309 ], [ %103, %land.rhs.from310 ]
+  br label %land.rhs.from311
+land.rhs.from311:
+  br label %land.end309
+land.end309:
+  %104 = phi i1 [ true, %land.lhs.eval310 ], [ %103, %land.rhs.from311 ]
   %105 = zext i1 %104 to i32
   %106 = call i32 @printf(i8* %99, i32 0, i32 %100, i32 %105)
   %107 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.121, i32 0, i32 0
@@ -1738,59 +1740,59 @@ land.end308:
   %109 = load i32, i32* %d.addr1
   %110 = load i32, i32* %c.addr2
   %111 = icmp ne i32 %110, 0
-  br label %land.lhs.eval313
-land.lhs.eval313:
-  br i1 %111, label %land.end312, label %land.rhs311
-land.rhs311:
+  br label %land.lhs.eval314
+land.lhs.eval314:
+  br i1 %111, label %land.end313, label %land.rhs312
+land.rhs312:
   %112 = load i32, i32* %d.addr1
   %113 = icmp ne i32 %112, 0
-  br label %land.rhs.from314
-land.rhs.from314:
-  br label %land.end312
-land.end312:
-  %114 = phi i1 [ true, %land.lhs.eval313 ], [ %113, %land.rhs.from314 ]
+  br label %land.rhs.from315
+land.rhs.from315:
+  br label %land.end313
+land.end313:
+  %114 = phi i1 [ true, %land.lhs.eval314 ], [ %113, %land.rhs.from315 ]
   %115 = zext i1 %114 to i32
   %116 = call i32 @printf(i8* %107, i32 %108, i32 %109, i32 %115)
   %117 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.122, i32 0, i32 0
   %118 = icmp ne i32 0, 0
-  br label %land.lhs.eval317
-land.lhs.eval317:
-  br i1 %118, label %land.end316, label %land.rhs315
-land.rhs315:
+  br label %land.lhs.eval318
+land.lhs.eval318:
+  br i1 %118, label %land.end317, label %land.rhs316
+land.rhs316:
   %119 = icmp ne i32 0, 0
-  br label %land.rhs.from318
-land.rhs.from318:
-  br label %land.end316
-land.end316:
-  %120 = phi i1 [ true, %land.lhs.eval317 ], [ %119, %land.rhs.from318 ]
+  br label %land.rhs.from319
+land.rhs.from319:
+  br label %land.end317
+land.end317:
+  %120 = phi i1 [ true, %land.lhs.eval318 ], [ %119, %land.rhs.from319 ]
   %121 = zext i1 %120 to i32
   %122 = call i32 @printf(i8* %117, i32 0, i32 0, i32 %121)
   %123 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.123, i32 0, i32 0
   %124 = icmp ne i32 1, 0
-  br label %land.lhs.eval321
-land.lhs.eval321:
-  br i1 %124, label %land.end320, label %land.rhs319
-land.rhs319:
+  br label %land.lhs.eval322
+land.lhs.eval322:
+  br i1 %124, label %land.end321, label %land.rhs320
+land.rhs320:
   %125 = icmp ne i32 0, 0
-  br label %land.rhs.from322
-land.rhs.from322:
-  br label %land.end320
-land.end320:
-  %126 = phi i1 [ true, %land.lhs.eval321 ], [ %125, %land.rhs.from322 ]
+  br label %land.rhs.from323
+land.rhs.from323:
+  br label %land.end321
+land.end321:
+  %126 = phi i1 [ true, %land.lhs.eval322 ], [ %125, %land.rhs.from323 ]
   %127 = zext i1 %126 to i32
   %128 = call i32 @printf(i8* %123, i32 1, i32 0, i32 %127)
   %129 = getelementptr inbounds [37 x i8], [37 x i8]* @.str.124, i32 0, i32 0
   %130 = icmp ne i32 1, 0
-  br label %land.lhs.eval325
-land.lhs.eval325:
-  br i1 %130, label %land.end324, label %land.rhs323
-land.rhs323:
+  br label %land.lhs.eval326
+land.lhs.eval326:
+  br i1 %130, label %land.end325, label %land.rhs324
+land.rhs324:
   %131 = icmp ne i32 1, 0
-  br label %land.rhs.from326
-land.rhs.from326:
-  br label %land.end324
-land.end324:
-  %132 = phi i1 [ true, %land.lhs.eval325 ], [ %131, %land.rhs.from326 ]
+  br label %land.rhs.from327
+land.rhs.from327:
+  br label %land.end325
+land.end325:
+  %132 = phi i1 [ true, %land.lhs.eval326 ], [ %131, %land.rhs.from327 ]
   %133 = zext i1 %132 to i32
   %134 = call i32 @printf(i8* %129, i32 1, i32 1, i32 %133)
   %135 = getelementptr inbounds [86 x i8], [86 x i8]* @.str.125, i32 0, i32 0
@@ -1798,19 +1800,19 @@ land.end324:
   %137 = load i32, i32* %d.addr1
   %138 = load i32, i32* %a.addr0
   %139 = icmp ne i32 %138, 0
-  br label %land.lhs.eval329
-land.lhs.eval329:
-  br i1 %139, label %land.end328, label %land.rhs327
-land.rhs327:
+  br label %land.lhs.eval330
+land.lhs.eval330:
+  br i1 %139, label %land.end329, label %land.rhs328
+land.rhs328:
   %140 = load i32, i32* %d.addr1
   %141 = add i32 %140, 1
   store i32 %141, i32* %d.addr1
   %142 = icmp ne i32 %141, 0
-  br label %land.rhs.from330
-land.rhs.from330:
-  br label %land.end328
-land.end328:
-  %143 = phi i1 [ true, %land.lhs.eval329 ], [ %142, %land.rhs.from330 ]
+  br label %land.rhs.from331
+land.rhs.from331:
+  br label %land.end329
+land.end329:
+  %143 = phi i1 [ true, %land.lhs.eval330 ], [ %142, %land.rhs.from331 ]
   %144 = zext i1 %143 to i32
   %145 = call i32 @printf(i8* %135, i32 %136, i32 %137, i32 %144)
   %146 = getelementptr inbounds [56 x i8], [56 x i8]* @.str.126, i32 0, i32 0
@@ -1824,19 +1826,19 @@ land.end328:
   %154 = load i32, i32* %d.addr1
   %155 = load i32, i32* %a.addr0
   %156 = icmp ne i32 %155, 0
-  br i1 %156, label %cond.true331, label %cond.false332
-cond.true331:
+  br i1 %156, label %cond.true332, label %cond.false333
+cond.true332:
   %157 = load i32, i32* %c.addr2
-  br label %then.from334
-then.from334:
-  br label %cond.end333
-cond.false332:
+  br label %then.from335
+then.from335:
+  br label %cond.end334
+cond.false333:
   %158 = load i32, i32* %d.addr1
-  br label %else.from335
-else.from335:
-  br label %cond.end333
-cond.end333:
-  %159 = phi i32 [ %157, %then.from334 ], [ %158, %else.from335 ]
+  br label %else.from336
+else.from336:
+  br label %cond.end334
+cond.end334:
+  %159 = phi i32 [ %157, %then.from335 ], [ %158, %else.from336 ]
   %160 = call i32 @printf(i8* %151, i32 %152, i32 %153, i32 %154, i32 %159)
   %161 = getelementptr inbounds [46 x i8], [46 x i8]* @.str.129, i32 0, i32 0
   %162 = load i32, i32* %b.addr3
@@ -1844,19 +1846,19 @@ cond.end333:
   %164 = load i32, i32* %d.addr1
   %165 = load i32, i32* %b.addr3
   %166 = icmp ne i32 %165, 0
-  br i1 %166, label %cond.true336, label %cond.false337
-cond.true336:
+  br i1 %166, label %cond.true337, label %cond.false338
+cond.true337:
   %167 = load i32, i32* %c.addr2
-  br label %then.from339
-then.from339:
-  br label %cond.end338
-cond.false337:
+  br label %then.from340
+then.from340:
+  br label %cond.end339
+cond.false338:
   %168 = load i32, i32* %d.addr1
-  br label %else.from340
-else.from340:
-  br label %cond.end338
-cond.end338:
-  %169 = phi i32 [ %167, %then.from339 ], [ %168, %else.from340 ]
+  br label %else.from341
+else.from341:
+  br label %cond.end339
+cond.end339:
+  %169 = phi i32 [ %167, %then.from340 ], [ %168, %else.from341 ]
   %170 = call i32 @printf(i8* %161, i32 %162, i32 %163, i32 %164, i32 %169)
   %171 = getelementptr inbounds [55 x i8], [55 x i8]* @.str.130, i32 0, i32 0
   %172 = load i32, i32* %c.addr2
@@ -1868,19 +1870,19 @@ cond.end338:
   %178 = icmp sgt i32 %176, %177
   %179 = zext i1 %178 to i32
   %180 = icmp ne i32 %179, 0
-  br i1 %180, label %cond.true341, label %cond.false342
-cond.true341:
+  br i1 %180, label %cond.true342, label %cond.false343
+cond.true342:
   %181 = load i32, i32* %c.addr2
-  br label %then.from344
-then.from344:
-  br label %cond.end343
-cond.false342:
+  br label %then.from345
+then.from345:
+  br label %cond.end344
+cond.false343:
   %182 = load i32, i32* %d.addr1
-  br label %else.from345
-else.from345:
-  br label %cond.end343
-cond.end343:
-  %183 = phi i32 [ %181, %then.from344 ], [ %182, %else.from345 ]
+  br label %else.from346
+else.from346:
+  br label %cond.end344
+cond.end344:
+  %183 = phi i32 [ %181, %then.from345 ], [ %182, %else.from346 ]
   %184 = call i32 @printf(i8* %171, i32 %172, i32 %173, i32 %174, i32 %175, i32 %183)
   %185 = getelementptr inbounds [54 x i8], [54 x i8]* @.str.131, i32 0, i32 0
   %186 = load i32, i32* %c.addr2
@@ -1892,19 +1894,19 @@ cond.end343:
   %192 = icmp slt i32 %190, %191
   %193 = zext i1 %192 to i32
   %194 = icmp ne i32 %193, 0
-  br i1 %194, label %cond.true346, label %cond.false347
-cond.true346:
+  br i1 %194, label %cond.true347, label %cond.false348
+cond.true347:
   %195 = load i32, i32* %c.addr2
-  br label %then.from349
-then.from349:
-  br label %cond.end348
-cond.false347:
+  br label %then.from350
+then.from350:
+  br label %cond.end349
+cond.false348:
   %196 = load i32, i32* %d.addr1
-  br label %else.from350
-else.from350:
-  br label %cond.end348
-cond.end348:
-  %197 = phi i32 [ %195, %then.from349 ], [ %196, %else.from350 ]
+  br label %else.from351
+else.from351:
+  br label %cond.end349
+cond.end349:
+  %197 = phi i32 [ %195, %then.from350 ], [ %196, %else.from351 ]
   %198 = call i32 @printf(i8* %185, i32 %186, i32 %187, i32 %188, i32 %189, i32 %197)
   %199 = getelementptr inbounds [57 x i8], [57 x i8]* @.str.132, i32 0, i32 0
   %200 = load i32, i32* %c.addr2
@@ -1916,39 +1918,39 @@ cond.end348:
   %206 = icmp eq i32 %204, %205
   %207 = zext i1 %206 to i32
   %208 = icmp ne i32 %207, 0
-  br i1 %208, label %cond.true351, label %cond.false352
-cond.true351:
+  br i1 %208, label %cond.true352, label %cond.false353
+cond.true352:
   %209 = load i32, i32* %c.addr2
-  br label %then.from354
-then.from354:
-  br label %cond.end353
-cond.false352:
+  br label %then.from355
+then.from355:
+  br label %cond.end354
+cond.false353:
   %210 = load i32, i32* %d.addr1
-  br label %else.from355
-else.from355:
-  br label %cond.end353
-cond.end353:
-  %211 = phi i32 [ %209, %then.from354 ], [ %210, %else.from355 ]
+  br label %else.from356
+else.from356:
+  br label %cond.end354
+cond.end354:
+  %211 = phi i32 [ %209, %then.from355 ], [ %210, %else.from356 ]
   %212 = call i32 @printf(i8* %199, i32 %200, i32 %201, i32 %202, i32 %203, i32 %211)
   %213 = getelementptr inbounds [41 x i8], [41 x i8]* @.str.133, i32 0, i32 0
   %214 = call i32 @printf(i8* %213)
   %215 = load i32, i32* %a.addr0
   %216 = icmp ne i32 %215, 0
-  br i1 %216, label %cond.true356, label %cond.false357
-cond.true356:
+  br i1 %216, label %cond.true357, label %cond.false358
+cond.true357:
   %217 = load i32, i32* %c.addr2
   %218 = add i32 %217, 2
   store i32 %218, i32* %c.addr2
-  br label %then.from359
-then.from359:
-  br label %cond.end358
-cond.false357:
+  br label %then.from360
+then.from360:
+  br label %cond.end359
+cond.false358:
   %219 = load i32, i32* %d.addr1
-  br label %else.from360
-else.from360:
-  br label %cond.end358
-cond.end358:
-  %220 = phi i32 [ %218, %then.from359 ], [ %219, %else.from360 ]
+  br label %else.from361
+else.from361:
+  br label %cond.end359
+cond.end359:
+  %220 = phi i32 [ %218, %then.from360 ], [ %219, %else.from361 ]
   store i32 %220, i32* %result.addr4
   %221 = getelementptr inbounds [77 x i8], [77 x i8]* @.str.134, i32 0, i32 0
   %222 = load i32, i32* %a.addr0
@@ -1961,21 +1963,21 @@ cond.end358:
   store i32 5, i32* %c.addr2
   %229 = load i32, i32* %b.addr3
   %230 = icmp ne i32 %229, 0
-  br i1 %230, label %cond.true361, label %cond.false362
-cond.true361:
+  br i1 %230, label %cond.true362, label %cond.false363
+cond.true362:
   %231 = load i32, i32* %c.addr2
-  br label %then.from364
-then.from364:
-  br label %cond.end363
-cond.false362:
+  br label %then.from365
+then.from365:
+  br label %cond.end364
+cond.false363:
   %232 = load i32, i32* %d.addr1
   %233 = add i32 %232, 3
   store i32 %233, i32* %d.addr1
-  br label %else.from365
-else.from365:
-  br label %cond.end363
-cond.end363:
-  %234 = phi i32 [ %231, %then.from364 ], [ %233, %else.from365 ]
+  br label %else.from366
+else.from366:
+  br label %cond.end364
+cond.end364:
+  %234 = phi i32 [ %231, %then.from365 ], [ %233, %else.from366 ]
   store i32 %234, i32* %result.addr4
   %235 = getelementptr inbounds [78 x i8], [78 x i8]* @.str.136, i32 0, i32 0
   %236 = load i32, i32* %b.addr3
@@ -1985,8 +1987,8 @@ cond.end363:
   %240 = getelementptr inbounds [45 x i8], [45 x i8]* @.str.137, i32 0, i32 0
   %241 = load i32, i32* %d.addr1
   %242 = call i32 @printf(i8* %240, i32 %241)
-  br label %return266
-return266:
+  br label %return267
+return267:
   ret void
 }
 
@@ -2004,8 +2006,8 @@ entry:
   store float %6, float* %b.addr5
   %7 = getelementptr inbounds [26 x i8], [26 x i8]* @.str.138, i32 0, i32 0
   %8 = call i32 @printf(i8* %7)
-  br label %do.body367
-do.body367:
+  br label %do.body368
+do.body368:
   %val.addr9 = alloca float
   %10 = load float, float* %a.addr0
   %11 = load float, float* %b.addr5
@@ -2019,13 +2021,13 @@ do.body367:
   %18 = load float, float* %val.addr9
   %19 = fpext float %18 to double
   %20 = call i32 @printf(i8* %13, double %15, double %17, double %19)
-  br label %do.cond368
-do.cond368:
+  br label %do.cond369
+do.cond369:
   %21 = icmp ne i32 0, 0
-  br i1 %21, label %do.body367, label %do.end369
-do.end369:
-  br label %do.body370
-do.body370:
+  br i1 %21, label %do.body368, label %do.end370
+do.end370:
+  br label %do.body371
+do.body371:
   %val.addr22 = alloca float
   %23 = load float, float* %a.addr0
   %24 = load float, float* %b.addr5
@@ -2039,13 +2041,13 @@ do.body370:
   %31 = load float, float* %val.addr22
   %32 = fpext float %31 to double
   %33 = call i32 @printf(i8* %26, double %28, double %30, double %32)
-  br label %do.cond371
-do.cond371:
+  br label %do.cond372
+do.cond372:
   %34 = icmp ne i32 0, 0
-  br i1 %34, label %do.body370, label %do.end372
-do.end372:
-  br label %do.body373
-do.body373:
+  br i1 %34, label %do.body371, label %do.end373
+do.end373:
+  br label %do.body374
+do.body374:
   %val.addr35 = alloca float
   %36 = load float, float* %a.addr0
   %37 = load float, float* %b.addr5
@@ -2059,13 +2061,13 @@ do.body373:
   %44 = load float, float* %val.addr35
   %45 = fpext float %44 to double
   %46 = call i32 @printf(i8* %39, double %41, double %43, double %45)
-  br label %do.cond374
-do.cond374:
+  br label %do.cond375
+do.cond375:
   %47 = icmp ne i32 0, 0
-  br i1 %47, label %do.body373, label %do.end375
-do.end375:
-  br label %do.body376
-do.body376:
+  br i1 %47, label %do.body374, label %do.end376
+do.end376:
+  br label %do.body377
+do.body377:
   %val.addr48 = alloca float
   %49 = load float, float* %a.addr0
   %50 = load float, float* %b.addr5
@@ -2079,13 +2081,13 @@ do.body376:
   %57 = load float, float* %val.addr48
   %58 = fpext float %57 to double
   %59 = call i32 @printf(i8* %52, double %54, double %56, double %58)
-  br label %do.cond377
-do.cond377:
+  br label %do.cond378
+do.cond378:
   %60 = icmp ne i32 0, 0
-  br i1 %60, label %do.body376, label %do.end378
-do.end378:
-  br label %do.body379
-do.body379:
+  br i1 %60, label %do.body377, label %do.end379
+do.end379:
+  br label %do.body380
+do.body380:
   %val.addr61 = alloca float
   %62 = load float, float* %a.addr0
   %63 = load float, float* %c.addr2
@@ -2099,13 +2101,13 @@ do.body379:
   %70 = load float, float* %val.addr61
   %71 = fpext float %70 to double
   %72 = call i32 @printf(i8* %65, double %67, double %69, double %71)
-  br label %do.cond380
-do.cond380:
+  br label %do.cond381
+do.cond381:
   %73 = icmp ne i32 0, 0
-  br i1 %73, label %do.body379, label %do.end381
-do.end381:
-  br label %do.body382
-do.body382:
+  br i1 %73, label %do.body380, label %do.end382
+do.end382:
+  br label %do.body383
+do.body383:
   %val.addr74 = alloca float
   %75 = load float, float* %a.addr0
   %76 = load float, float* %c.addr2
@@ -2119,13 +2121,13 @@ do.body382:
   %83 = load float, float* %val.addr74
   %84 = fpext float %83 to double
   %85 = call i32 @printf(i8* %78, double %80, double %82, double %84)
-  br label %do.cond383
-do.cond383:
+  br label %do.cond384
+do.cond384:
   %86 = icmp ne i32 0, 0
-  br i1 %86, label %do.body382, label %do.end384
-do.end384:
-  br label %do.body385
-do.body385:
+  br i1 %86, label %do.body383, label %do.end385
+do.end385:
+  br label %do.body386
+do.body386:
   %val.addr87 = alloca float
   %88 = load float, float* %a.addr0
   %89 = load float, float* %c.addr2
@@ -2139,13 +2141,13 @@ do.body385:
   %96 = load float, float* %val.addr87
   %97 = fpext float %96 to double
   %98 = call i32 @printf(i8* %91, double %93, double %95, double %97)
-  br label %do.cond386
-do.cond386:
+  br label %do.cond387
+do.cond387:
   %99 = icmp ne i32 0, 0
-  br i1 %99, label %do.body385, label %do.end387
-do.end387:
-  br label %do.body388
-do.body388:
+  br i1 %99, label %do.body386, label %do.end388
+do.end388:
+  br label %do.body389
+do.body389:
   %val.addr100 = alloca float
   %101 = load float, float* %a.addr0
   %102 = load float, float* %c.addr2
@@ -2159,13 +2161,13 @@ do.body388:
   %109 = load float, float* %val.addr100
   %110 = fpext float %109 to double
   %111 = call i32 @printf(i8* %104, double %106, double %108, double %110)
-  br label %do.cond389
-do.cond389:
+  br label %do.cond390
+do.cond390:
   %112 = icmp ne i32 0, 0
-  br i1 %112, label %do.body388, label %do.end390
-do.end390:
-  br label %do.body391
-do.body391:
+  br i1 %112, label %do.body389, label %do.end391
+do.end391:
+  br label %do.body392
+do.body392:
   %val.addr113 = alloca float
   %114 = load float, float* %a.addr0
   %115 = fneg float %114
@@ -2176,13 +2178,13 @@ do.body391:
   %119 = load float, float* %val.addr113
   %120 = fpext float %119 to double
   %121 = call i32 @printf(i8* %116, double %118, double %120)
-  br label %do.cond392
-do.cond392:
+  br label %do.cond393
+do.cond393:
   %122 = icmp ne i32 0, 0
-  br i1 %122, label %do.body391, label %do.end393
-do.end393:
-  br label %return366
-return366:
+  br i1 %122, label %do.body392, label %do.end394
+do.end394:
+  br label %return367
+return367:
   ret void
 }
 
@@ -2209,8 +2211,10 @@ entry:
   %12 = call i32 @printf(i8* %11)
   call void @test_operator_precedence()
   store i32 0, i32* %retval
-  br label %return394
-return394:
+  br label %return395
+return.dead396:
+  br label %return395
+return395:
   %13 = load i32, i32* %retval
   ret i32 %13
 }

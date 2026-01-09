@@ -43,6 +43,21 @@ CompilerOptions ArgumentParser::parse() {
             opts.debugMode = true;
             continue;
         }
+
+        if (arg == "-g") {
+            opts.debugInfo = true;
+            continue;
+        }
+
+        if (arg == "-m32") {
+            opts.is64bit = false;
+            continue;
+        }
+
+        if (arg == "-m64") {
+            opts.is64bit = true;
+            continue;
+        }
         
         // -D macro definition
         if (arg.substr(0, 2) == "-D") {
@@ -138,13 +153,22 @@ void ArgumentParser::printUsage(const char* programName) {
               << "       " CYAN "-fsyntax-only" RESET "\n"
               << "              Only run the lexer and parser, then stop.\n"
               << "\n"
+              << "       " CYAN "-m32" RESET "\n"
+              << "              Target i386 (32-bit).\n"
+              << "\n"
+              << "       " CYAN "-m64" RESET "\n"
+              << "              Target x86_64 (64-bit).\n"
+              << "\n"
+              << "       " CYAN "-g" RESET "\n"
+              << "              Emit debug information (LLVM debug metadata).\n"
+              << "\n"
               << WHITE "AUTHOR" RESET "\n"
               << "       Written by " MAGENTA "Sperron | Skyness" RESET ".\n";
 }
 
 void ArgumentParser::printVersion() {
     std::cout << WHITE "cc1" RESET " version " GREEN "0.1.0" RESET "\n"
-              << "Target: " CYAN "i386-linux-gnu" RESET "\n"
+              << "Target: " CYAN "i386-linux-gnu / x86_64-linux-gnu (select with -m32/-m64)" RESET "\n"
               << "C standard: " CYAN "C89/ANSI C" RESET "\n"
               << "By " MAGENTA "Sperron | Skyness" RESET "\n";
 }

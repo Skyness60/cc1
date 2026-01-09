@@ -47,6 +47,14 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
                 auto structDecl = AST::make<AST::StructDecl>(
                     structType->name, structType->isUnion,
                     structType->line, structType->column);
+
+                // Preserve the full StructType (including bitfield widths).
+                {
+                    auto cloned = structType->clone();
+                    structDecl->declaredType = AST::Ptr<AST::StructType>(
+                        dynamic_cast<AST::StructType*>(cloned.release()));
+                }
+
                 for (auto& member : structType->members) {
                     auto memberDecl = AST::make<AST::VarDecl>(
                         member.name, member.type ? member.type->clone() : nullptr,

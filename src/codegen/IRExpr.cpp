@@ -1,6 +1,78 @@
 #include <codegen/IRGenerator.hpp>
 
+#include <cctype>
+
 namespace cc1 {
+
+static inline std::string trimCopy(const std::string& s) {
+    size_t start = 0;
+    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) start++;
+    size_t end = s.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) end--;
+    return s.substr(start, end - start);
+}
+
+static inline bool startsWith(const std::string& s, const std::string& prefix) {
+    return s.rfind(prefix, 0) == 0;
+}
+
+static inline bool isAggregateLLVMType(const std::string& t) {
+    return !t.empty() && (t[0] == '[' || t[0] == '{' || startsWith(t, "%struct.") || startsWith(t, "%union."));
+}
+
+static inline bool isUnsignedIntegralResolvedType(const AST::Expression& expr) {
+    if (!expr.resolvedType) return false;
+    // Only handle primitive unsigneds; everything else defaults to signed.
+    if (auto* prim = dynamic_cast<AST::PrimitiveType*>(expr.resolvedType.get())) {
+        switch (prim->kind) {
+            case AST::PrimitiveKind::UnsignedChar:
+            case AST::PrimitiveKind::UnsignedShort:
+            case AST::PrimitiveKind::UnsignedInt:
+            case AST::PrimitiveKind::UnsignedLong:
+            case AST::PrimitiveKind::UnsignedLongLong:
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
+}
+
+static inline bool shouldLoadCallArgument(const IRValue& v) {
+    if (!v.isPointer || v.isConstant) return false;
+    std::string dt = v.derefType();
+    // Do not load aggregates (arrays/structs/unions). Keep pointer so it decays/passes by reference.
+    if (isAggregateLLVMType(dt)) return false;
+    return true;
+}
+
+static inline bool parseFunctionDeclParamTypes(const std::string& declLine,
+                                               std::vector<std::string>& outParamTypes,
+                                               bool& outIsVariadic) {
+    outParamTypes.clear();
+    outIsVariadic = false;
+    auto l = declLine.find('(');
+    auto r = declLine.rfind(')');
+    if (l == std::string::npos || r == std::string::npos || r <= l) return false;
+    std::string inside = declLine.substr(l + 1, r - l - 1);
+    inside = trimCopy(inside);
+    if (inside.empty()) return true;
+
+    size_t pos = 0;
+    while (pos < inside.size()) {
+        size_t comma = inside.find(',', pos);
+        std::string tok = (comma == std::string::npos) ? inside.substr(pos) : inside.substr(pos, comma - pos);
+        tok = trimCopy(tok);
+        if (tok == "...") {
+            outIsVariadic = true;
+        } else if (!tok.empty()) {
+            outParamTypes.push_back(tok);
+        }
+        if (comma == std::string::npos) break;
+        pos = comma + 1;
+    }
+    return true;
+}
 
 // ============================================================================
 // Integer Literal
@@ -80,26 +152,17 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
     if (node.op == AST::BinaryOp::Assign) {
         // Evaluate RHS first
         node.right->accept(*this);
-        IRValue rhsVal = lastValue_;
-        
-        // Get RHS value (load if pointer)
-        std::string rhsReg = rhsVal.name;
-        std::string rhsType = rhsVal.type;
-        if (rhsVal.isPointer && !rhsVal.isConstant) {
-            rhsReg = newTemp();
-            rhsType = rhsVal.derefType();
-            emit(rhsReg + " = load " + rhsType + ", " + rhsVal.type + " " + rhsVal.name);
-        }
+        IRValue rhsVal = loadValue(lastValue_);
         
         // Evaluate LHS to get address
         node.left->accept(*this);
         IRValue lhsVal = lastValue_;
         
-        // Store
-        emit("store " + rhsType + " " + rhsReg + ", " + lhsVal.type + " " + lhsVal.name);
-        
+        // Store (handles bitfields too)
+        storeValue(rhsVal, lhsVal);
+
         // Result is the assigned value
-        lastValue_ = IRValue(rhsReg, rhsType, false, false);
+        lastValue_ = rhsVal;
         return;
     }
     
@@ -108,20 +171,37 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
         // Get LHS address
         node.left->accept(*this);
         IRValue lhsPtr = lastValue_;
-        
-        // Load current LHS value
-        std::string lhsReg = newTemp();
-        std::string lhsType = lhsPtr.derefType();
-        emit(lhsReg + " = load " + lhsType + ", " + lhsPtr.type + " " + lhsPtr.name);
+
+        // Load current LHS value (handles bitfields)
+        IRValue lhsLoaded = loadValue(lhsPtr);
+        std::string lhsReg = lhsLoaded.name;
+        std::string lhsType = lhsLoaded.type;
         
         // Evaluate RHS
         node.right->accept(*this);
-        IRValue rhsVal = lastValue_;
-        
+        IRValue rhsVal = loadValue(lastValue_);
         std::string rhsReg = rhsVal.name;
-        if (rhsVal.isPointer && !rhsVal.isConstant) {
-            rhsReg = newTemp();
-            emit(rhsReg + " = load " + rhsVal.derefType() + ", " + rhsVal.type + " " + rhsVal.name);
+
+        // Keep RHS type compatible with LHS type.
+        if (rhsVal.type != lhsType) {
+            auto getIntSize = [](const std::string& t) -> int {
+                if (t == "i8") return 8;
+                if (t == "i16") return 16;
+                if (t == "i32") return 32;
+                if (t == "i64") return 64;
+                return 0;
+            };
+            int rhsSize = getIntSize(rhsVal.type);
+            int lhsSize = getIntSize(lhsType);
+            if (rhsSize > 0 && lhsSize > 0 && rhsSize != lhsSize) {
+                std::string promoted = newTemp();
+                if (rhsSize > lhsSize) {
+                    emit(promoted + " = trunc " + rhsVal.type + " " + rhsReg + " to " + lhsType);
+                } else {
+                    emit(promoted + " = sext " + rhsVal.type + " " + rhsReg + " to " + lhsType);
+                }
+                rhsReg = promoted;
+            }
         }
         
         // Perform operation
@@ -142,8 +222,8 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
         }
         emit(resultReg + " = " + opName + " " + lhsType + " " + lhsReg + ", " + rhsReg);
         
-        // Store back
-        emit("store " + lhsType + " " + resultReg + ", " + lhsPtr.type + " " + lhsPtr.name);
+        // Store back (handles bitfields)
+        storeValue(IRValue(resultReg, lhsType, false, false), lhsPtr);
         
         lastValue_ = IRValue(resultReg, lhsType, false, false);
         return;
@@ -156,16 +236,11 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
         
         // Evaluate LHS
         node.left->accept(*this);
-        IRValue lhsVal = lastValue_;
-        
-        std::string lhsReg = lhsVal.name;
-        if (lhsVal.isPointer && !lhsVal.isConstant) {
-            lhsReg = newTemp();
-            emit(lhsReg + " = load " + lhsVal.derefType() + ", " + lhsVal.type + " " + lhsVal.name);
-        }
+        IRValue lhsLoaded = loadValue(lastValue_);
+        std::string lhsReg = lhsLoaded.name;
         
         std::string cmpReg = newTemp();
-        emit(cmpReg + " = icmp ne " + lhsVal.derefType() + " " + lhsReg + ", 0");
+        emit(cmpReg + " = icmp ne " + lhsLoaded.type + " " + lhsReg + ", 0");
         
         std::string lhsEvalLabel = newLabel("land.lhs.eval");
         emit("br label %" + lhsEvalLabel);
@@ -180,16 +255,11 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
         // RHS block
         emitLabel(rhsLabel);
         node.right->accept(*this);
-        IRValue rhsVal = lastValue_;
-        
-        std::string rhsReg = rhsVal.name;
-        if (rhsVal.isPointer && !rhsVal.isConstant) {
-            rhsReg = newTemp();
-            emit(rhsReg + " = load " + rhsVal.derefType() + ", " + rhsVal.type + " " + rhsVal.name);
-        }
+        IRValue rhsLoaded = loadValue(lastValue_);
+        std::string rhsReg = rhsLoaded.name;
         
         std::string rhsCmp = newTemp();
-        emit(rhsCmp + " = icmp ne " + rhsVal.derefType() + " " + rhsReg + ", 0");
+        emit(rhsCmp + " = icmp ne " + rhsLoaded.type + " " + rhsReg + ", 0");
         
         // Merge point from RHS evaluation might be in a different block
         std::string rhsFromLabel = newLabel("land.rhs.from");
@@ -216,27 +286,16 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
     
     // Regular binary operations
     node.left->accept(*this);
-    IRValue lhsVal = lastValue_;
+    IRValue lhsVal = loadValue(lastValue_);
     
     node.right->accept(*this);
-    IRValue rhsVal = lastValue_;
+    IRValue rhsVal = loadValue(lastValue_);
     
-    // Load values if pointers
     std::string lhsReg = lhsVal.name;
     std::string lhsType = lhsVal.type;
-    if (lhsVal.isPointer && !lhsVal.isConstant) {
-        lhsReg = newTemp();
-        lhsType = lhsVal.derefType();
-        emit(lhsReg + " = load " + lhsType + ", " + lhsVal.type + " " + lhsVal.name);
-    }
     
     std::string rhsReg = rhsVal.name;
     std::string rhsType = rhsVal.type;
-    if (rhsVal.isPointer && !rhsVal.isConstant) {
-        rhsReg = newTemp();
-        rhsType = rhsVal.derefType();
-        emit(rhsReg + " = load " + rhsType + ", " + rhsVal.type + " " + rhsVal.name);
-    }
     
     // Promote integer types to common type for arithmetic operations
     auto getIntSize = [](const std::string& t) -> int {
@@ -602,15 +661,10 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
 
 void IRGenerator::visit(AST::CastExpr& node) {
     node.operand->accept(*this);
-    IRValue srcVal = lastValue_;
-    
+    IRValue srcVal = loadValue(lastValue_);
+
     std::string srcReg = srcVal.name;
     std::string srcType = srcVal.type;
-    if (srcVal.isPointer && !srcVal.isConstant) {
-        srcReg = newTemp();
-        srcType = srcVal.derefType();
-        emit(srcReg + " = load " + srcType + ", " + srcVal.type + " " + srcVal.name);
-    }
     
     std::string dstType = typeToLLVM(node.targetType.get());
     
@@ -666,9 +720,13 @@ void IRGenerator::visit(AST::SizeofExpr& node) {
     if (node.targetType) {
         size = getTypeSize(node.targetType.get());
     } else if (node.operand) {
-        // sizeof(expr) - need to determine type
-        // For now, just evaluate and use i32 size
-        size = 4;
+        // sizeof(expr)
+        if (node.operand->resolvedType) {
+            size = getTypeSize(node.operand->resolvedType.get());
+        } else {
+            // Fallback
+            size = 4;
+        }
     }
     
     lastValue_ = IRValue(std::to_string(size), "i32", false, true);
@@ -689,20 +747,104 @@ void IRGenerator::visit(AST::CallExpr& node) {
         funcName = lastValue_.name;
     }
     
-    // Evaluate arguments
+    // Try to recover function parameter types from the emitted declaration (if available)
+    std::vector<std::string> paramTypes;
+    bool isVariadic = false;
+    std::string calleeIdName;
+    if (auto* id = dynamic_cast<AST::Identifier*>(node.callee.get())) {
+        calleeIdName = id->name;
+        auto it = functionDeclarations_.find(id->name);
+        if (it != functionDeclarations_.end()) {
+            parseFunctionDeclParamTypes(it->second, paramTypes, isVariadic);
+        }
+    }
+    if (calleeIdName == "printf") {
+        isVariadic = true;
+    }
+
+    // Evaluate arguments with C semantics:
+    // - arrays/structs are passed as pointers (do not aggregate-load)
+    // - apply prototype pointer casts when needed
+    // - apply default argument promotions for variadic calls
     std::vector<std::pair<std::string, std::string>> args;
-    for (auto& arg : node.arguments) {
+    args.reserve(node.arguments.size());
+    for (size_t i = 0; i < node.arguments.size(); ++i) {
+        auto& arg = node.arguments[i];
         arg->accept(*this);
         IRValue argVal = lastValue_;
-        
+
         std::string argReg = argVal.name;
         std::string argType = argVal.type;
-        if (argVal.isPointer && !argVal.isConstant) {
+
+        // Bitfield members are represented as lvalue refs; extract their rvalue now.
+        if (argVal.isBitfieldRef) {
+            IRValue loaded = loadValue(argVal);
+            argReg = loaded.name;
+            argType = loaded.type;
+            argVal = loaded;
+        }
+
+        // Load lvalues for scalars/pointers, but NOT for aggregates.
+        if (shouldLoadCallArgument(argVal)) {
             argReg = newTemp();
             argType = argVal.derefType();
             emit(argReg + " = load " + argType + ", " + argVal.type + " " + argVal.name);
         }
-        
+
+        // Prototype-based coercion for fixed parameters (mostly pointers)
+        if (i < paramTypes.size()) {
+            const std::string& paramTy = paramTypes[i];
+            if (argType != paramTy) {
+                // Pointer-to-pointer bitcasts (e.g. T* -> i8*)
+                if (!argType.empty() && argType.back() == '*' && !paramTy.empty() && paramTy.back() == '*') {
+                    std::string casted = newTemp();
+                    emit(casted + " = bitcast " + argType + " " + argReg + " to " + paramTy);
+                    argReg = casted;
+                    argType = paramTy;
+                } else {
+                    auto intBits = [](const std::string& t) -> int {
+                        if (t == "i1") return 1;
+                        if (t == "i8") return 8;
+                        if (t == "i16") return 16;
+                        if (t == "i32") return 32;
+                        if (t == "i64") return 64;
+                        return 0;
+                    };
+                    int srcBits = intBits(argType);
+                    int dstBits = intBits(paramTy);
+
+                    // Integer <-> integer coercion to the parameter type.
+                    if (srcBits > 0 && dstBits > 0) {
+                        std::string casted = newTemp();
+                        if (dstBits < srcBits) {
+                            emit(casted + " = trunc " + argType + " " + argReg + " to " + paramTy);
+                        } else if (dstBits > srcBits) {
+                            bool isUnsigned = isUnsignedIntegralResolvedType(*arg);
+                            emit(casted + " = " + std::string(isUnsigned ? "zext" : "sext") + " " + argType + " " + argReg + " to " + paramTy);
+                        } else {
+                            emit(casted + " = bitcast " + argType + " " + argReg + " to " + paramTy);
+                        }
+                        argReg = casted;
+                        argType = paramTy;
+                    }
+                }
+            }
+        } else if (isVariadic) {
+            // Default argument promotions for variadic args
+            if (argType == "float") {
+                std::string ext = newTemp();
+                emit(ext + " = fpext float " + argReg + " to double");
+                argReg = ext;
+                argType = "double";
+            } else if (argType == "i8" || argType == "i16") {
+                std::string ext = newTemp();
+                bool isUnsigned = isUnsignedIntegralResolvedType(*arg);
+                emit(ext + " = " + std::string(isUnsigned ? "zext" : "sext") + " " + argType + " " + argReg + " to i32");
+                argReg = ext;
+                argType = "i32";
+            }
+        }
+
         args.push_back({argType, argReg});
     }
     
@@ -749,6 +891,15 @@ void IRGenerator::visit(AST::CallExpr& node) {
 void IRGenerator::visit(AST::MemberExpr& node) {
     node.object->accept(*this);
     IRValue objVal = lastValue_;
+
+    // For '->', the object expression should evaluate to a pointer value.
+    // If it is a pointer lvalue (e.g. function parameter stored in an alloca, type T**), load it.
+    if (node.isArrow && objVal.isPointer && !objVal.isConstant) {
+        std::string dt = objVal.derefType();
+        if (!dt.empty() && dt.back() == '*') {
+            objVal = loadValue(objVal);
+        }
+    }
     
     DebugLogger::instance().logExpr("MemberExpr.object", objVal.type, objVal.name, objVal.isPointer, objVal.isConstant);
     
@@ -824,6 +975,40 @@ void IRGenerator::visit(AST::MemberExpr& node) {
     
     DebugLogger::instance().log("[MemberExpr] memberIdx=" + std::to_string(memberIdx) + 
                                " memberType=" + memberType);
+
+    // Bitfield read: extract bits from packed storage (bitfields are not addressable)
+    if (layout) {
+        auto wIt = layout->bitfieldWidths.find(node.member);
+        auto oIt = layout->bitfieldOffsets.find(node.member);
+        if (wIt != layout->bitfieldWidths.end() && oIt != layout->bitfieldOffsets.end()) {
+            int bitWidth = wIt->second;
+            int bitOffset = oIt->second;
+
+            std::string storagePtr = newTemp();
+            emit(storagePtr + " = getelementptr inbounds " + structLLVMType + ", " +
+                 objVal.type + " " + objVal.name + ", i32 0, i32 " + std::to_string(memberIdx));
+
+            // Represent as a bitfield reference. Loads/stores are handled in loadValue/storeValue.
+            IRValue ref(storagePtr, memberType + "*", true, false);
+            ref.isBitfieldRef = true;
+            ref.bitfieldStorageType = memberType;
+            ref.bitfieldOffset = bitOffset;
+            ref.bitfieldWidth = bitWidth;
+
+            // Signedness from declared member type (preferred).
+            bool isUnsigned = false;
+            if (layout) {
+                auto sIt = layout->bitfieldIsUnsigned.find(node.member);
+                if (sIt != layout->bitfieldIsUnsigned.end()) {
+                    isUnsigned = sIt->second;
+                }
+            }
+            ref.bitfieldIsUnsigned = isUnsigned;
+
+            lastValue_ = ref;
+            return;
+        }
+    }
     
     // Generate getelementptr
     // Pattern: getelementptr inbounds <pointee_type>, <ptr_type> <ptr>, i32 0, i32 <member_idx>
@@ -883,11 +1068,6 @@ void IRGenerator::visit(AST::IndexExpr& node) {
     
     // Compute element type from pointer type
     std::string elemType = arrType;
-    // Handle double-pointer case (can happen with array parameters)
-    if (elemType.size() >= 2 && elemType.substr(elemType.size() - 2) == "**") {
-        elemType = elemType.substr(0, elemType.size() - 1);  // Remove one *
-        arrType = elemType;  // Fix arrType too
-    }
     if (elemType.back() == '*') {
         elemType = elemType.substr(0, elemType.size() - 1);
     }
@@ -895,10 +1075,30 @@ void IRGenerator::visit(AST::IndexExpr& node) {
     // Compute element pointer
     std::string elemPtr = newTemp();
     DebugLogger::instance().log("[IndexExpr] GEP: elemType=" + elemType + " arrType=" + arrType + " arrPtr=" + arrPtr);
-    emit(elemPtr + " = getelementptr inbounds " + elemType + ", " + arrType + " " + arrPtr + ", " + idxVal.derefType() + " " + idxReg);
+    if (!elemType.empty() && elemType[0] == '[') {
+        // Indexing into an array object: [N x T]* p; p[i] needs indices (0, i)
+        emit(elemPtr + " = getelementptr inbounds " + elemType + ", " + arrType + " " + arrPtr + ", i32 0, " + idxVal.derefType() + " " + idxReg);
+    } else {
+        emit(elemPtr + " = getelementptr inbounds " + elemType + ", " + arrType + " " + arrPtr + ", " + idxVal.derefType() + " " + idxReg);
+    }
     
-    DebugLogger::instance().logExpr("IndexExpr.result", elemType + "*", elemPtr, true, false);
-    lastValue_ = IRValue(elemPtr, elemType + "*", true, false);
+    // For array types like [N x T], the element type is T, not [N x T]
+    std::string resultType = elemType + "*";
+    if (elemType[0] == '[') {
+        // Array type like "[2 x i32]" - extract element type
+        size_t xPos = elemType.find(" x ");
+        if (xPos != std::string::npos) {
+            // Type is between "x " and the closing "]"
+            size_t typeStart = xPos + 3;  // After "x "
+            size_t typeEnd = elemType.rfind(']');
+            if (typeEnd > typeStart) {
+                resultType = elemType.substr(typeStart, typeEnd - typeStart) + "*";
+            }
+        }
+    }
+    
+    DebugLogger::instance().logExpr("IndexExpr.result", resultType, elemPtr, true, false);
+    lastValue_ = IRValue(elemPtr, resultType, true, false);
 }
 
 // ============================================================================
@@ -912,29 +1112,20 @@ void IRGenerator::visit(AST::TernaryExpr& node) {
     
     // Evaluate condition
     node.condition->accept(*this);
-    IRValue condVal = lastValue_;
-    
-    std::string condReg = condVal.name;
-    if (condVal.isPointer && !condVal.isConstant) {
-        condReg = newTemp();
-        emit(condReg + " = load " + condVal.derefType() + ", " + condVal.type + " " + condVal.name);
-    }
-    
+    IRValue condLoaded = loadValue(lastValue_);
+    std::string condReg = condLoaded.name;
+    std::string condType = condLoaded.type;
+
     std::string cmpReg = newTemp();
-    emit(cmpReg + " = icmp ne " + condVal.derefType() + " " + condReg + ", 0");
+    emit(cmpReg + " = icmp ne " + condType + " " + condReg + ", 0");
     emit("br i1 " + cmpReg + ", label %" + thenLabel + ", label %" + elseLabel);
     
     // Then branch
     emitLabel(thenLabel);
     node.thenExpr->accept(*this);
-    IRValue thenVal = lastValue_;
+    IRValue thenVal = loadValue(lastValue_);
     std::string thenReg = thenVal.name;
     std::string thenType = thenVal.type;
-    if (thenVal.isPointer && !thenVal.isConstant) {
-        thenReg = newTemp();
-        thenType = thenVal.derefType();
-        emit(thenReg + " = load " + thenType + ", " + thenVal.type + " " + thenVal.name);
-    }
     std::string thenBlock = newLabel("then.from");
     emit("br label %" + thenBlock);
     emitLabel(thenBlock);
@@ -943,12 +1134,8 @@ void IRGenerator::visit(AST::TernaryExpr& node) {
     // Else branch
     emitLabel(elseLabel);
     node.elseExpr->accept(*this);
-    IRValue elseVal = lastValue_;
+    IRValue elseVal = loadValue(lastValue_);
     std::string elseReg = elseVal.name;
-    if (elseVal.isPointer && !elseVal.isConstant) {
-        elseReg = newTemp();
-        emit(elseReg + " = load " + elseVal.derefType() + ", " + elseVal.type + " " + elseVal.name);
-    }
     std::string elseBlock = newLabel("else.from");
     emit("br label %" + elseBlock);
     emitLabel(elseBlock);

@@ -2,20 +2,27 @@
 
 namespace cc1 {
 
+static void setResolvedExprType(AST::Expression& expr, const AST::Ptr<AST::Type>& type) {
+    expr.resolvedType = type ? type->clone() : nullptr;
+}
+
 // ============================================================================
 // Expression Visitors
 // ============================================================================
 
 void SemanticAnalyzer::visit(AST::IntegerLiteral& node) {
     exprTypes_[&node] = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Int, node.line, node.column);
+    setResolvedExprType(node, exprTypes_[&node]);
 }
 
 void SemanticAnalyzer::visit(AST::FloatLiteral& node) {
     exprTypes_[&node] = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Double, node.line, node.column);
+    setResolvedExprType(node, exprTypes_[&node]);
 }
 
 void SemanticAnalyzer::visit(AST::CharLiteral& node) {
     exprTypes_[&node] = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Char, node.line, node.column);
+    setResolvedExprType(node, exprTypes_[&node]);
 }
 
 void SemanticAnalyzer::visit(AST::StringLiteral& node) {
@@ -23,12 +30,14 @@ void SemanticAnalyzer::visit(AST::StringLiteral& node) {
     auto charType = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Char, node.line, node.column);
     auto size = AST::make<AST::IntegerLiteral>(static_cast<long long>(node.value.length() + 1), "", node.line, node.column);
     exprTypes_[&node] = AST::make<AST::ArrayType>(std::move(charType), std::move(size), node.line, node.column);
+    setResolvedExprType(node, exprTypes_[&node]);
 }
 
 void SemanticAnalyzer::visit(AST::Identifier& node) {
     Symbol* sym = currentScope_->lookup(node.name);
     if (sym && sym->type) {
         exprTypes_[&node] = sym->type->clone();
+        setResolvedExprType(node, exprTypes_[&node]);
     }
 }
 
@@ -73,6 +82,7 @@ void SemanticAnalyzer::visit(AST::BinaryExpr& node) {
     // Determine result type
     if (leftType) {
         exprTypes_[&node] = std::move(leftType);
+        setResolvedExprType(node, exprTypes_[&node]);
     }
 }
 
@@ -86,6 +96,7 @@ void SemanticAnalyzer::visit(AST::UnaryExpr& node) {
             // &x produces pointer to x's type
             if (operandType) {
                 exprTypes_[&node] = AST::make<AST::PointerType>(std::move(operandType), node.line, node.column);
+                setResolvedExprType(node, exprTypes_[&node]);
             }
             break;
             
@@ -95,12 +106,15 @@ void SemanticAnalyzer::visit(AST::UnaryExpr& node) {
                 AST::Type* base = stripQualifiers(operandType.get());
                 if (auto* ptr = dynamic_cast<AST::PointerType*>(base)) {
                     exprTypes_[&node] = ptr->pointee->clone();
+                    setResolvedExprType(node, exprTypes_[&node]);
                 } else if (auto* arr = dynamic_cast<AST::ArrayType*>(base)) {
                     exprTypes_[&node] = arr->elementType->clone();
+                    setResolvedExprType(node, exprTypes_[&node]);
                 } else {
                     // Dereferencing non-pointer - this gives the underlying type
                     // (e.g., *int_ptr gives int)
                     exprTypes_[&node] = std::move(operandType);
+                    setResolvedExprType(node, exprTypes_[&node]);
                 }
             }
             break;
@@ -108,6 +122,7 @@ void SemanticAnalyzer::visit(AST::UnaryExpr& node) {
         default:
             if (operandType) {
                 exprTypes_[&node] = std::move(operandType);
+                setResolvedExprType(node, exprTypes_[&node]);
             }
             break;
     }
@@ -118,6 +133,7 @@ void SemanticAnalyzer::visit(AST::CastExpr& node) {
     
     if (node.targetType) {
         exprTypes_[&node] = node.targetType->clone();
+        setResolvedExprType(node, exprTypes_[&node]);
     }
 }
 
@@ -172,6 +188,7 @@ void SemanticAnalyzer::visit(AST::CallExpr& node) {
                 // Set return type
                 if (funcType->returnType) {
                     exprTypes_[&node] = funcType->returnType->clone();
+                    setResolvedExprType(node, exprTypes_[&node]);
                 }
             }
         }
@@ -214,6 +231,7 @@ void SemanticAnalyzer::visit(AST::TernaryExpr& node) {
 void SemanticAnalyzer::visit(AST::SizeofExpr& node) {
     // sizeof always returns size_t (unsigned long in C89)
     exprTypes_[&node] = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::UnsignedLong, node.line, node.column);
+    setResolvedExprType(node, exprTypes_[&node]);
 }
 
 void SemanticAnalyzer::visit(AST::InitializerList& node) {

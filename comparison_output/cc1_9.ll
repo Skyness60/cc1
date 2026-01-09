@@ -3,7 +3,10 @@ source_filename = "cc1"
 target datalayout = "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-f64:32:64-f80:32-n8:16:32-S128"
 target triple = "i386-pc-linux-gnu"
 
-%struct.u = type { i8 }
+%struct.anon.0 = type { i8 }
+%struct.anon.1 = type { i8 }
+%struct.anon.2 = type { i8 }
+%struct.u = type { %struct.anon.0 }
 @.str.0 = private unnamed_addr constant [24 x i8] c"alpha:\0Aposition: %d\0A%s\0A\00"
 @.str.1 = private unnamed_addr constant [10 x i8] c"lowercase\00"
 @.str.2 = private unnamed_addr constant [10 x i8] c"uppercase\00"
@@ -64,6 +67,8 @@ land.end4:
 if.then1:
   store i32 1, i32* %retval
   br label %return0
+return.dead11:
+  br label %if.end2
 if.end2:
   %27 = load i8**, i8*** %av.addr
   %28 = getelementptr inbounds i8*, i8** %27, i32 1
@@ -74,60 +79,70 @@ if.end2:
   store i8 %31, i8* %32
   %33 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
   %34 = load i8, i8* %33
-  %35 = call i32 @isalnum(i8 %34)
-  %36 = icmp eq i32 %35, 0
-  %37 = zext i1 %36 to i32
-  %38 = icmp ne i32 %37, 0
-  br i1 %38, label %if.then11, label %if.end12
-if.then11:
+  %35 = sext i8 %34 to i32
+  %36 = call i32 @isalnum(i32 %35)
+  %37 = icmp eq i32 %36, 0
+  %38 = zext i1 %37 to i32
+  %39 = icmp ne i32 %38, 0
+  br i1 %39, label %if.then12, label %if.end13
+if.then12:
   store i32 1, i32* %retval
   br label %return0
-if.end12:
-  %39 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
-  %40 = load i8, i8* %39
-  %41 = lshr i8 %40, 6
-  %42 = and i8 %41, 1
-  %43 = icmp ne i8 %42, 0
-  br i1 %43, label %if.then13, label %if.else14
-if.then13:
-  %44 = getelementptr inbounds [24 x i8], [24 x i8]* @.str.0, i32 0, i32 0
-  %45 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
-  %46 = load i8, i8* %45
-  %47 = and i8 %46, 31
-  %48 = sext i8 %47 to i32
-  %49 = sub i32 %48, 1
-  %50 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
-  %51 = load i8, i8* %50
-  %52 = lshr i8 %51, 5
-  %53 = and i8 %52, 1
-  %54 = icmp ne i8 %53, 0
-  br i1 %54, label %cond.true16, label %cond.false17
-cond.true16:
-  %55 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.1, i32 0, i32 0
-  br label %then.from19
-then.from19:
-  br label %cond.end18
-cond.false17:
-  %56 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.2, i32 0, i32 0
-  br label %else.from20
-else.from20:
-  br label %cond.end18
-cond.end18:
-  %57 = phi i8* [ %55, %then.from19 ], [ %56, %else.from20 ]
-  %58 = call i32 @printf(i8* %44, i32 %49, i8* %57)
-  br label %if.end15
-if.else14:
-  %59 = getelementptr inbounds [14 x i8], [14 x i8]* @.str.3, i32 0, i32 0
-  %60 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
-  %61 = load i8, i8* %60
-  %62 = and i8 %61, 15
-  %63 = call i32 @printf(i8* %59, i8 %62)
-  br label %if.end15
-if.end15:
+return.dead14:
+  br label %if.end13
+if.end13:
+  %40 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
+  %41 = getelementptr inbounds %struct.anon.0, %struct.anon.0* %40, i32 0, i32 0
+  %42 = load i8, i8* %41
+  %43 = lshr i8 %42, 6
+  %44 = and i8 %43, 1
+  %45 = zext i8 %44 to i32
+  %46 = icmp ne i32 %45, 0
+  br i1 %46, label %if.then15, label %if.else16
+if.then15:
+  %47 = getelementptr inbounds [24 x i8], [24 x i8]* @.str.0, i32 0, i32 0
+  %48 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
+  %49 = getelementptr inbounds %struct.anon.1, %struct.anon.1* %48, i32 0, i32 0
+  %50 = load i8, i8* %49
+  %51 = and i8 %50, 31
+  %52 = zext i8 %51 to i32
+  %53 = sub i32 %52, 1
+  %54 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
+  %55 = getelementptr inbounds %struct.anon.1, %struct.anon.1* %54, i32 0, i32 0
+  %56 = load i8, i8* %55
+  %57 = lshr i8 %56, 5
+  %58 = and i8 %57, 1
+  %59 = zext i8 %58 to i32
+  %60 = icmp ne i32 %59, 0
+  br i1 %60, label %cond.true18, label %cond.false19
+cond.true18:
+  %61 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.1, i32 0, i32 0
+  br label %then.from21
+then.from21:
+  br label %cond.end20
+cond.false19:
+  %62 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.2, i32 0, i32 0
+  br label %else.from22
+else.from22:
+  br label %cond.end20
+cond.end20:
+  %63 = phi i8* [ %61, %then.from21 ], [ %62, %else.from22 ]
+  %64 = call i32 @printf(i8* %47, i32 %53, i8* %63)
+  br label %if.end17
+if.else16:
+  %65 = getelementptr inbounds [14 x i8], [14 x i8]* @.str.3, i32 0, i32 0
+  %66 = getelementptr inbounds %struct.u, %struct.u* %c.addr2, i32 0, i32 0
+  %67 = getelementptr inbounds %struct.anon.2, %struct.anon.2* %66, i32 0, i32 0
+  %68 = load i8, i8* %67
+  %69 = and i8 %68, 15
+  %70 = zext i8 %69 to i32
+  %71 = call i32 @printf(i8* %65, i32 %70)
+  br label %if.end17
+if.end17:
   br label %return0
 return0:
-  %64 = load i32, i32* %retval
-  ret i32 %64
+  %72 = load i32, i32* %retval
+  ret i32 %72
 }
 !llvm.module.flags = !{!0, !1}
 !0 = !{i32 8, !"PIC Level", i32 2}

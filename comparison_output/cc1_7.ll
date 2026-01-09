@@ -31,6 +31,8 @@ entry:
   store i32 %3, i32* @f.a.0
   store i32 %2, i32* %retval
   br label %return0
+return.dead1:
+  br label %return0
 return0:
   %4 = load i32, i32* %retval
   ret i32 %4
@@ -46,8 +48,10 @@ entry:
   %3 = add i32 %2, 1
   store i32 %3, i32* @g.a.1
   store i32 %2, i32* %retval
-  br label %return1
-return1:
+  br label %return2
+return.dead3:
+  br label %return2
+return2:
   %4 = load i32, i32* %retval
   ret i32 %4
 }
@@ -87,8 +91,8 @@ entry:
   %28 = load i32, i32* @a
   %29 = load i32, i32* @b
   %30 = call i32 @printf(i8* %27, i32 %28, i32 %29)
-  br label %return2
-return2:
+  br label %return4
+return4:
   %31 = load i32, i32* %retval
   ret i32 %31
 }
@@ -103,8 +107,10 @@ entry:
   %3 = add i32 %2, 1
   store i32 %3, i32* @h.a.2
   store i32 %2, i32* %retval
-  br label %return3
-return3:
+  br label %return5
+return.dead6:
+  br label %return5
+return5:
   %4 = load i32, i32* %retval
   ret i32 %4
 }

@@ -25,9 +25,9 @@ while.cond1:
 while.body2:
   %7 = load i8**, i8*** %av.addr
   %8 = load i32, i32* %i.addr2
-  %9 = getelementptr inbounds i8, i8* %7, i32 %8
-  %10 = load i8, i8* %9
-  %11 = call i32 @puts(i8 %10)
+  %9 = getelementptr inbounds i8*, i8** %7, i32 %8
+  %10 = load i8*, i8** %9
+  %11 = call i32 @puts(i8* %10)
   %12 = load i32, i32* %i.addr2
   %13 = add i32 %12, 1
   store i32 %13, i32* %i.addr2

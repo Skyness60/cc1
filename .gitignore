@@ -47,5 +47,6 @@ tests/
 obj/
 compile_commands.json
 cc1
-fcc
+# fcc (driver) is part of the submission
+# fcc
 archives

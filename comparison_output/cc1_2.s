@@ -30,7 +30,7 @@ main:                                   # @main
                                         #   in Loop: Header=BB0_1 Depth=1
 	movl	36(%esp), %eax
 	movl	16(%esp), %ecx
-	movzbl	(%eax,%ecx), %eax
+	movl	(%eax,%ecx,4), %eax
 	movl	%eax, (%esp)
 	calll	puts@PLT
 	incl	16(%esp)

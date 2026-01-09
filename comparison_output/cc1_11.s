@@ -79,7 +79,8 @@ print_array:                            # @print_array
 	leal	(%edx,%edx,2), %edx
 	addl	%ecx, %edx
 	movss	(%eax,%edx), %xmm0              # xmm0 = mem[0],zero,zero,zero
-	movss	%xmm0, 4(%esp)
+	cvtss2sd	%xmm0, %xmm0
+	movsd	%xmm0, 4(%esp)
 	movl	64(%esp), %eax                  # 4-byte Reload
 	movl	%eax, (%esp)
 	calll	printf@PLT
@@ -128,6 +129,7 @@ print_array:                            # @print_array
 	leal	(%edx,%edx,2), %edx
 	addl	%ecx, %edx
 	movzbl	16(%eax,%edx), %eax
+	andl	$15, %eax
 	movl	%eax, 4(%esp)
 	movl	36(%esp), %eax                  # 4-byte Reload
 	movl	%eax, (%esp)
@@ -137,7 +139,8 @@ print_array:                            # @print_array
 	leal	(%ecx,%ecx,8), %edx
 	leal	(%edx,%edx,2), %edx
 	addl	%ecx, %edx
-	movzbl	17(%eax,%edx), %eax
+	movzbl	16(%eax,%edx), %eax
+	shrl	$4, %eax
 	movl	%eax, 4(%esp)
 	movl	32(%esp), %eax                  # 4-byte Reload
 	movl	%eax, (%esp)
@@ -242,33 +245,67 @@ main:                                   # @main
 	.size	main, .Lfunc_end1-main
 	.cfi_endproc
                                         # -- End function
-	.type	size_t,@object                  # @size_t
-	.bss
-	.globl	size_t
-	.p2align	2, 0x0
-size_t:
-	.long	0                               # 0x0
-	.size	size_t, 4
-
-	.type	T,@object                       # @T
-	.globl	T
-	.p2align	4, 0x0
-T:
-	.zero	28
-	.size	T, 28
-
 	.type	array1,@object                  # @array1
+	.data
 	.globl	array1
 	.p2align	4, 0x0
 array1:
-	.zero	112
+	.long	0x3f800000                      # float 1
+	.long	2                               # 0x2
+	.long	0                               # 0x0
+	.long	3                               # 0x3
+	.byte	84                              # 0x54
+	.zero	3
+	.zero	8
+	.zero	16
+	.byte	118                             # 0x76
+	.zero	3
+	.long	8                               # 0x8
+	.long	9                               # 0x9
+	.long	0x41200000                      # float 10
+	.long	11                              # 0xb
+	.long	12                              # 0xc
+	.long	13                              # 0xd
+	.byte	254                             # 0xfe
+	.zero	3
+	.zero	8
+	.long	0x41800000                      # float 16
+	.zero	8
+	.zero	4
+	.byte	0                               # 0x0
+	.zero	3
+	.zero	8
 	.size	array1, 112
 
 	.type	array2,@object                  # @array2
 	.globl	array2
 	.p2align	4, 0x0
 array2:
-	.zero	112
+	.long	0x3f800000                      # float 1
+	.long	2                               # 0x2
+	.long	0                               # 0x0
+	.long	3                               # 0x3
+	.byte	84                              # 0x54
+	.zero	3
+	.zero	8
+	.zero	16
+	.byte	118                             # 0x76
+	.zero	3
+	.long	8                               # 0x8
+	.long	9                               # 0x9
+	.long	0x41200000                      # float 10
+	.long	11                              # 0xb
+	.long	12                              # 0xc
+	.long	13                              # 0xd
+	.byte	254                             # 0xfe
+	.zero	3
+	.zero	8
+	.long	0x41800000                      # float 16
+	.zero	8
+	.zero	4
+	.byte	0                               # 0x0
+	.zero	3
+	.zero	8
 	.size	array2, 112
 
 	.type	.L.str.0,@object                # @.str.0

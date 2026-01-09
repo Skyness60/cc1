@@ -1,16 +1,33 @@
 #include <codegen/IRGenerator.hpp>
 
+#include <cstdint>
+#include <cstring>
+#include <iomanip>
+
 namespace cc1 {
+
+static std::string formatLLVMFloatConstant(float value) {
+    // LLVM textual IR accepts float constants in a 64-bit hex form (same style clang emits).
+    // We encode the rounded float value as a double bit-pattern.
+    double asDouble = static_cast<double>(value);
+    uint64_t bits = 0;
+    static_assert(sizeof(bits) == sizeof(asDouble), "unexpected double size");
+    std::memcpy(&bits, &asDouble, sizeof(bits));
+
+    std::ostringstream oss;
+    oss << "0x" << std::hex << std::nouppercase << std::setw(16) << std::setfill('0') << bits;
+    return oss.str();
+}
 
 // ============================================================================
 // Translation Unit
 // ============================================================================
 
-void IRGenerator::visit(AST::TranslationUnit& node) {
+void IRGenerator::visit(AST::TranslationUnit& snode) {
     inGlobalScope_ = true;
     
     // First pass: collect typedef definitions and assign names to anonymous structs
-    for (auto& decl : node.declarations) {
+    for (auto& decl : snode.declarations) {
         // Check for TypedefDecl
         if (auto* typedefDecl = dynamic_cast<AST::TypedefDecl*>(decl.get())) {
             if (typedefDecl->underlyingType) {
@@ -40,18 +57,22 @@ void IRGenerator::visit(AST::TranslationUnit& node) {
     }
     
     // Second pass: collect struct definitions
-    for (auto& decl : node.declarations) {
+    for (auto& decl : snode.declarations) {
         if (auto* structDecl = dynamic_cast<AST::StructDecl*>(decl.get())) {
             if (!structDecl->members.empty()) {
                 StructLayout layout = computeStructLayout(structDecl);
                 structLayouts_[structDecl->name] = layout;
-                emitGlobal(layout.llvmType);
+
+                // Ensure the struct type definition is emitted exactly once via getIR().
+                if (!namedStructDefs_.count(structDecl->name)) {
+                    namedStructDefs_[structDecl->name] = {layout.llvmType, structDecl->declaredType.get()};
+                }
             }
         }
     }
     
     // Third pass: process declarations
-    for (auto& decl : node.declarations) {
+    for (auto& decl : snode.declarations) {
         if (decl) decl->accept(*this);
     }
 }
@@ -160,28 +181,45 @@ void IRGenerator::visit(AST::VarDecl& node) {
         // Determine initial value
         std::string initValue;
         if (node.initializer) {
-            long long constVal;
-            if (evaluateConstantExpr(node.initializer.get(), constVal)) {
-                initValue = std::to_string(constVal);
-            } else if (auto* strLit = dynamic_cast<AST::StringLiteral*>(node.initializer.get())) {
-                // String literal initializer for char arrays
-                std::string strName = newGlobalString(strLit->value);
-                // This is tricky - need to handle differently
-                initValue = getDefaultValue(node.type.get());
-            } else if (auto* initList = dynamic_cast<AST::InitializerList*>(node.initializer.get())) {
-                // InitializerList - try to generate the proper initializer
-                // For arrays of structs, use flattening (works with or without bitfields)
-                bool isArrayOfStruct = false;
-                if (auto* arrayType = dynamic_cast<AST::ArrayType*>(node.type.get())) {
-                    auto* elemType = stripQualifiers(arrayType->elementType.get());
-                    auto* structType = dynamic_cast<AST::StructType*>(elemType);
-                    isArrayOfStruct = (structType != nullptr);
+            if (llvmType == "float" || llvmType == "double") {
+                double fpVal;
+                if (evaluateConstantFloatExpr(node.initializer.get(), fpVal)) {
+                    std::ostringstream oss;
+                    if (llvmType == "float") {
+                        initValue = formatLLVMFloatConstant(static_cast<float>(fpVal));
+                    } else {
+                        oss.setf(std::ios::scientific);
+                        oss << std::setprecision(17) << fpVal;
+                        initValue = oss.str();
+                    }
+                } else {
+                    initValue = getDefaultValue(node.type.get());
                 }
-                
-                // Use generateInitializerValue for all array types
-                initValue = generateInitializerValue(node.type.get(), initList);
             } else {
-                initValue = getDefaultValue(node.type.get());
+                long long constVal;
+                if (evaluateConstantExpr(node.initializer.get(), constVal)) {
+                    initValue = std::to_string(constVal);
+                } else if (auto* strLit = dynamic_cast<AST::StringLiteral*>(node.initializer.get())) {
+                    // String literal initializer for char arrays
+                    std::string strName = newGlobalString(strLit->value);
+                    // This is tricky - need to handle differently
+                    initValue = getDefaultValue(node.type.get());
+                } else if (auto* initList = dynamic_cast<AST::InitializerList*>(node.initializer.get())) {
+                    // InitializerList - try to generate the proper initializer
+                    // For arrays of structs, use flattening (works with or without bitfields)
+                    bool isArrayOfStruct = false;
+                    if (auto* arrayType = dynamic_cast<AST::ArrayType*>(node.type.get())) {
+                        auto* elemType = stripQualifiers(arrayType->elementType.get());
+                        auto* structType = dynamic_cast<AST::StructType*>(elemType);
+                        isArrayOfStruct = (structType != nullptr);
+                    }
+                    (void)isArrayOfStruct;
+                    
+                    // Use generateInitializerValue for all array types
+                    initValue = generateInitializerValue(node.type.get(), initList);
+                } else {
+                    initValue = getDefaultValue(node.type.get());
+                }
             }
         } else {
             initValue = getDefaultValue(node.type.get());
@@ -211,11 +249,27 @@ void IRGenerator::visit(AST::VarDecl& node) {
             
             std::string initValue;
             if (node.initializer) {
-                long long constVal;
-                if (evaluateConstantExpr(node.initializer.get(), constVal)) {
-                    initValue = std::to_string(constVal);
+                if (llvmType == "float" || llvmType == "double") {
+                    double fpVal;
+                    if (evaluateConstantFloatExpr(node.initializer.get(), fpVal)) {
+                        std::ostringstream oss;
+                        if (llvmType == "float") {
+                            initValue = formatLLVMFloatConstant(static_cast<float>(fpVal));
+                        } else {
+                            oss.setf(std::ios::scientific);
+                            oss << std::setprecision(17) << fpVal;
+                            initValue = oss.str();
+                        }
+                    } else {
+                        initValue = getDefaultValue(node.type.get());
+                    }
                 } else {
-                    initValue = getDefaultValue(node.type.get());
+                    long long constVal;
+                    if (evaluateConstantExpr(node.initializer.get(), constVal)) {
+                        initValue = std::to_string(constVal);
+                    } else {
+                        initValue = getDefaultValue(node.type.get());
+                    }
                 }
             } else {
                 initValue = getDefaultValue(node.type.get());
@@ -240,11 +294,34 @@ void IRGenerator::visit(AST::VarDecl& node) {
         
         // Initialize if present
         if (node.initializer) {
+            std::string valReg;
+            std::string valType = llvmType;
+            
+            // Special handling for InitializerList on array/struct types
+            if (auto* initList = dynamic_cast<AST::InitializerList*>(node.initializer.get())) {
+                // Generate the initializer value directly
+                std::string initValue = generateInitializerValue(node.type.get(), initList);
+                valReg = newTemp();
+                // For arrays and structs, we need a way to initialize them on the stack
+                // Use undef and insert the values, OR use a global constant and copy it
+                // For now, generate the initialization directly as the value
+                emit("store " + llvmType + " " + initValue + ", " + llvmType + "* " + ptrName);
+                
+                // Register symbol
+                IRSymbol sym;
+                sym.name = node.name;
+                sym.irName = ptrName;
+                sym.type = llvmType;
+                defineSymbol(node.name, sym);
+                return;
+            }
+            
+            // For non-initializer-list expressions
             node.initializer->accept(*this);
             IRValue initVal = lastValue_;
             
-            std::string valReg = initVal.name;
-            std::string valType = initVal.type;
+            valReg = initVal.name;
+            valType = initVal.type;
             
             // If initializer is a pointer (from load), we need to load it first
             if (initVal.isPointer && !initVal.isConstant) {
@@ -320,6 +397,10 @@ void IRGenerator::visit(AST::VarDecl& node) {
 // ============================================================================
 
 void IRGenerator::visit(AST::FunctionDecl& node) {
+    if (debugInfo_) {
+        initDebugMetadataIfNeeded();
+    }
+
     std::string returnType = typeToLLVM(node.returnType.get());
     std::string funcName = "@" + node.name;
     
@@ -374,7 +455,24 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
     definedFunctions_.insert(node.name);
     
     // Function definition
-    funcDefBuffer_ << "\ndefine dso_local " << returnType << " " << funcName << params << " {\n";
+    int savedSubprogram = currentSubprogramId_;
+    if (debugInfo_) {
+        int subTyId = newDebugMetaId();
+        debugMetaBuffer_ << "!" << subTyId << " = !DISubroutineType(types: !{null})\n";
+
+        currentSubprogramId_ = newDebugMetaId();
+        int line = node.line > 0 ? node.line : 1;
+        debugMetaBuffer_ << "!" << currentSubprogramId_
+                         << " = distinct !DISubprogram(name: \"" << node.name << "\", scope: !" << diFileId_
+                         << ", file: !" << diFileId_ << ", line: " << line
+                         << ", type: !" << subTyId << ", unit: !" << diCompileUnitId_
+                         << ", spFlags: DISPFlagDefinition)\n";
+
+        funcDefBuffer_ << "\ndefine dso_local " << returnType << " " << funcName << params
+                      << " !dbg !" << currentSubprogramId_ << " {\n";
+    } else {
+        funcDefBuffer_ << "\ndefine dso_local " << returnType << " " << funcName << params << " {\n";
+    }
     
     // Save state and switch to function context
     currentFunction_ = &node;
@@ -389,6 +487,8 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
     
     // Enter function scope
     enterScope();
+
+    DebugLocGuard fnLoc(*this, node.line, node.column);
     
     // Allocate space for parameters and copy
     for (size_t i = 0; i < node.parameters.size(); ++i) {
@@ -454,6 +554,7 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
     currentFunction_ = nullptr;
     inGlobalScope_ = true;
     currentBuffer_ = &globalBuffer_;
+    currentSubprogramId_ = savedSubprogram;
     
     // Register function symbol
     IRSymbol sym;

@@ -8,8 +8,8 @@ namespace cc1 {
 // SemanticAnalyzer Constructor & Destructor
 // ============================================================================
 
-SemanticAnalyzer::SemanticAnalyzer(const std::string& filename, const std::string& source)
-    : filename_(filename), source_(source) 
+SemanticAnalyzer::SemanticAnalyzer(const std::string& filename, const std::string& source, bool is64bit)
+    : filename_(filename), source_(source), is64bit_(is64bit)
 {
     // Create global scope
     enterScope(false);

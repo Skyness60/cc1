@@ -3,6 +3,17 @@
 
 namespace cc1 {
 
+static std::string nextAnonStructName() {
+    static int anonCounter = 0;
+    return "anon." + std::to_string(anonCounter++);
+}
+
+static int alignTo(int offset, int alignment) {
+    if (alignment <= 0) return offset;
+    int rem = offset % alignment;
+    return rem == 0 ? offset : (offset + (alignment - rem));
+}
+
 // ============================================================================
 // Type to LLVM IR Mapping
 // ============================================================================
@@ -63,72 +74,20 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
     }
     
     if (auto* structType = dynamic_cast<AST::StructType*>(type)) {
-        if (!structType->name.empty()) {
-            // Named struct - register for module-level definition
-            collectNamedStruct(structType);
-            return "%struct." + structType->name;
+        if (structType->name.empty()) {
+            // Anonymous struct/union types are distinct in C.
+            // If we inline them, multiple different anonymous structs can collapse to the
+            // same LLVM type string (e.g., "{ i8 }") which breaks member/bitfield access.
+            // Give them a unique internal name and emit them as named %struct.*.
+            structType->name = nextAnonStructName();
         }
-        // Anonymous struct - compute inline
-        std::string result = "{ ";
-        if (structType->isUnion && !structType->members.empty()) {
-            // Union: use largest member
-            int maxSize = 0;
-            std::string maxType;
-            for (const auto& member : structType->members) {
-                int size = getTypeSize(member.type.get());
-                if (size > maxSize) {
-                    maxSize = size;
-                    maxType = typeToLLVM(member.type.get());
-                }
-            }
-            result += maxType;
-        } else {
-            // Struct: all members, packing consecutive bitfields
-            size_t i = 0;
-            while (i < structType->members.size()) {
-                if (i > 0) result += ", ";
-                
-                const auto& member = structType->members[i];
-                
-                // If this is a bitfield, pack consecutive bitfields into one type
-                if (member.isBitfield()) {
-                    int totalBits = member.bitWidth;
-                    size_t j = i + 1;
-                    // Count consecutive bitfields
-                    while (j < structType->members.size() && structType->members[j].isBitfield()) {
-                        totalBits += structType->members[j].bitWidth;
-                        j++;
-                    }
-                    
-                    // Determine packing type
-                    if (totalBits <= 8) {
-                        result += "i8";
-                    } else if (totalBits <= 16) {
-                        result += "i16";
-                    } else if (totalBits <= 32) {
-                        result += "i32";
-                    } else {
-                        result += "i64";
-                    }
-                    
-                    // Skip the packed bitfields
-                    i = j;
-                } else {
-                    result += typeToLLVM(member.type.get());
-                    i++;
-                }
-            }
-        }
-        result += " }";
-        
-        // Register the inline struct member info for later lookup
-        registerInlineStructMembers(result, structType);
-        
-        return result;
+        // Named struct (including auto-named anonymous): register for module-level definition.
+        collectNamedStruct(structType);
+        return "%struct." + structType->name;
     }
     
     if (auto* enumType = dynamic_cast<AST::EnumType*>(type)) {
-        // Enums are i32
+        (void)enumType;
         return is64bit_ ? "i32" : "i32";
     }
     
@@ -203,20 +162,10 @@ int IRGenerator::getTypeSize(AST::Type* type) {
             auto* layout = getStructLayout(structType->name);
             if (layout) return layout->totalSize;
         }
-        
-        if (structType->isUnion) {
-            int maxSize = 0;
-            for (const auto& member : structType->members) {
-                maxSize = std::max(maxSize, getTypeSize(member.type.get()));
-            }
-            return maxSize > 0 ? maxSize : 1;
-        } else {
-            int totalSize = 0;
-            for (const auto& member : structType->members) {
-                totalSize += getTypeSize(member.type.get());
-            }
-            return totalSize > 0 ? totalSize : 1;
-        }
+
+        // Anonymous/inline structs: compute full layout (including padding)
+        StructLayout layout = computeStructLayout(structType);
+        return layout.totalSize;
     }
     
     if (dynamic_cast<AST::EnumType*>(type)) {
@@ -260,12 +209,9 @@ int IRGenerator::getTypeAlign(AST::Type* type) {
             auto* layout = getStructLayout(structType->name);
             if (layout) return layout->alignment;
         }
-        
-        int maxAlign = 1;
-        for (const auto& member : structType->members) {
-            maxAlign = std::max(maxAlign, getTypeAlign(member.type.get()));
-        }
-        return maxAlign;
+
+        StructLayout layout = computeStructLayout(structType);
+        return layout.alignment;
     }
     
     return 4;  // Default
@@ -391,75 +337,43 @@ std::string IRGenerator::generateInitializerValue(AST::Type* type, AST::Initiali
             }
         }
         
-        // If we have struct array with nested lists (possibly mixed with scalars),
-        // process them by grouping initializers into array elements
-        if (structType && nestedCount > 0) {
-            // Mixed braced and unbraced initializers - need special handling
-            // Process elements, using flattened path for scalar portions
+        // Handle struct array initialization
+        if (structType) {
+            // Determine if this is per-element or flat initialization
+            // Key indicator: if the first initializer is a braced InitList, it's per-element
+            // Otherwise, all scalars means flat initialization
             
-            // Calculate members per struct
-            auto countStructMembers = [this](AST::StructType* st) -> size_t {
-                size_t count = 0;
-                for (const auto& member : st->members) {
-                    count += countFlattedMembers(member.type.get());
-                }
-                return count;
-            };
-            
-            size_t membersPerStruct = countStructMembers(structType);
-            size_t initIdx = 0;
-            
-            for (size_t i = 0; i < arraySize; ++i) {
-                if (i > 0) result += ", ";
-                
-                if (initIdx < initList->initializers.size()) {
-                    if (auto* elemInitList = dynamic_cast<AST::InitializerList*>(initList->initializers[initIdx].get())) {
-                        // Element has proper braced initializer
-                        result += elemType + " " + generateInitializerValue(arrayType->elementType.get(), elemInitList);
-                        initIdx++;
-                    } else {
-                        // Element uses unbraced (flattened) initializers
-                        result += elemType + " " + generateStructInitializerFromFlatHelper(structType, initList, initIdx);
-                    }
-                } else {
-                    result += elemType + " " + "zeroinitializer";
-                }
+            bool isPerElement = false;
+            if (!initList->initializers.empty()) {
+                isPerElement = dynamic_cast<AST::InitializerList*>(initList->initializers[0].get()) != nullptr;
             }
-        } else if (structType && initList->initializers.size() > arraySize) {
-            // Likely a flattened initializer list - need to group elements back into structs
-            // Calculate members per struct including nested structs and arrays
-            auto countStructMembers = [this](AST::StructType* st) -> size_t {
-                size_t count = 0;
-                for (const auto& member : st->members) {
-                    count += countFlattedMembers(member.type.get());
-                }
-                return count;
-            };
             
-            size_t membersPerStruct = countStructMembers(structType);
-            if (membersPerStruct > 0 && membersPerStruct < initList->initializers.size()) {
-                // Process flattened list, grouping into structs
+            if (isPerElement) {
+                // Per-element initialization
+                // Process each array element: some may have InitializerLists, others are individual scalars
                 size_t initIdx = 0;
                 for (size_t i = 0; i < arraySize; ++i) {
                     if (i > 0) result += ", ";
                     
-                    // Generate struct initializer from flat list
-                    result += elemType + " " + generateStructInitializerFromFlatHelper(structType, initList, initIdx);
-                }
-            } else {
-                // Not a flattened list, process normally
-                for (size_t i = 0; i < arraySize; ++i) {
-                    if (i > 0) result += ", ";
-                    
-                    if (i < initList->initializers.size()) {
-                        if (auto* elemInitList = dynamic_cast<AST::InitializerList*>(initList->initializers[i].get())) {
+                    if (initIdx < initList->initializers.size()) {
+                        if (auto* elemInitList = dynamic_cast<AST::InitializerList*>(initList->initializers[initIdx].get())) {
+                            // Explicit InitializerList for this element
                             result += elemType + " " + generateInitializerValue(arrayType->elementType.get(), elemInitList);
+                            initIdx++;
                         } else {
-                            result += elemType + " " + "zeroinitializer";
+                            // Scalar - treat as start of flat initialization for this element
+                            result += elemType + " " + generateStructInitializerFromFlatHelper(structType, initList, initIdx);
                         }
                     } else {
-                        result += elemType + " " + "zeroinitializer";
+                        result += elemType + " zeroinitializer";
                     }
+                }
+            } else {
+                // Flat initialization - all scalars, one shared stream for all elements
+                size_t initIdx = 0;
+                for (size_t i = 0; i < arraySize; ++i) {
+                    if (i > 0) result += ", ";
+                    result += elemType + " " + generateStructInitializerFromFlatHelper(structType, initList, initIdx);
                 }
             }
         } else {
@@ -568,25 +482,22 @@ std::string IRGenerator::generateInitializerValue(AST::Type* type, AST::Initiali
                     j++;
                 }
                 
-                // Extract value for the first bitfield (or combined value for packed bitfields)
-                if (initIdx < initList->initializers.size()) {
-                    long long val;
-                    if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
-                        result += memberType + " " + std::to_string(val);
-                    } else {
-                        result += memberType + " " + getDefaultValue(member.type.get());
-                    }
-                    initIdx++;
-                    
-                    // For additional bitfields in the pack, consume more initializers
-                    for (size_t k = i + 1; k < j; ++k) {
-                        if (initIdx < initList->initializers.size()) {
-                            initIdx++;  // Consume but don't emit separately (already packed)
+                // Pack all bitfield values into a single byte
+                long long packedValue = 0;
+                int bitOffset = 0;
+                for (size_t k = i; k < j; ++k) {
+                    if (initIdx < initList->initializers.size()) {
+                        long long val;
+                        if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
+                            // Mask the value to its bitwidth and shift into position
+                            long long mask = (1LL << structType->members[k].bitWidth) - 1;
+                            packedValue |= (val & mask) << bitOffset;
                         }
+                        initIdx++;
                     }
-                } else {
-                    result += memberType + " " + getDefaultValue(member.type.get());
+                    bitOffset += structType->members[k].bitWidth;
                 }
+                result += memberType + " " + std::to_string(packedValue);
                 
                 // After bitfield packing, add padding if needed
                 int packingBytes = totalBits / 8;
@@ -631,22 +542,27 @@ std::string IRGenerator::generateInitializerValue(AST::Type* type, AST::Initiali
                                 result += memberType + " " + getDefaultValue(member.type.get());
                             }
                         } else if (memberArrayType) {
-                            // Array member with scalar initializer - fill first element and rest with zeros
-                            long long val;
-                            if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
-                                size_t elemCount = (memberArrayType->size > 0) ? memberArrayType->size : 0;
-                                if (elemCount > 0) {
-                                    result += memberType + " [";
-                                    std::string elemTypeStr = typeToLLVM(memberArrayType->elementType.get());
-                                    for (size_t k = 0; k < elemCount; ++k) {
-                                        if (k > 0) result += ", ";
-                                        result += elemTypeStr + " ";
-                                        result += (k == 0) ? std::to_string(val) : "0";
+                            // Array member - consume multiple initializers, one per element
+                            size_t elemCount = (memberArrayType->size > 0) ? memberArrayType->size : 0;
+                            if (elemCount > 0) {
+                                result += memberType + " [";
+                                std::string elemTypeStr = typeToLLVM(memberArrayType->elementType.get());
+                                for (size_t k = 0; k < elemCount; ++k) {
+                                    if (k > 0) result += ", ";
+                                    result += elemTypeStr + " ";
+                                    if (initIdx < initList->initializers.size()) {
+                                        long long val;
+                                        if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
+                                            result += std::to_string(val);
+                                        } else {
+                                            result += "0";
+                                        }
+                                        initIdx++;
+                                    } else {
+                                        result += "0";
                                     }
-                                    result += "]";
-                                } else {
-                                    result += memberType + " " + getDefaultValue(member.type.get());
                                 }
+                                result += "]";
                             } else {
                                 result += memberType + " " + getDefaultValue(member.type.get());
                             }
@@ -708,57 +624,106 @@ AST::Type* IRGenerator::stripQualifiers(AST::Type* type) {
 
 IRGenerator::StructLayout IRGenerator::computeStructLayout(AST::StructDecl* decl) {
     StructLayout layout;
+
+    // Prefer the preserved StructType if available (keeps bitfield widths).
+    if (decl && decl->declaredType) {
+        layout = computeStructLayout(decl->declaredType.get());
+        layout.llvmType = "%struct." + decl->name + " = type " + layout.llvmType;
+        return layout;
+    }
     
     if (decl->isUnion) {
-        // Union: all members at offset 0, size is max member size
+        // Union: all members overlap at offset 0; alignment is max member alignment.
         layout.llvmType = "%struct." + decl->name + " = type { ";
-        int maxSize = 0;
-        std::string maxType;
+        int maxSize = 1;
         int maxAlign = 1;
-        
+        std::string chosenType = "i8";
+        int chosenSize = 1;
+
+        if (!decl->members.empty() && decl->members[0] && decl->members[0]->type) {
+            AST::Type* firstType = stripQualifiers(decl->members[0]->type.get());
+            chosenType = typeToLLVM(firstType);
+            chosenSize = std::max(1, getTypeSize(firstType));
+            maxAlign = std::max(1, getTypeAlign(firstType));
+            maxSize = chosenSize;
+        }
+
         for (size_t i = 0; i < decl->members.size(); ++i) {
             auto& member = decl->members[i];
-            std::string memberType = typeToLLVM(member->type.get());
-            int memberSize = getTypeSize(member->type.get());
-            int memberAlign = getTypeAlign(member->type.get());
-            
-            layout.memberIndices[member->name] = 0;  // All at index 0
+            AST::Type* memberTypeAst = stripQualifiers(member->type.get());
+            std::string memberType = typeToLLVM(memberTypeAst);
+            int memberSize = getTypeSize(memberTypeAst);
+            int memberAlign = getTypeAlign(memberTypeAst);
+
+            layout.memberIndices[member->name] = 0;
             layout.memberTypes[member->name] = memberType;
-            
-            if (memberSize > maxSize) {
-                maxSize = memberSize;
-                maxType = memberType;
+
+            maxSize = std::max(maxSize, memberSize);
+            if (memberAlign > maxAlign) {
+                maxAlign = memberAlign;
+                chosenType = memberType;
+                chosenSize = memberSize;
+            } else if (memberAlign == maxAlign && memberSize > chosenSize) {
+                chosenType = memberType;
+                chosenSize = memberSize;
             }
-            maxAlign = std::max(maxAlign, memberAlign);
         }
-        
-        layout.llvmType += maxType + " }";
-        layout.totalSize = maxSize > 0 ? maxSize : 1;
+
+        int desiredSize = alignTo(maxSize > 0 ? maxSize : 1, maxAlign);
+        layout.llvmType += chosenType;
+        int pad = desiredSize - chosenSize;
+        if (pad > 0) {
+            layout.llvmType += ", [" + std::to_string(pad) + " x i8]";
+        }
+        layout.llvmType += " }";
+        layout.totalSize = desiredSize;
         layout.alignment = maxAlign;
     } else {
-        // Struct: sequential layout
+        // Struct: add explicit padding fields to match ABI alignment.
         layout.llvmType = "%struct." + decl->name + " = type { ";
-        int totalSize = 0;
+        int offset = 0;
         int maxAlign = 1;
-        
+        int fieldIndex = 0;
+        bool firstField = true;
+
         for (size_t i = 0; i < decl->members.size(); ++i) {
             auto& member = decl->members[i];
             std::string memberType = typeToLLVM(member->type.get());
             int memberSize = getTypeSize(member->type.get());
             int memberAlign = getTypeAlign(member->type.get());
-            
-            if (i > 0) layout.llvmType += ", ";
+
+            int aligned = alignTo(offset, memberAlign);
+            int pad = aligned - offset;
+            if (pad > 0) {
+                if (!firstField) layout.llvmType += ", ";
+                firstField = false;
+                layout.llvmType += "[" + std::to_string(pad) + " x i8]";
+                offset += pad;
+                fieldIndex++;
+            }
+
+            if (!firstField) layout.llvmType += ", ";
+            firstField = false;
             layout.llvmType += memberType;
-            
-            layout.memberIndices[member->name] = static_cast<int>(i);
+
+            layout.memberIndices[member->name] = fieldIndex;
             layout.memberTypes[member->name] = memberType;
-            
-            totalSize += memberSize;
+
+            offset += memberSize;
             maxAlign = std::max(maxAlign, memberAlign);
+            fieldIndex++;
         }
-        
+
+        int finalSize = alignTo(offset, maxAlign);
+        int tailPad = finalSize - offset;
+        if (tailPad > 0) {
+            if (!firstField) layout.llvmType += ", ";
+            layout.llvmType += "[" + std::to_string(tailPad) + " x i8]";
+            fieldIndex++;
+        }
+
         layout.llvmType += " }";
-        layout.totalSize = totalSize > 0 ? totalSize : 1;
+        layout.totalSize = finalSize > 0 ? finalSize : 1;
         layout.alignment = maxAlign;
     }
     
@@ -770,55 +735,215 @@ IRGenerator::StructLayout IRGenerator::computeStructLayout(AST::StructType* type
     
     if (type->isUnion) {
         layout.llvmType = "{ ";
-        int maxSize = 0;
-        std::string maxType = "i8";
+        int maxSize = 1;
         int maxAlign = 1;
-        
+        std::string chosenType = "i8";
+        int chosenSize = 1;
+
+        if (!type->members.empty() && type->members[0].type) {
+            AST::Type* firstType = stripQualifiers(type->members[0].type.get());
+            chosenType = typeToLLVM(firstType);
+            chosenSize = std::max(1, getTypeSize(firstType));
+            maxAlign = std::max(1, getTypeAlign(firstType));
+            maxSize = chosenSize;
+        }
+
         for (size_t i = 0; i < type->members.size(); ++i) {
             auto& member = type->members[i];
-            std::string memberType = typeToLLVM(member.type.get());
-            int memberSize = getTypeSize(member.type.get());
-            int memberAlign = getTypeAlign(member.type.get());
-            
+            AST::Type* memberTypeAst = stripQualifiers(member.type.get());
+            std::string memberType = typeToLLVM(memberTypeAst);
+            int memberSize = getTypeSize(memberTypeAst);
+            int memberAlign = getTypeAlign(memberTypeAst);
+
             layout.memberIndices[member.name] = 0;
             layout.memberTypes[member.name] = memberType;
-            
-            if (memberSize > maxSize) {
-                maxSize = memberSize;
-                maxType = memberType;
+
+            maxSize = std::max(maxSize, memberSize);
+            if (memberAlign > maxAlign) {
+                maxAlign = memberAlign;
+                chosenType = memberType;
+                chosenSize = memberSize;
+            } else if (memberAlign == maxAlign && memberSize > chosenSize) {
+                chosenType = memberType;
+                chosenSize = memberSize;
             }
-            maxAlign = std::max(maxAlign, memberAlign);
         }
-        
-        layout.llvmType += maxType + " }";
-        layout.totalSize = maxSize > 0 ? maxSize : 1;
+
+        int desiredSize = alignTo(maxSize > 0 ? maxSize : 1, maxAlign);
+        layout.llvmType += chosenType;
+        int pad = desiredSize - chosenSize;
+        if (pad > 0) {
+            layout.llvmType += ", [" + std::to_string(pad) + " x i8]";
+        }
+        layout.llvmType += " }";
+        layout.totalSize = desiredSize;
         layout.alignment = maxAlign;
     } else {
         layout.llvmType = "{ ";
-        int totalSize = 0;
+        int offset = 0;
         int maxAlign = 1;
-        
+        int fieldIndex = 0;
+        bool firstField = true;
+
+        // Bitfield packing: storage-unit based (declared base type).
+        int currentUnitSize = 0;
+        int currentUnitAlign = 1;
+        int currentUnitBitsTotal = 0;
+        int currentUnitBitsUsed = 0;
+        int currentUnitFieldIndex = -1;
+        std::string currentUnitLLVMType;
+
+        auto flushUnit = [&]() {
+            if (currentUnitBitsUsed > 0 && currentUnitSize > 0) {
+                offset += currentUnitSize;
+            }
+            currentUnitSize = 0;
+            currentUnitAlign = 1;
+            currentUnitBitsTotal = 0;
+            currentUnitBitsUsed = 0;
+            currentUnitFieldIndex = -1;
+            currentUnitLLVMType.clear();
+        };
+
+        auto ensurePaddingTo = [&](int alignment) {
+            int aligned = alignTo(offset, alignment);
+            int pad = aligned - offset;
+            if (pad > 0) {
+                if (!firstField) layout.llvmType += ", ";
+                firstField = false;
+                layout.llvmType += "[" + std::to_string(pad) + " x i8]";
+                offset += pad;
+                fieldIndex++;
+            }
+        };
+
+        auto openStorageUnitIfNeeded = [&](int unitSize, int unitAlign, const std::string& unitLLVMType) {
+            if (currentUnitBitsTotal == 0 || currentUnitSize != unitSize || currentUnitAlign != unitAlign) {
+                flushUnit();
+                ensurePaddingTo(unitAlign);
+
+                if (!firstField) layout.llvmType += ", ";
+                firstField = false;
+                layout.llvmType += unitLLVMType;
+                currentUnitFieldIndex = fieldIndex;
+                fieldIndex++;
+
+                currentUnitSize = unitSize;
+                currentUnitAlign = unitAlign;
+                currentUnitBitsTotal = unitSize * 8;
+                currentUnitBitsUsed = 0;
+                currentUnitLLVMType = unitLLVMType;
+                maxAlign = std::max(maxAlign, unitAlign);
+            }
+        };
+
         for (size_t i = 0; i < type->members.size(); ++i) {
-            auto& member = type->members[i];
+            const auto& member = type->members[i];
+
+            if (member.isBitfield()) {
+                int unitSize = getTypeSize(member.type.get());
+                int unitAlign = getTypeAlign(member.type.get());
+                if (unitSize <= 0) unitSize = 1;
+                if (unitAlign <= 0) unitAlign = 1;
+                std::string unitLLVMType;
+                if (unitSize == 1) unitLLVMType = "i8";
+                else if (unitSize == 2) unitLLVMType = "i16";
+                else if (unitSize == 4) unitLLVMType = "i32";
+                else unitLLVMType = "i64";
+
+                // Zero-width bitfield forces alignment to next storage unit boundary.
+                if (member.bitWidth == 0) {
+                    flushUnit();
+                    ensurePaddingTo(unitAlign);
+                    maxAlign = std::max(maxAlign, unitAlign);
+                    continue;
+                }
+
+                // Open or switch storage unit.
+                openStorageUnitIfNeeded(unitSize, unitAlign, unitLLVMType);
+
+                // If it doesn't fit, start a new unit.
+                if (currentUnitBitsUsed + member.bitWidth > currentUnitBitsTotal) {
+                    flushUnit();
+                    openStorageUnitIfNeeded(unitSize, unitAlign, unitLLVMType);
+                }
+
+                if (!member.name.empty()) {
+                    layout.memberIndices[member.name] = currentUnitFieldIndex;
+                    layout.memberTypes[member.name] = currentUnitLLVMType;
+                    layout.bitfieldOffsets[member.name] = currentUnitBitsUsed;
+                    layout.bitfieldWidths[member.name] = member.bitWidth;
+
+                    bool isUnsigned = false;
+                    if (auto* prim = dynamic_cast<AST::PrimitiveType*>(stripQualifiers(member.type.get()))) {
+                        switch (prim->kind) {
+                            case AST::PrimitiveKind::UnsignedChar:
+                            case AST::PrimitiveKind::UnsignedShort:
+                            case AST::PrimitiveKind::UnsignedInt:
+                            case AST::PrimitiveKind::UnsignedLong:
+                            case AST::PrimitiveKind::UnsignedLongLong:
+                                isUnsigned = true;
+                                break;
+                            default:
+                                isUnsigned = false;
+                                break;
+                        }
+                    }
+                    layout.bitfieldIsUnsigned[member.name] = isUnsigned;
+                }
+
+                currentUnitBitsUsed += member.bitWidth;
+                if (currentUnitBitsUsed == currentUnitBitsTotal) {
+                    flushUnit();
+                }
+                continue;
+            }
+
+            // Non-bitfield member closes any active storage unit.
+            flushUnit();
+
             std::string memberType = typeToLLVM(member.type.get());
             int memberSize = getTypeSize(member.type.get());
             int memberAlign = getTypeAlign(member.type.get());
-            
-            if (i > 0) layout.llvmType += ", ";
+
+            int aligned = alignTo(offset, memberAlign);
+            int pad = aligned - offset;
+            if (pad > 0) {
+                if (!firstField) layout.llvmType += ", ";
+                firstField = false;
+                layout.llvmType += "[" + std::to_string(pad) + " x i8]";
+                offset += pad;
+                fieldIndex++;
+            }
+
+            if (!firstField) layout.llvmType += ", ";
+            firstField = false;
             layout.llvmType += memberType;
-            
-            layout.memberIndices[member.name] = static_cast<int>(i);
+
+            layout.memberIndices[member.name] = fieldIndex;
             layout.memberTypes[member.name] = memberType;
-            
-            totalSize += memberSize;
+
+            offset += memberSize;
             maxAlign = std::max(maxAlign, memberAlign);
+            fieldIndex++;
         }
-        
+
+        // Flush trailing partial storage unit.
+        flushUnit();
+
+        int finalSize = alignTo(offset, maxAlign);
+        int tailPad = finalSize - offset;
+        if (tailPad > 0) {
+            if (!firstField) layout.llvmType += ", ";
+            layout.llvmType += "[" + std::to_string(tailPad) + " x i8]";
+            fieldIndex++;
+        }
+
         layout.llvmType += " }";
-        layout.totalSize = totalSize > 0 ? totalSize : 1;
+        layout.totalSize = finalSize > 0 ? finalSize : 1;
         layout.alignment = maxAlign;
     }
-    
+
     return layout;
 }
 
@@ -845,14 +970,14 @@ void IRGenerator::collectNamedStruct(AST::StructType* structType) {
     }
     
     // First, ensure all nested structs have names and are collected
-    static int anonCounter = 0;
     if (structType->members.size() > 0) {
         for (const auto& member : structType->members) {
             if (member.type) {
-                if (auto* nestedStruct = dynamic_cast<AST::StructType*>(member.type.get())) {
+                AST::Type* nestedType = stripQualifiers(member.type.get());
+                if (auto* nestedStruct = dynamic_cast<AST::StructType*>(nestedType)) {
                     // Give anonymous nested structs a generated name
                     if (nestedStruct->name.empty()) {
-                        nestedStruct->name = "anon." + std::to_string(anonCounter++);
+                        nestedStruct->name = nextAnonStructName();
                     }
                     // Recursively collect nested structs FIRST
                     collectNamedStruct(nestedStruct);
@@ -864,6 +989,12 @@ void IRGenerator::collectNamedStruct(AST::StructType* structType) {
     // Now generate definition for this struct (nested structs already defined)
     std::string definition = generateStructTypeDefinition(structType);
     namedStructDefs_[structType->name] = {definition, structType};
+    
+    // Also compute and register the layout for member access
+    if (structLayouts_.find(structType->name) == structLayouts_.end()) {
+        StructLayout layout = computeStructLayout(structType);
+        structLayouts_[structType->name] = layout;
+    }
 }
 
 std::string IRGenerator::generateStructTypeDefinition(AST::StructType* structType) {
@@ -871,74 +1002,8 @@ std::string IRGenerator::generateStructTypeDefinition(AST::StructType* structTyp
         return "%struct.unknown = type { i32 }";
     }
     
-    std::string result = "%struct." + structType->name + " = type { ";
-    
-    if (structType->isUnion && !structType->members.empty()) {
-        // Union: use largest member
-        int maxSize = 0;
-        std::string maxType;
-        for (const auto& member : structType->members) {
-            if (member.type) {
-                int size = getTypeSize(member.type.get());
-                if (size > maxSize) {
-                    maxSize = size;
-                    maxType = typeToLLVM(member.type.get());
-                }
-            }
-        }
-        result += maxType;
-    } else {
-        // Struct: all members with bitfield packing
-        size_t i = 0;
-        while (i < structType->members.size()) {
-            if (i > 0) result += ", ";
-            
-            const auto& member = structType->members[i];
-            
-            // If this is a bitfield, pack consecutive bitfields into one type
-            if (member.isBitfield()) {
-                int totalBits = member.bitWidth;
-                size_t j = i + 1;
-                // Count consecutive bitfields
-                while (j < structType->members.size() && structType->members[j].isBitfield()) {
-                    totalBits += structType->members[j].bitWidth;
-                    j++;
-                }
-                
-                // Determine packing type
-                if (totalBits <= 8) {
-                    result += "i8";
-                } else if (totalBits <= 16) {
-                    result += "i16";
-                } else if (totalBits <= 32) {
-                    result += "i32";
-                } else {
-                    result += "i64";
-                }
-                
-                // Add padding after bitfields (3 bytes for single byte bitfields on 32-bit)
-                // This matches clang's alignment padding behavior
-                int packingBytes = totalBits / 8;
-                if (packingBytes == 1) {
-                    // One byte of bitfields -> add 3 bytes padding for 4-byte alignment
-                    result += ", [3 x i8]";
-                }
-                
-                // Skip the packed bitfields
-                i = j;
-            } else {
-                if (member.type) {
-                    result += typeToLLVM(member.type.get());
-                } else {
-                    result += "i32";  // Fallback for null types
-                }
-                i++;
-            }
-        }
-    }
-    
-    result += " }";
-    return result;
+    StructLayout layout = computeStructLayout(structType);
+    return "%struct." + structType->name + " = type " + layout.llvmType;
 }
 
 AST::Type* IRGenerator::resolveTypedef(const std::string& name) {
@@ -1020,12 +1085,14 @@ void IRGenerator::registerInlineStructMembers(const std::string& llvmType, AST::
         // Create a map of member names to indices for this struct
         std::map<std::string, int> memberMap;
         
-        int index = 0;
+        StructLayout layout = computeStructLayout(structType);
         for (const auto& member : structType->members) {
             if (!member.name.empty()) {
-                memberMap[member.name] = index;
+                auto it = layout.memberIndices.find(member.name);
+                if (it != layout.memberIndices.end()) {
+                    memberMap[member.name] = it->second;
+                }
             }
-            index++;
         }
         
         // Store in the global map
@@ -1317,8 +1384,21 @@ size_t IRGenerator::countFlattedMembers(AST::Type* type) {
             return 1;  // Union consumes only one initializer
         }
         size_t total = 0;
-        for (const auto& member : st->members) {
-            total += countFlattedMembers(member.type.get());
+        size_t i = 0;
+        while (i < st->members.size()) {
+            const auto& member = st->members[i];
+            
+            // Handle consecutive bitfields as a single unit
+            if (member.isBitfield()) {
+                total += 1;  // Packed bitfields count as 1 initializer
+                // Skip all consecutive bitfields
+                while (i < st->members.size() && st->members[i].isBitfield()) {
+                    i++;
+                }
+            } else {
+                total += countFlattedMembers(member.type.get());
+                i++;
+            }
         }
         return total;
     }
@@ -1354,26 +1434,22 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
                 j++;
             }
             
-            // Emit the first bitfield value
-            result += memberTypeStr + " ";
-            if (idx < flatList->initializers.size()) {
-                long long val;
-                if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
-                    result += std::to_string(val);
-                } else {
-                    result += getDefaultValue(member.type.get());
-                }
-                idx++;
-            } else {
-                result += getDefaultValue(member.type.get());
-            }
-            
-            // Skip additional bitfields in the pack
-            for (size_t k = i + 1; k < j; ++k) {
+            // Pack all bitfield values into a single byte
+            long long packedValue = 0;
+            int bitOffset = 0;
+            for (size_t k = i; k < j; ++k) {
                 if (idx < flatList->initializers.size()) {
-                    idx++;  // Consume initializers
+                    long long val;
+                    if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
+                        // Mask the value to its bitwidth and shift into position
+                        long long mask = (1LL << st->members[k].bitWidth) - 1;
+                        packedValue |= (val & mask) << bitOffset;
+                    }
+                    idx++;
                 }
+                bitOffset += st->members[k].bitWidth;
             }
+            result += memberTypeStr + " " + std::to_string(packedValue);
             
             // Add padding if needed
             int packingBytes = totalBits / 8;
@@ -1439,8 +1515,14 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
                 } else {
                     // Could be an InitializerList for nested struct
                     if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
-                        // It's a nested initializer list - use it directly for the next element
-                        result += generateInitializerValue(memberType, initListExpr);
+                        // It's a nested initializer list
+                        // If the list is empty, zero-init the member
+                        if (initListExpr->initializers.empty()) {
+                            result += getDefaultValue(memberType);
+                        } else {
+                            // Use it directly for the member
+                            result += generateInitializerValue(memberType, initListExpr);
+                        }
                         idx++;
                     } else {
                         result += getDefaultValue(memberType);
@@ -1450,28 +1532,55 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
             } else {
                 // Multiple initializers - recursively distribute them
                 if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
-                    result += generateStructInitializerFromFlatHelper(structMemberType, flatList, idx);
-                } else if (auto* arrayMemberType = dynamic_cast<AST::ArrayType*>(memberType)) {
-                    // For arrays, consume the required number of initializers
-                    size_t elemCount = (arrayMemberType->size > 0) ? arrayMemberType->size : 0;
-                    result += "[";
-                    std::string elemTypeStr = typeToLLVM(arrayMemberType->elementType.get());
-                    for (size_t k = 0; k < elemCount; ++k) {
-                        if (k > 0) result += ", ";
-                        result += elemTypeStr + " ";
-                        if (idx < flatList->initializers.size()) {
-                            long long val;
-                            if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
-                                result += std::to_string(val);
-                            } else {
-                                result += "0";
-                            }
+                    // For struct members, check if we have a braced initializer list
+                    if (idx < flatList->initializers.size()) {
+                        if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
+                            // Use the braced list directly
+                            result += generateInitializerValue(memberType, initListExpr);
                             idx++;
                         } else {
-                            result += "0";
+                            // No braced list - use flat helper
+                            result += generateStructInitializerFromFlatHelper(structMemberType, flatList, idx);
                         }
+                    } else {
+                        result += getDefaultValue(memberType);
                     }
-                    result += "]";
+                } else if (auto* arrayMemberType = dynamic_cast<AST::ArrayType*>(memberType)) {
+                    // For arrays, check if we have a braced initializer list first
+                    if (idx < flatList->initializers.size()) {
+                        if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
+                            // Use the braced list directly
+                            result += generateInitializerValue(memberType, initListExpr);
+                            idx++;
+                        } else {
+                            // Scalar values for array elements - consume multiple initializers
+                            size_t elemCount = (arrayMemberType->size > 0) ? arrayMemberType->size : 0;
+                            if (elemCount > 0) {
+                                result += "[";
+                                std::string elemTypeStr = typeToLLVM(arrayMemberType->elementType.get());
+                                for (size_t k = 0; k < elemCount; ++k) {
+                                    if (k > 0) result += ", ";
+                                    result += elemTypeStr + " ";
+                                    if (idx < flatList->initializers.size()) {
+                                        long long val;
+                                        if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
+                                            result += std::to_string(val);
+                                        } else {
+                                            result += "0";
+                                        }
+                                        idx++;
+                                    } else {
+                                        result += "0";
+                                    }
+                                }
+                                result += "]";
+                            } else {
+                                result += getDefaultValue(memberType);
+                            }
+                        }
+                    } else {
+                        result += getDefaultValue(memberType);
+                    }
                 } else {
                     result += getDefaultValue(memberType);
                 }

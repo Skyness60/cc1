@@ -6,6 +6,7 @@
 #include <sstream>
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 #include <stack>
 #include <fstream>
@@ -55,6 +56,14 @@ struct IRValue {
     std::string type;       // LLVM type (e.g., "i32", "i32*")
     bool isPointer = false; // True if this is a pointer/address
     bool isConstant = false;
+
+    // Bitfield lvalue support: when true, this IRValue represents a reference to a bitfield
+    // stored inside an integer storage unit at 'name' (which is a pointer to the storage unit).
+    bool isBitfieldRef = false;
+    std::string bitfieldStorageType; // integer type (e.g., i8/i16/i32/i64)
+    int bitfieldOffset = 0;          // bit offset within storage unit
+    int bitfieldWidth = 0;           // bit width
+    bool bitfieldIsUnsigned = true;  // affects sign-extension on load
     
     IRValue() = default;
     IRValue(const std::string& n, const std::string& t, bool ptr = false, bool cst = false)
@@ -97,6 +106,8 @@ struct IRSymbol {
 class IRGenerator : public AST::DefaultVisitor {
 public:
     IRGenerator(bool is64bit = false);
+
+    void setDebugInfo(bool enabled, const std::string& primaryFilename);
     
     /// Generate IR for the AST
     void generate(AST::TranslationUnit& unit);
@@ -205,6 +216,9 @@ public:
         std::string llvmType;
         std::map<std::string, int> memberIndices;  // name -> struct index
         std::map<std::string, std::string> memberTypes;  // name -> LLVM type
+        std::map<std::string, int> bitfieldOffsets;  // name -> bit offset within packed storage
+        std::map<std::string, int> bitfieldWidths;   // name -> bit width
+        std::map<std::string, bool> bitfieldIsUnsigned;  // name -> unsigned?
         int totalSize = 0;
         int alignment = 1;
     };
@@ -238,7 +252,48 @@ public:
     // ========================================================================
     bool evaluateConstantExpr(AST::Expression* expr, long long& result);
 
+    // Like evaluateConstantExpr, but evaluates into floating point (double).
+    // Intended for constant initializers of float/double objects.
+    bool evaluateConstantFloatExpr(AST::Expression* expr, double& result);
+
 private:
+    // Debug info (LLVM metadata)
+    struct DebugLoc {
+        int line = 0;
+        int column = 0;
+    };
+
+    bool debugInfo_ = false;
+    std::string debugFilename_;
+    std::string debugDirectory_;
+
+    int nextDebugMetaId_ = 4; // !0/!1 reserved for PIC/PIE, !2/!3 for DWARF/debug info version
+    int diFileId_ = -1;
+    int diCompileUnitId_ = -1;
+    int currentSubprogramId_ = -1;
+    std::vector<DebugLoc> debugLocStack_;
+    std::map<std::tuple<int,int,int>, int> diLocationIds_; // (line,col,scope) -> !id
+    std::stringstream debugMetaBuffer_;
+
+    void initDebugMetadataIfNeeded();
+    int newDebugMetaId();
+    int getOrCreateDILocationId(int line, int col, int scopeId);
+    std::string dbgSuffixForCurrentLoc();
+
+    void pushDebugLoc(int line, int col);
+    void popDebugLoc();
+
+    struct DebugLocGuard {
+        IRGenerator& gen;
+        bool active;
+        DebugLocGuard(IRGenerator& g, int line, int col) : gen(g), active(g.debugInfo_) {
+            if (active) gen.pushDebugLoc(line, col);
+        }
+        ~DebugLocGuard() {
+            if (active) gen.popDebugLoc();
+        }
+    };
+
     // ========================================================================
     // State
     // ========================================================================
@@ -277,8 +332,15 @@ private:
         std::string defaultLabel;
         std::string endLabel;
         std::vector<std::pair<long long, std::string>> cases;
+        // Labeling + fallthrough support
+        std::vector<AST::Statement*> labelOrder;               // in source order
+        std::map<AST::Statement*, std::string> labelForNode;   // CaseStmt/DefaultStmt node -> label
     };
     std::stack<SwitchContext> switchStack_;
+
+    // Tracks whether the current basic block already ended with a terminator.
+    // Used to avoid emitting instructions after terminators when generating case labels.
+    bool blockTerminated_ = false;
     
     // Symbol tables (scoped)
     std::vector<std::map<std::string, IRSymbol>> scopes_;

@@ -6,125 +6,183 @@
 main:                                   # @main
 	.cfi_startproc
 # %bb.0:                                # %entry
-	subl	$12, %esp
+	pushl	%ebx
+	.cfi_def_cfa_offset 8
+	subl	$8, %esp
 	.cfi_def_cfa_offset 16
-	movl	$0, 8(%esp)
+	.cfi_offset %ebx, -8
+	calll	.L0$pb
+	.cfi_adjust_cfa_offset 4
+.L0$pb:
+	popl	%ebx
+	.cfi_adjust_cfa_offset -4
+.Ltmp0:
+	addl	$_GLOBAL_OFFSET_TABLE_+(.Ltmp0-.L0$pb), %ebx
+	movl	$0, 4(%esp)
+	leal	.L.str.0@GOTOFF(%ebx), %eax
 	subl	$8, %esp
 	.cfi_adjust_cfa_offset 8
 	pushl	$1
 	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.0
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$2
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.1
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$4
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.2
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$4
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.3
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$4
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.4
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$8
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.5
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$12
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.6
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$12
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.7
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$8
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.8
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$1337                           # imm = 0x539
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.9
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$42
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.10
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$43
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.11
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$44
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.12
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$42
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.13
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$43
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.14
-	.cfi_adjust_cfa_offset 4
-	calll	printf@PLT
-	addl	$8, %esp
-	.cfi_adjust_cfa_offset -8
-	pushl	$2
-	.cfi_adjust_cfa_offset 4
-	pushl	$.L.str.15
+	pushl	%eax
 	.cfi_adjust_cfa_offset 4
 	calll	printf@PLT
 	addl	$16, %esp
 	.cfi_adjust_cfa_offset -16
-	movl	8(%esp), %eax
-	addl	$12, %esp
+	leal	.L.str.1@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$2
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.2@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$4
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.3@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$4
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.4@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$4
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.5@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$8
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.6@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$12
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.7@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$12
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.8@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$8
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.9@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$1337                           # imm = 0x539
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.10@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$42
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.11@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$43
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.12@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$44
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.13@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$42
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.14@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$43
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	leal	.L.str.15@GOTOFF(%ebx), %eax
+	subl	$8, %esp
+	.cfi_adjust_cfa_offset 8
+	pushl	$2
+	.cfi_adjust_cfa_offset 4
+	pushl	%eax
+	.cfi_adjust_cfa_offset 4
+	calll	printf@PLT
+	addl	$16, %esp
+	.cfi_adjust_cfa_offset -16
+	movl	4(%esp), %eax
+	addl	$8, %esp
+	.cfi_def_cfa_offset 8
+	popl	%ebx
 	.cfi_def_cfa_offset 4
 	retl
 .Lfunc_end0:
