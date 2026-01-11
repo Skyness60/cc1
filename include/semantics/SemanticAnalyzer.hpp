@@ -139,6 +139,10 @@ private:
     bool isConstantExpr(AST::Expression* expr);
     bool evaluateConstantExpr(AST::Expression* expr, long long& result);
     bool hasDivisionByZero(AST::Expression* expr);
+
+    struct ConstExprIsConstVisitor;
+    struct ConstExprEvalVisitor;
+    struct ConstExprDivZeroVisitor;
     
     // Enum processing
     void processEnumType(AST::EnumType* enumType);

@@ -257,6 +257,52 @@ public:
     bool evaluateConstantFloatExpr(AST::Expression* expr, double& result);
 
 private:
+    // ====================================================================
+    // IRTypes internal helpers
+    // ====================================================================
+    std::string nextAnonStructName();
+
+    std::string generateArrayInitializerValue(AST::ArrayType* arrayType, AST::InitializerList* initList);
+    std::string generateStructInitializerValue(AST::StructType* structType, AST::InitializerList* initList);
+
+    std::string generateArrayInitializerStruct(AST::ArrayType* arrayType, AST::StructType* structType, AST::InitializerList* initList,
+                                               size_t arraySize, const std::string& elemType);
+    std::string generateArrayInitializerNonStruct(AST::ArrayType* arrayType, AST::StructType* structType, AST::InitializerList* initList,
+                                                  size_t arraySize, const std::string& elemType);
+
+    std::string generateStructFromInitForFlattened(AST::StructType* stype, AST::InitializerList* typeInitList);
+
+    // ====================================================================
+    // IRDecl internal helpers
+    // ====================================================================
+    std::string formatLLVMFloatConstant(float value);
+    void emitVarDeclFunctionPrototype(AST::VarDecl& node, AST::FunctionType& funcType);
+    void emitGlobalVarDecl(AST::VarDecl& node, const std::string& llvmType);
+    void emitLocalVarDecl(AST::VarDecl& node, const std::string& llvmType);
+
+    bool emitBinaryAssign(AST::BinaryExpr& node);
+    bool emitBinaryCompoundAssign(AST::BinaryExpr& node);
+    bool emitBinaryLogicalShortCircuit(AST::BinaryExpr& node);
+    void emitBinaryRegular(AST::BinaryExpr& node);
+
+    bool emitBinaryArithmetic(AST::BinaryExpr& node,
+                             const std::string& lhsReg,
+                             const std::string& lhsType,
+                             const std::string& rhsReg,
+                             const std::string& rhsType,
+                             std::string& outResult,
+                             std::string& outResultType);
+    bool emitBinaryComparison(AST::BinaryExpr& node,
+                             const IRValue& rhsVal,
+                             const std::string& lhsReg,
+                             const std::string& lhsType,
+                             const std::string& rhsReg,
+                             std::string& outResult,
+                             std::string& outResultType);
+
+    StructLayout computeStructLayoutUnion(AST::StructType* type);
+    StructLayout computeStructLayoutStruct(AST::StructType* type);
+
     // Debug info (LLVM metadata)
     struct DebugLoc {
         int line = 0;
