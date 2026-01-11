@@ -172,6 +172,10 @@ private:
     AST::Ptr<AST::Expression> parseUnaryExpression();
     AST::Ptr<AST::Expression> parsePostfixExpression();
     AST::Ptr<AST::Expression> parsePrimaryExpression();
+    AST::Ptr<AST::Expression> parsePrimaryIntegerLiteral();
+    AST::Ptr<AST::Expression> parsePrimaryFloatLiteral();
+    AST::Ptr<AST::Expression> parsePrimaryStringLiteral();
+    AST::Ptr<AST::Expression> parsePrimaryCharLiteral();
     AST::Ptr<AST::Expression> parseSizeofExpression();
     AST::Ptr<AST::Expression> parseConstantExpression();
     
