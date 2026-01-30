@@ -2,10 +2,8 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Binary Expression
-// ============================================================================
-
+// EN: Dispatches binary expressions to assignment/logical/regular emitters.
+// FR: Dispatch les binaires vers assignation/logique/regular.
 void IRGenerator::visit(AST::BinaryExpr& node) {
     if (emitBinaryAssign(node)) return;
     if (emitBinaryCompoundAssign(node)) return;
@@ -13,4 +11,4 @@ void IRGenerator::visit(AST::BinaryExpr& node) {
     emitBinaryRegular(node);
 }
 
-} // namespace cc1
+} 

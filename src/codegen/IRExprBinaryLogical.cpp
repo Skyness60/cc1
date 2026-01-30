@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Emits short-circuiting logical AND/OR using labels and phi nodes.
+// FR: Genere les AND/OR logiques court-circuites via labels et phi.
 bool IRGenerator::emitBinaryLogicalShortCircuit(AST::BinaryExpr& node) {
     if (node.op != AST::BinaryOp::LogicalAnd && node.op != AST::BinaryOp::LogicalOr) {
         return false;
@@ -10,7 +12,7 @@ bool IRGenerator::emitBinaryLogicalShortCircuit(AST::BinaryExpr& node) {
     std::string rhsLabel = newLabel("land.rhs");
     std::string endLabel = newLabel("land.end");
 
-    // Evaluate LHS
+    
     node.left->accept(*this);
     IRValue lhsLoaded = loadValue(lastValue_);
     std::string lhsReg = lhsLoaded.name;
@@ -28,7 +30,7 @@ bool IRGenerator::emitBinaryLogicalShortCircuit(AST::BinaryExpr& node) {
         emit("br i1 " + cmpReg + ", label %" + endLabel + ", label %" + rhsLabel);
     }
 
-    // RHS block
+    
     emitLabel(rhsLabel);
     node.right->accept(*this);
     IRValue rhsLoaded = loadValue(lastValue_);
@@ -37,13 +39,13 @@ bool IRGenerator::emitBinaryLogicalShortCircuit(AST::BinaryExpr& node) {
     std::string rhsCmp = newTemp();
     emit(rhsCmp + " = icmp ne " + rhsLoaded.type + " " + rhsReg + ", 0");
 
-    // Merge point from RHS evaluation might be in a different block
+    
     std::string rhsFromLabel = newLabel("land.rhs.from");
     emit("br label %" + rhsFromLabel);
     emitLabel(rhsFromLabel);
     emit("br label %" + endLabel);
 
-    // End block with phi
+    
     emitLabel(endLabel);
     std::string result = newTemp();
     if (node.op == AST::BinaryOp::LogicalAnd) {
@@ -52,7 +54,7 @@ bool IRGenerator::emitBinaryLogicalShortCircuit(AST::BinaryExpr& node) {
         emit(result + " = phi i1 [ true, %" + lhsEvalLabel + " ], [ " + rhsCmp + ", %" + rhsFromLabel + " ]");
     }
 
-    // Extend to i32
+    
     std::string extResult = newTemp();
     emit(extResult + " = zext i1 " + result + " to i32");
 
@@ -60,4 +62,4 @@ bool IRGenerator::emitBinaryLogicalShortCircuit(AST::BinaryExpr& node) {
     return true;
 }
 
-} // namespace cc1
+} 

@@ -10,6 +10,8 @@
 
 using cc1::DebugLogger;
 
+// EN: Builds the driver from parsed options and sets debug logging if enabled.
+// FR: Construit le driver depuis les options et active le debug si besoin.
 CompilerDriver::CompilerDriver(const CompilerOptions& opts)
     : input_files_(opts.inputFiles),
       output_file_(opts.outputFile),
@@ -24,15 +26,26 @@ CompilerDriver::CompilerDriver(const CompilerOptions& opts)
 {
     symbols_.reset(new SymbolTable());
     
-    // Enable debug logging if requested
+    // Treat '-' as meaning stdout for output. Normalise by clearing the
+    // output filename so downstream code that writes to stdout (when
+    // output_file_ is empty) will be used for both preprocessing and
+    // code generation.
+    if (output_file_ == "-") {
+        output_file_.clear();
+    }
+
     if (debug_mode_) {
         DebugLogger::instance().setEnabled(true);
         DebugLogger::instance().setOutputFile("cc1_debug.log");
     }
 }
 
+// EN: Defaulted destructor since resources are RAII-managed.
+// FR: Destructeur par defaut car les ressources sont RAII.
 CompilerDriver::~CompilerDriver() = default;
 
+// EN: Runs the full compile pipeline with early exits on requested phases.
+// FR: Execute le pipeline complet avec arrets selon options.
 bool CompilerDriver::compile()
 {
     if (!runPreprocessing())
@@ -52,6 +65,8 @@ bool CompilerDriver::compile()
     return true;
 }
 
+// EN: Runs lexing on the preprocessed source and optionally dumps tokens.
+// FR: Lance le lexing sur la source pretraitee et dump les tokens si demande.
 bool CompilerDriver::runLexing()
 {
     if (input_files_.empty()) {
@@ -61,7 +76,7 @@ bool CompilerDriver::runLexing()
 
     std::string filename = input_files_[0];
     
-    // source_ is already preprocessed
+    
     Lexer lexer(source_, filename);
     tokens_ = lexer.tokenize();
 
@@ -74,10 +89,12 @@ bool CompilerDriver::runLexing()
     return true;
 }
 
+// EN: Parses the token stream into an AST, handling parse errors.
+// FR: Parse le flux de tokens en AST et gere les erreurs.
 bool CompilerDriver::runParsing()
 {
     if (tokens_.empty()) {
-        return true;  // Nothing to parse
+        return true;  
     }
     
     std::string filename = input_files_.empty() ? "<input>" : input_files_[0];
@@ -86,7 +103,7 @@ bool CompilerDriver::runParsing()
         cc1::Parser parser(tokens_, filename, source_);
         ast_ = parser.parse();
         
-        // Check if any errors were encountered during parsing
+        
         if (parser.hadError()) {
             return false;
         }
@@ -97,6 +114,8 @@ bool CompilerDriver::runParsing()
     }
 }
 
+// EN: Runs semantic analysis on the AST and reports errors.
+// FR: Lance l analyse semantique sur l AST et rapporte les erreurs.
 bool CompilerDriver::runSemantics()
 {
     if (!ast_) return true;
@@ -108,6 +127,8 @@ bool CompilerDriver::runSemantics()
     return !analyzer.hadError();
 }
 
+// EN: Generates LLVM IR and writes it to file or stdout.
+// FR: Genere l IR LLVM et l ecrit en fichier ou stdout.
 bool CompilerDriver::runCodeGen()
 {
     if (!ast_) return true;

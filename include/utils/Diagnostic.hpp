@@ -1,37 +1,47 @@
 #pragma once
 
+
+
 #include <string>
 #include <iostream>
 #include <utils/SourceLocation.hpp>
 #include <utils/color.hpp>
 
+// EN: Kinds of diagnostics supported by the printer.
+// FR: Types de diagnostics supportes par le printer.
 enum class DiagnosticKind {
     Error,
     Warning,
     Note
 };
 
+// EN: Formats and prints diagnostics with optional source context.
+// FR: Formate et affiche les diagnostics avec contexte source optionnel.
 class DiagnosticPrinter {
 public:
+    // EN: Prints a diagnostic to stderr immediately.
+    // FR: Affiche un diagnostic sur stderr immediatement.
     static void print(DiagnosticKind kind, const SourceLocation& loc,
                       const std::string& message, const std::string& sourceLine = "") {
         std::cerr << format(kind, loc, message, sourceLine) << std::endl;
     }
     
+    // EN: Formats a diagnostic into a string for logging.
+    // FR: Formate un diagnostic en string pour journalisation.
     static std::string format(DiagnosticKind kind, const SourceLocation& loc,
                               const std::string& message, const std::string& sourceLine = "") {
         std::string result;
         
-        // Location: file:line:col:
+        
         result += WHITE + loc.toString() + ": " RESET;
         
-        // Kind: error/warning/note
+        
         result += kindToString(kind);
         
-        // Message
+        
         result += WHITE + message + RESET "\n";
         
-        // Source line with caret
+        
         if (!sourceLine.empty()) {
             result += formatSourceLine(loc.line, loc.column, sourceLine);
         }
@@ -40,6 +50,8 @@ public:
     }
 
 private:
+    // EN: Maps diagnostic kinds to colored prefixes.
+    // FR: Mappe les types vers des prefixes colores.
     static std::string kindToString(DiagnosticKind kind) {
         switch (kind) {
             case DiagnosticKind::Error:   return RED "error: " RESET;
@@ -49,18 +61,20 @@ private:
         return "";
     }
     
+    // EN: Builds a source line caret marker for the diagnostic.
+    // FR: Construit le marqueur de source (caret) pour le diagnostic.
     static std::string formatSourceLine(int line, int column, const std::string& sourceLine) {
         std::string result;
         std::string lineNumStr = std::to_string(line);
         
-        // Line with source code: "    N | source"
+        
         result += "    " + lineNumStr + " | " + sourceLine + "\n";
         
-        // Caret line: "      | ^"
-        // We need to handle tabs by preserving them in the caret line
+        
+        
         result += "    " + std::string(lineNumStr.length(), ' ') + " | ";
         
-        // Build the spacing to reach the caret position, preserving tabs
+        
         std::string spacing;
         int pos = 1;
         for (size_t i = 0; i < sourceLine.length() && pos < column; ++i, ++pos) {

@@ -2,12 +2,16 @@
 
 namespace cc1 {
 
+// EN: Aligns an offset up to the requested alignment.
+// FR: Aligne un offset vers le haut selon l alignement.
 static int alignTo(int offset, int alignment) {
     if (alignment <= 0) return offset;
     int rem = offset % alignment;
     return rem == 0 ? offset : (offset + (alignment - rem));
 }
 
+// EN: Computes union layout by selecting max-size/alignment member.
+// FR: Calcule le layout union via membre max taille/alignement.
 IRGenerator::StructLayout IRGenerator::computeStructLayoutUnion(AST::StructType* type) {
     StructLayout layout;
 
@@ -59,4 +63,4 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutUnion(AST::StructType*
     return layout;
 }
 
-} // namespace cc1
+} 

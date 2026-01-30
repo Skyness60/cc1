@@ -2,18 +2,20 @@
 
 namespace cc1 {
 
+// EN: Computes byte size for a type using target pointer width.
+// FR: Calcule la taille en octets d un type selon la cible.
 int IRGenerator::getTypeSize(AST::Type* type) {
     if (!type) return 0;
 
     type = stripQualifiers(type);
 
-    // Handle typedef
+    
     if (auto* typedefType = dynamic_cast<AST::TypedefType*>(type)) {
         AST::Type* resolved = resolveTypedef(typedefType->name);
         if (resolved) {
             return getTypeSize(resolved);
         }
-        return 4;  // Fallback
+        return 4;  
     }
 
     if (auto* prim = dynamic_cast<AST::PrimitiveType*>(type)) {
@@ -41,35 +43,37 @@ int IRGenerator::getTypeSize(AST::Type* type) {
             if (layout) return layout->totalSize;
         }
 
-        // Anonymous/inline structs: compute full layout (including padding)
+        
         StructLayout layout = computeStructLayout(structType);
         return layout.totalSize;
     }
 
     if (dynamic_cast<AST::EnumType*>(type)) {
-        return 4;  // Enums are int
+        return 4;  
     }
 
-    return 4;  // Default
+    return 4;  
 }
 
+// EN: Computes alignment for a type using target pointer width.
+// FR: Calcule l alignement d un type selon la cible.
 int IRGenerator::getTypeAlign(AST::Type* type) {
     if (!type) return 1;
 
     type = stripQualifiers(type);
 
-    // Handle typedef
+    
     if (auto* typedefType = dynamic_cast<AST::TypedefType*>(type)) {
         AST::Type* resolved = resolveTypedef(typedefType->name);
         if (resolved) {
             return getTypeAlign(resolved);
         }
-        return 4;  // Fallback
+        return 4;  
     }
 
     if (auto* prim = dynamic_cast<AST::PrimitiveType*>(type)) {
         int size = getPrimitiveSize(prim->kind);
-        // Alignment is min(size, pointer_size)
+        
         int ptrSize = is64bit_ ? 8 : 4;
         return std::min(size, ptrSize);
     }
@@ -92,9 +96,11 @@ int IRGenerator::getTypeAlign(AST::Type* type) {
         return layout.alignment;
     }
 
-    return 4;  // Default
+    return 4;  
 }
 
+// EN: Returns byte size for a primitive kind.
+// FR: Renvoie la taille en octets pour un type primitif.
 int IRGenerator::getPrimitiveSize(AST::PrimitiveKind kind) {
     switch (kind) {
         case AST::PrimitiveKind::Void:
@@ -120,9 +126,9 @@ int IRGenerator::getPrimitiveSize(AST::PrimitiveKind kind) {
         case AST::PrimitiveKind::Double:
             return 8;
         case AST::PrimitiveKind::LongDouble:
-            return is64bit_ ? 16 : 12;  // x86_fp80
+            return is64bit_ ? 16 : 12;  
     }
     return 4;
 }
 
-} // namespace cc1
+} 

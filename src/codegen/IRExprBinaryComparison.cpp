@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Emits comparison ops with integer/pointer ordering and i1->i32 extend.
+// FR: Genere les comparaisons avec ordre entier/pointeur et extension i1->i32.
 bool IRGenerator::emitBinaryComparison(AST::BinaryExpr& node,
                                       const IRValue& rhsVal,
                                       const std::string& lhsReg,
@@ -12,7 +14,7 @@ bool IRGenerator::emitBinaryComparison(AST::BinaryExpr& node,
     switch (node.op) {
         case AST::BinaryOp::Equal: {
             std::string cmp = newTemp();
-            // For pointer comparison with 0, use null
+            
             std::string rhsValue = rhsReg;
             if (!lhsType.empty() && lhsType.back() == '*' && rhsVal.isConstant) {
                 try {
@@ -47,7 +49,7 @@ bool IRGenerator::emitBinaryComparison(AST::BinaryExpr& node,
         }
         case AST::BinaryOp::Less: {
             std::string cmp = newTemp();
-            // For pointer comparisons, use unsigned comparison
+            
             if (!lhsType.empty() && lhsType.back() == '*') {
                 emit(cmp + " = icmp ult " + lhsType + " " + lhsReg + ", " + rhsReg);
             } else {
@@ -99,4 +101,4 @@ bool IRGenerator::emitBinaryComparison(AST::BinaryExpr& node,
     }
 }
 
-} // namespace cc1
+} 

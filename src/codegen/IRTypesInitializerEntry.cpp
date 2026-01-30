@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Generates an LLVM initializer for a type and initializer list.
+// FR: Genere un initialiseur LLVM pour un type et une liste d init.
 std::string IRGenerator::generateInitializerValue(AST::Type* type, AST::InitializerList* initList) {
     if (!type || !initList) return "zeroinitializer";
 
@@ -15,8 +17,8 @@ std::string IRGenerator::generateInitializerValue(AST::Type* type, AST::Initiali
         return generateStructInitializerValue(structType, initList);
     }
 
-    // For other types, return zeroinitializer
+    
     return "zeroinitializer";
 }
 
-} // namespace cc1
+} 

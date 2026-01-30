@@ -4,6 +4,8 @@
 
 namespace cc1 {
 
+// EN: Evaluates a #if condition with defined() handling and pushes state.
+// FR: Evalue une condition #if avec gestion de defined() et empile l etat.
 void Preprocessor::visit(pp::IfDirective& dir) {
     if (!isActive()) {
         conditionalStack_.push(ConditionalState{false, false, false});
@@ -46,6 +48,8 @@ void Preprocessor::visit(pp::IfDirective& dir) {
     conditionalStack_.push(ConditionalState{conditionTrue, conditionTrue, false});
 }
 
+// EN: Handles #ifdef/#ifndef by checking macro existence and pushing state.
+// FR: Traite #ifdef/#ifndef en testant l existence et empilant l etat.
 void Preprocessor::visit(pp::IfdefDirective& dir) {
     if (!isActive()) {
         conditionalStack_.push(ConditionalState{false, false, false});
@@ -57,4 +61,7 @@ void Preprocessor::visit(pp::IfdefDirective& dir) {
     conditionalStack_.push(ConditionalState{conditionTrue, conditionTrue, false});
 }
 
-} // namespace cc1
+// TODO(cc1) EN: Support the full defined operator grammar (macro names with
+// expansion) and provide errors for malformed conditions. FR: Supporter la
+// grammaire complete de defined et des erreurs pour conditions invalides.
+} 

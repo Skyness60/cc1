@@ -2,35 +2,34 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Unary Expression
-// ============================================================================
-
+// EN: Emits IR for unary operators, including ++/-- and address/deref.
+// FR: Genere l IR pour les unaires, incluant ++/-- et adresse/deref.
 void IRGenerator::visit(AST::UnaryExpr& node) {
-    // Handle pre/post increment/decrement
+    
     if (node.op == AST::UnaryOp::PreIncrement || node.op == AST::UnaryOp::PreDecrement ||
         node.op == AST::UnaryOp::PostIncrement || node.op == AST::UnaryOp::PostDecrement) {
 
         node.operand->accept(*this);
         IRValue ptr = lastValue_;
 
-        // Load current value
+        
         std::string oldVal = newTemp();
         std::string valType = ptr.derefType();
         emit(oldVal + " = load " + valType + ", " + ptr.type + " " + ptr.name);
 
-        // Compute new value - handle pointer increment/decrement
+        
         std::string newVal = newTemp();
         if (!valType.empty() && valType.back() == '*') {
-            // Pointer arithmetic
+            
             std::string elemType = valType.substr(0, valType.size() - 1);
+            std::string idxType = is64bit_ ? "i64" : "i32";
             if (node.op == AST::UnaryOp::PreIncrement || node.op == AST::UnaryOp::PostIncrement) {
-                emit(newVal + " = getelementptr inbounds " + elemType + ", " + valType + " " + oldVal + ", i32 1");
+                emit(newVal + " = getelementptr inbounds " + elemType + ", " + valType + " " + oldVal + ", " + idxType + " 1");
             } else {
-                emit(newVal + " = getelementptr inbounds " + elemType + ", " + valType + " " + oldVal + ", i32 -1");
+                emit(newVal + " = getelementptr inbounds " + elemType + ", " + valType + " " + oldVal + ", " + idxType + " -1");
             }
         } else {
-            // Regular arithmetic
+            
             if (node.op == AST::UnaryOp::PreIncrement || node.op == AST::UnaryOp::PostIncrement) {
                 emit(newVal + " = add " + valType + " " + oldVal + ", 1");
             } else {
@@ -38,10 +37,10 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
             }
         }
 
-        // Store new value
+        
         emit("store " + valType + " " + newVal + ", " + ptr.type + " " + ptr.name);
 
-        // Return old or new value
+        
         if (node.op == AST::UnaryOp::PreIncrement || node.op == AST::UnaryOp::PreDecrement) {
             lastValue_ = IRValue(newVal, valType, false, false);
         } else {
@@ -50,7 +49,7 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
         return;
     }
 
-    // For other unary operations, evaluate operand
+    
     node.operand->accept(*this);
     IRValue operandVal = loadValue(lastValue_);
 
@@ -70,7 +69,11 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
             break;
         case AST::UnaryOp::LogicalNot: {
             std::string cmp = newTemp();
-            emit(cmp + " = icmp eq " + operandType + " " + operandReg + ", 0");
+            if (!operandType.empty() && operandType.back() == '*') {
+                emit(cmp + " = icmp eq " + operandType + " " + operandReg + ", null");
+            } else {
+                emit(cmp + " = icmp eq " + operandType + " " + operandReg + ", 0");
+            }
             result = newTemp();
             emit(result + " = zext i1 " + cmp + " to i32");
             operandType = "i32";
@@ -81,15 +84,22 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
             emit(result + " = xor " + operandType + " " + operandReg + ", -1");
             break;
         case AST::UnaryOp::AddressOf:
-            // Address-of returns pointer to operand
-            lastValue_ = lastValue_;
+            
+            {
+                IRValue v = lastValue_;
+                v.isPointer = false;
+                lastValue_ = v;
+            }
             return;
         case AST::UnaryOp::Dereference: {
-            // Dereference returns lvalue/pointer to the value
-            // If operand already is a pointer value, mark it as lvalue
-            IRValue v = lastValue_;
-            v.isPointer = true;
-            lastValue_ = v;
+            
+            
+            
+            if (!operandType.empty() && operandType.back() == '*') {
+                lastValue_ = IRValue(operandReg, operandType, true, false);
+            } else {
+                lastValue_ = operandVal;
+            }
             return;
         }
         default:
@@ -100,4 +110,4 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
     lastValue_ = IRValue(result, operandType, false, false);
 }
 
-} // namespace cc1
+} 

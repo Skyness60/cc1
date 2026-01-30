@@ -1,5 +1,7 @@
 #include <lexer/Token.hpp>
 
+// EN: Converts a token type to a readable string for diagnostics/logging.
+// FR: Convertit un type de token en chaine lisible pour diagnostics/log.
 std::string tokenTypeToString(TokenType type) {
     switch (type) {
         case TokenType::EndOfFile: return "EndOfFile";
@@ -8,7 +10,7 @@ std::string tokenTypeToString(TokenType type) {
         case TokenType::FloatLiteral: return "FloatLiteral";
         case TokenType::StringLiteral: return "StringLiteral";
         case TokenType::CharLiteral: return "CharLiteral";
-        // Keywords
+        
         case TokenType::Auto: return "Auto";
         case TokenType::Break: return "Break";
         case TokenType::Case: return "Case";
@@ -41,7 +43,7 @@ std::string tokenTypeToString(TokenType type) {
         case TokenType::Void: return "Void";
         case TokenType::Volatile: return "Volatile";
         case TokenType::While: return "While";
-        // Operators
+        
         case TokenType::Plus: return "Plus";
         case TokenType::Minus: return "Minus";
         case TokenType::Star: return "Star";
@@ -75,7 +77,7 @@ std::string tokenTypeToString(TokenType type) {
         case TokenType::CaretEqual: return "CaretEqual";
         case TokenType::LeftShiftEqual: return "LeftShiftEqual";
         case TokenType::RightShiftEqual: return "RightShiftEqual";
-        // Punctuation
+        
         case TokenType::LeftParen: return "LeftParen";
         case TokenType::RightParen: return "RightParen";
         case TokenType::LeftBrace: return "LeftBrace";
@@ -95,8 +97,13 @@ std::string tokenTypeToString(TokenType type) {
     }
 }
 
+// EN: Prints a token in a structured debug-friendly format.
+// FR: Affiche un token dans un format de debug structure.
 std::ostream& operator<<(std::ostream& os, const Token& token) {
     os << "Token(" << tokenTypeToString(token.type) << ", \"" 
        << token.value << "\", " << token.line << ":" << token.column << ")";
     return os;
 }
+
+// TODO(cc1) EN: Keep tokenTypeToString in sync automatically with TokenType.
+// FR: Synchroniser tokenTypeToString automatiquement avec TokenType.

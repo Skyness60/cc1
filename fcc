@@ -378,7 +378,13 @@ if [[ ! -x "$cc1_bin" ]]; then
 fi
 
 workdir="$(mktemp -d -t fcc.XXXXXX)"
-cleanup() { rm -rf "$workdir"; }
+cleanup() {
+  if [[ "${FCC_KEEP_TMP:-0}" == "1" ]]; then
+    echo "fcc: note: keeping temporary directory: $workdir" >&2
+    return 0
+  fi
+  rm -rf "$workdir"
+}
 trap cleanup EXIT
 
 cpp_flags=("${cpp_I_flags[@]}" "${cpp_D_flags[@]}" "${cpp_U_flags[@]}")
@@ -403,7 +409,19 @@ for idx in "${!inputs[@]}"; do
     exit 1
   fi
 
-  # POSIX c17 accepts object files and libraries as operands to the link phase.
+  # If this is not an object/library operand, require it to be a C source file.
+  # '-' (stdin) is handled earlier and becomes a temporary file; object (.o)
+  # and libraries (.a/.so) are allowed as-is for linking.
+  if ! is_obj_operand "$src" && ! is_lib_operand "$src"; then
+    case "$src" in
+      *.c|*.C) ;;
+      *)
+        echo "fcc: error: input file must be a .c file: $src" >&2
+        exit 1
+        ;;
+    esac
+  fi
+
   if is_obj_operand "$src"; then
     if [[ $mode_link -eq 1 ]]; then
       objs+=("$src")
@@ -492,9 +510,9 @@ for idx in "${!inputs[@]}"; do
   if [[ $debug_info -eq 1 ]]; then
     # clang's assembler is more tolerant of llc DWARF directives on some systems.
     if [[ "$arch" == "m64" ]]; then
-      run clang -c "$sfile" -o "$ofile"
+      run clang -std=c89 -c "$sfile" -o "$ofile"
     else
-      run clang -m32 -c "$sfile" -o "$ofile"
+      run clang -m32 -std=c89 -c "$sfile" -o "$ofile"
     fi
   else
     if [[ "$arch" == "m64" ]]; then
@@ -544,7 +562,7 @@ if [[ $mode_link -eq 1 ]]; then
         link_args+=("$tok")
       fi
     done
-    run clang -no-pie "${link_args[@]}" "${clang_flags[@]}" -o "$out_a"
+    run clang -std=c89 -no-pie "${link_args[@]}" "${clang_flags[@]}" -o "$out_a"
   else
     link_args=()
     for tok in "${link_sequence[@]}"; do
@@ -555,6 +573,6 @@ if [[ $mode_link -eq 1 ]]; then
         link_args+=("$tok")
       fi
     done
-    run clang -m32 -no-pie "${link_args[@]}" "${clang_flags[@]}" -o "$out_a"
+    run clang -m32 -std=c89 -no-pie "${link_args[@]}" "${clang_flags[@]}" -o "$out_a"
   fi
 fi

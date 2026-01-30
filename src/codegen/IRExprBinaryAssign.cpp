@@ -2,23 +2,25 @@
 
 namespace cc1 {
 
+// EN: Emits IR for simple assignment, storing rhs into lhs.
+// FR: Genere l IR pour une assignation simple, store rhs dans lhs.
 bool IRGenerator::emitBinaryAssign(AST::BinaryExpr& node) {
     if (node.op != AST::BinaryOp::Assign) return false;
 
-    // Evaluate RHS first
+    
     node.right->accept(*this);
     IRValue rhsVal = loadValue(lastValue_);
 
-    // Evaluate LHS to get address
+    
     node.left->accept(*this);
     IRValue lhsVal = lastValue_;
 
-    // Store (handles bitfields too)
+    
     storeValue(rhsVal, lhsVal);
 
-    // Result is the assigned value
+    
     lastValue_ = rhsVal;
     return true;
 }
 
-} // namespace cc1
+} 

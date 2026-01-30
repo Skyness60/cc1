@@ -19,11 +19,18 @@ const std::unordered_map<std::string, TokenType> KeywordMatcher::keywords_ = {
     {"volatile", TokenType::Volatile}, {"while", TokenType::While}
 };
 
+// EN: Returns the keyword token type or Identifier for non-keywords.
+// FR: Renvoie le type mot-cle ou Identifier pour non-mots-cles.
 TokenType KeywordMatcher::match(const std::string& identifier) {
     auto it = keywords_.find(identifier);
     return (it != keywords_.end()) ? it->second : TokenType::Identifier;
 }
 
+// EN: Checks if the identifier is a keyword.
+// FR: Verifie si l identifiant est un mot-cle.
 bool KeywordMatcher::isKeyword(const std::string& identifier) {
     return keywords_.find(identifier) != keywords_.end();
 }
+
+// TODO(cc1) EN: Extend keywords for newer C standards if supported.
+// FR: Etendre les mots-cles pour standards C plus recents si supportes.

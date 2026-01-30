@@ -4,6 +4,8 @@
 
 namespace cc1 {
 
+// EN: Defines builtin macros like __DATE__/__TIME__ and platform markers.
+// FR: Definit les macros internes comme __DATE__/__TIME__ et marqueurs plateforme.
 void Preprocessor::setupBuiltinMacros() {
     std::time_t t = std::time(nullptr);
     std::tm* tm = std::localtime(&t);
@@ -25,4 +27,6 @@ void Preprocessor::setupBuiltinMacros() {
     macroTable_.define("__unix__", pp::MacroDefinition("__unix__", std::vector<std::string>(), "1", false, false));
 }
 
-} // namespace cc1
+// TODO(cc1) EN: Make builtin macros configurable by target instead of hardcoding.
+// FR: Rendre les macros internes configurables par cible au lieu de hardcoder.
+} 

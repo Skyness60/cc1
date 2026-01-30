@@ -2,11 +2,15 @@
 
 namespace cc1 {
 
+// EN: Generates a unique name for anonymous struct types.
+// FR: Genere un nom unique pour les structs anonymes.
 std::string IRGenerator::nextAnonStructName() {
     static int anonCounter = 0;
     return "anon." + std::to_string(anonCounter++);
 }
 
+// EN: Maps AST types to LLVM IR type strings.
+// FR: Mappe les types AST vers les types LLVM IR.
 std::string IRGenerator::typeToLLVM(AST::Type* type) {
     if (!type) return "void";
 
@@ -18,7 +22,7 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
 
     if (auto* ptr = dynamic_cast<AST::PointerType*>(type)) {
         std::string pointeeType = typeToLLVM(ptr->pointee.get());
-        // In LLVM, void* is not valid - use i8* instead
+        
         if (pointeeType == "void") {
             return "i8*";
         }
@@ -34,7 +38,7 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
         if (size > 0) {
             return "[" + std::to_string(size) + " x " + elemType + "]";
         }
-        // Unsized array - treat as pointer
+        
         return elemType + "*";
     }
 
@@ -53,24 +57,24 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
     }
 
     if (auto* typedefType = dynamic_cast<AST::TypedefType*>(type)) {
-        // Resolve typedef to its underlying type
+        
         AST::Type* resolved = resolveTypedef(typedefType->name);
         if (resolved) {
             return typeToLLVM(resolved);
         }
-        // Fallback if not resolved
+        
         return "i32";
     }
 
     if (auto* structType = dynamic_cast<AST::StructType*>(type)) {
         if (structType->name.empty()) {
-            // Anonymous struct/union types are distinct in C.
-            // If we inline them, multiple different anonymous structs can collapse to the
-            // same LLVM type string (e.g., "{ i8 }") which breaks member/bitfield access.
-            // Give them a unique internal name and emit them as named %struct.*.
+            
+            
+            
+            
             structType->name = nextAnonStructName();
         }
-        // Named struct (including auto-named anonymous): register for module-level definition.
+        
         collectNamedStruct(structType);
         return "%struct." + structType->name;
     }
@@ -80,9 +84,11 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
         return is64bit_ ? "i32" : "i32";
     }
 
-    return "i32";  // Default fallback
+    return "i32";  
 }
 
+// EN: Maps primitive kinds to LLVM IR type strings.
+// FR: Mappe les types primitifs vers les types LLVM IR.
 std::string IRGenerator::primitiveToLLVM(AST::PrimitiveKind kind) {
     switch (kind) {
         case AST::PrimitiveKind::Void:
@@ -113,4 +119,4 @@ std::string IRGenerator::primitiveToLLVM(AST::PrimitiveKind kind) {
     return "i32";
 }
 
-} // namespace cc1
+} 

@@ -7,15 +7,15 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Switch Statement
-// ============================================================================
-
+// EN: Emits IR for switch statements, collecting case labels and dispatch.
+// FR: Genere l IR pour switch, collecte les cases et le dispatch.
 void IRGenerator::visit(AST::SwitchStmt& node) {
-    // Evaluate switch expression
+    
     node.expression->accept(*this);
     IRValue switchLoaded = loadValue(lastValue_);
 
+    // EN: Checks if the switch expression is unsigned for promotions.
+    // FR: Verifie si l expression switch est non signee pour promotions.
     auto isUnsignedSwitchExpr = [&]() -> bool {
         if (!node.expression || !node.expression->resolvedType) return false;
         if (auto* prim = dynamic_cast<AST::PrimitiveType*>(stripQualifiers(node.expression->resolvedType.get()))) {
@@ -33,10 +33,12 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
         return false;
     };
 
-    // Normalize the switch condition to i32 (C integer promotions).
+    
     std::string switchReg = switchLoaded.name;
     std::string switchType = switchLoaded.type;
     if (switchType != "i32") {
+        // EN: Maps integer LLVM types to bit-width for promotions.
+        // FR: Mappe les types entiers LLVM vers la largeur en bits.
         auto intBits = [](const std::string& t) -> int {
             if (t == "i8") return 8;
             if (t == "i16") return 16;
@@ -51,7 +53,7 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
         } else if (bits == 64) {
             emit(promoted + " = trunc i64 " + switchReg + " to i32");
         } else {
-            // Fallback: treat as i32 already.
+            
             promoted = switchReg;
         }
         switchReg = promoted;
@@ -60,7 +62,7 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
 
     std::string endLabel = newLabel("sw.end");
 
-    // Collect case/default labels in source order.
+    
     struct LabelInfo {
         AST::Statement* node;
         bool isDefault;
@@ -71,6 +73,8 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
     labels.reserve(8);
 
     std::function<void(AST::Statement*)> collect;
+    // EN: Walks the switch body to collect case/default labels.
+    // FR: Parcourt le corps pour collecter les labels case/default.
     collect = [&](AST::Statement* stmt) {
         if (!stmt) return;
         if (auto* c = dynamic_cast<AST::CaseStmt*>(stmt)) {
@@ -105,18 +109,18 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
             collect(lab->body.get());
             return;
         }
-        // Other statement kinds don't introduce switch labels.
+        
     };
 
     collect(node.body.get());
 
-    // Build switch context with concrete labels.
+    
     SwitchContext ctx;
     ctx.switchVar = switchReg;
     ctx.switchType = switchType;
     ctx.endLabel = endLabel;
 
-    // Assign labels (and choose default target).
+    
     std::string defaultTarget = endLabel;
     for (auto& li : labels) {
         std::string lbl = newLabel(li.isDefault ? "sw.default" : "sw.case");
@@ -130,11 +134,11 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
         }
     }
 
-    // Push switch context and break target.
+    
     switchStack_.push(ctx);
     breakLabels_.push(endLabel);
 
-    // Emit dispatch (LLVM switch terminator).
+    
     {
         std::stringstream sw;
         sw << "switch " << switchType << " " << switchReg << ", label %" << defaultTarget << " [";
@@ -148,16 +152,16 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
         emit(sw.str());
     }
 
-    // After a terminator, we must start a new block before defining other blocks.
-    // This block is unreachable from the dispatch (switch is a terminator), and just
-    // provides a well-formed place to continue emitting subsequent IR.
+    
+    
+    
     std::string afterDispatch = newLabel("sw.after");
     emitLabel(afterDispatch);
     emit("br label %" + endLabel);
 
-    // Emit labeled blocks in source order.
-    // Any statements before the first case/default label are unreachable in C switch semantics,
-    // so we skip them.
+    
+    
+    
     if (node.body) {
         if (auto* block = dynamic_cast<AST::CompoundStmt*>(node.body.get())) {
             bool started = false;
@@ -173,24 +177,24 @@ void IRGenerator::visit(AST::SwitchStmt& node) {
                 st->accept(*this);
             }
         } else {
-            // If the body isn't a compound, only emit if it starts with a label.
+            
             if (dynamic_cast<AST::CaseStmt*>(node.body.get()) || dynamic_cast<AST::DefaultStmt*>(node.body.get())) {
                 node.body->accept(*this);
             }
         }
     }
 
-    // If control reaches the end of the switch body without a break/return/goto,
-    // it implicitly exits the switch.
+    
+    
     if (!blockTerminated_) {
         emit("br label %" + endLabel);
     }
 
-    // End label (code after the switch continues here).
+    
     emitLabel(endLabel);
 
     breakLabels_.pop();
     switchStack_.pop();
 }
 
-} // namespace cc1
+} 

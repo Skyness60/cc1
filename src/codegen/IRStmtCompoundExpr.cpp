@@ -2,20 +2,18 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Compound Statement
-// ============================================================================
-
+// EN: Emits IR for a compound statement with its own scope.
+// FR: Genere l IR pour un bloc compose avec scope.
 void IRGenerator::visit(AST::CompoundStmt& node) {
     DebugLocGuard loc(*this, node.line, node.column);
     enterScope();
 
-    // Process declarations
+    
     for (auto& decl : node.declarations) {
         if (decl) decl->accept(*this);
     }
 
-    // Process statements
+    
     for (auto& stmt : node.statements) {
         if (stmt) stmt->accept(*this);
     }
@@ -23,16 +21,14 @@ void IRGenerator::visit(AST::CompoundStmt& node) {
     exitScope();
 }
 
-// ============================================================================
-// Expression Statement
-// ============================================================================
-
+// EN: Emits IR for an expression statement.
+// FR: Genere l IR pour une instruction d expression.
 void IRGenerator::visit(AST::ExpressionStmt& node) {
     DebugLocGuard loc(*this, node.line, node.column);
     if (node.expression) {
         node.expression->accept(*this);
-        // Result is discarded
+        
     }
 }
 
-} // namespace cc1
+} 

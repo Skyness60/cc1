@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Analyzes a variable declaration: types, initializers, and symbols.
+// FR: Analyse une declaration de variable : types, init et symboles.
 void SemanticAnalyzer::visit(AST::VarDecl& node) {
     if (node.name.empty()) {
         if (auto* enumType = dynamic_cast<AST::EnumType*>(node.type.get())) {
@@ -88,6 +90,8 @@ void SemanticAnalyzer::visit(AST::VarDecl& node) {
     currentScope_->define(node.name, sym, node.type ? node.type->clone() : nullptr);
 }
 
+// EN: Analyzes a parameter declaration and defines it in scope.
+// FR: Analyse une declaration de parametre et la definit dans le scope.
 void SemanticAnalyzer::visit(AST::ParamDecl& node) {
     Symbol sym;
     sym.name = node.name;
@@ -100,4 +104,7 @@ void SemanticAnalyzer::visit(AST::ParamDecl& node) {
     }
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Add duplicate parameter name checks.
+// FR: Ajouter des checks de noms de parametres dupliques.

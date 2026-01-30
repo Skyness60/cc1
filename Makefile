@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -g -fno-stack-protector -Iinclude -MMD -MP
+CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -O2 -g -fno-stack-protector -Iinclude -MMD -MP
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -21,7 +21,7 @@ YELLOW = \033[1;33m
 RED = \033[1;31m
 RESET = \033[0m
 
-.PHONY: all clean re test
+.PHONY: all clean re
 all: $(TARGET)
 	@echo -e "$(GREEN)✓ Build successful!$(RESET)"
 
@@ -34,13 +34,6 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@echo -e "$(YELLOW)[CC]$(RESET) Compiling $<"
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Test target
-test: $(TEST_OBJS) $(TEST_DIR)/test_lexer.cpp
-	@echo -e "$(CYAN)[TEST]$(RESET) Building tests..."
-	@$(CXX) $(CXXFLAGS) -I$(TEST_DIR) -o $(TEST_TARGET) $(TEST_DIR)/test_lexer.cpp $(TEST_OBJS)
-	@echo -e "$(CYAN)[TEST]$(RESET) Running tests...\n"
-	@./$(TEST_TARGET)
-
 $(OBJ_DIR):
 	@mkdir -p $(OBJ_DIR)
 
@@ -48,6 +41,8 @@ clean:
 	@echo -e "$(RED)[CLEAN]$(RESET) Removing $(OBJ_DIR) and $(TARGET)"
 	@rm -rf $(OBJ_DIR) $(TARGET) $(TEST_TARGET)
 
-re: clean all
+re:
+	@make clean
+	@make all
 
 -include $(DEPS)

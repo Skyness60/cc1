@@ -2,10 +2,14 @@
 
 namespace cc1 {
 
+// EN: Stores a resolved type on the expression for later passes.
+// FR: Stocke le type resolu sur l expression pour les passes suivantes.
 static void setResolvedExprType(AST::Expression& expr, const AST::Ptr<AST::Type>& type) {
     expr.resolvedType = type ? type->clone() : nullptr;
 }
 
+// EN: Checks binary expressions and records the resulting type.
+// FR: Verifie les binaires et enregistre le type resultant.
 void SemanticAnalyzer::visit(AST::BinaryExpr& node) {
     if (node.left) node.left->accept(*this);
     if (node.right) node.right->accept(*this);
@@ -47,6 +51,8 @@ void SemanticAnalyzer::visit(AST::BinaryExpr& node) {
     }
 }
 
+// EN: Validates unary operators and infers their result types.
+// FR: Valide les unaires et deduit leurs types resultat.
 void SemanticAnalyzer::visit(AST::UnaryExpr& node) {
     if (node.operand) node.operand->accept(*this);
 
@@ -83,6 +89,8 @@ void SemanticAnalyzer::visit(AST::UnaryExpr& node) {
     }
 }
 
+// EN: Assigns the cast target type as the expression result type.
+// FR: Assigne le type cible du cast comme type resultat.
 void SemanticAnalyzer::visit(AST::CastExpr& node) {
     if (node.operand) node.operand->accept(*this);
 
@@ -92,6 +100,8 @@ void SemanticAnalyzer::visit(AST::CastExpr& node) {
     }
 }
 
+// EN: Validates call arguments and sets the call result type.
+// FR: Valide les arguments d appel et fixe le type resultat.
 void SemanticAnalyzer::visit(AST::CallExpr& node) {
     if (node.callee) node.callee->accept(*this);
     for (auto& arg : node.arguments) {
@@ -142,10 +152,14 @@ void SemanticAnalyzer::visit(AST::CallExpr& node) {
     }
 }
 
+// EN: Visits member access; type resolution handled elsewhere.
+// FR: Visite l acces membre; la resolution se fait ailleurs.
 void SemanticAnalyzer::visit(AST::MemberExpr& node) {
     if (node.object) node.object->accept(*this);
 }
 
+// EN: Validates array indexing and infers element type.
+// FR: Valide l indexation et deduit le type de l element.
 void SemanticAnalyzer::visit(AST::IndexExpr& node) {
     if (node.array) node.array->accept(*this);
     if (node.index) node.index->accept(*this);
@@ -161,6 +175,8 @@ void SemanticAnalyzer::visit(AST::IndexExpr& node) {
     }
 }
 
+// EN: Validates ternary expression branches and chooses a type.
+// FR: Valide les branches du ternaire et choisit un type.
 void SemanticAnalyzer::visit(AST::TernaryExpr& node) {
     if (node.condition) node.condition->accept(*this);
     if (node.thenExpr) node.thenExpr->accept(*this);
@@ -172,4 +188,4 @@ void SemanticAnalyzer::visit(AST::TernaryExpr& node) {
     }
 }
 
-} // namespace cc1
+} 

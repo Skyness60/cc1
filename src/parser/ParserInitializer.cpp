@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses an initializer, either a list or an assignment expression.
+// FR: Parse un initialiseur, soit liste soit expression d affectation.
 AST::Ptr<AST::Expression> Parser::parseInitializer() {
     if (check(TokenType::LeftBrace)) {
         return parseInitializerList();
@@ -9,6 +11,8 @@ AST::Ptr<AST::Expression> Parser::parseInitializer() {
     return parseAssignmentExpression();
 }
 
+// EN: Parses a brace-enclosed initializer list.
+// FR: Parse une liste d initialisation entre accolades.
 AST::Ptr<AST::InitializerList> Parser::parseInitializerList() {
     int line = current().line;
     int col = current().column;
@@ -26,4 +30,7 @@ AST::Ptr<AST::InitializerList> Parser::parseInitializerList() {
     return initList;
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Support designated initializers if needed.
+// FR: Supporter les initialisateurs designes si necessaire.

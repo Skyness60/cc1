@@ -2,18 +2,16 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Enum Processing
-// ============================================================================
-
+// EN: Processes enum type definitions and registers enum constants.
+// FR: Traite les enums et enregistre les constantes enum.
 void SemanticAnalyzer::processEnumType(AST::EnumType* enumType) {
     if (!enumType) return;
 
-    // Register enum tag if named
+    
     if (!enumType->name.empty()) {
         Symbol* existingTag = currentScope_->lookupTag(enumType->name);
         if (existingTag && existingTag->tagKind != Symbol::TagKind::Enum) {
-            error(enumType->line, 1,  // Column 1 points to 'enum' keyword like clang
+            error(enumType->line, 1,  
                   "use of '" + enumType->name + "' with tag type that does not match previous declaration");
             return;
         }
@@ -26,22 +24,22 @@ void SemanticAnalyzer::processEnumType(AST::EnumType* enumType) {
         currentScope_->defineTag(enumType->name, sym);
     }
 
-    // Process enumerators - check for division by zero (bad_semantic_7.c)
+    
     long long nextValue = 0;
     for (const auto& enumerator : enumType->enumerators) {
         if (enumerator.value) {
-            // Check for division by zero in the value expression
+            
             if (hasDivisionByZero(enumerator.value.get())) {
-                // Point to the expression like clang does
+                
                 int line = enumerator.value->line;
                 int col = enumerator.value->column;
                 error(line, col, "expression is not an integer constant expression");
                 return;
             }
 
-            // Evaluate the constant expression
+            
             if (!evaluateConstantExpr(enumerator.value.get(), nextValue)) {
-                // Point to the expression like clang does
+                
                 int line = enumerator.value->line;
                 int col = enumerator.value->column;
                 error(line, col, "expression is not an integer constant expression");
@@ -49,10 +47,10 @@ void SemanticAnalyzer::processEnumType(AST::EnumType* enumType) {
             }
         }
 
-        // Store computed value in AST
+        
         enumerator.computedValue = nextValue;
 
-        // Register enumerator as constant with its value
+        
         Symbol sym;
         sym.name = enumerator.name;
         sym.isEnumConstant = true;
@@ -65,4 +63,4 @@ void SemanticAnalyzer::processEnumType(AST::EnumType* enumType) {
     }
 }
 
-} // namespace cc1
+} 

@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses equality expressions (==, !=).
+// FR: Parse les expressions d egalite (==, !=).
 AST::Ptr<AST::Expression> Parser::parseEqualityExpression() {
     auto expr = parseRelationalExpression();
 
@@ -17,6 +19,8 @@ AST::Ptr<AST::Expression> Parser::parseEqualityExpression() {
     return expr;
 }
 
+// EN: Parses relational expressions (<, >, <=, >=).
+// FR: Parse les expressions relationnelles (<, >, <=, >=).
 AST::Ptr<AST::Expression> Parser::parseRelationalExpression() {
     auto expr = parseShiftExpression();
 
@@ -32,6 +36,8 @@ AST::Ptr<AST::Expression> Parser::parseRelationalExpression() {
     return expr;
 }
 
+// EN: Parses shift expressions (<<, >>).
+// FR: Parse les expressions de decalage (<<, >>).
 AST::Ptr<AST::Expression> Parser::parseShiftExpression() {
     auto expr = parseAdditiveExpression();
 
@@ -47,6 +53,8 @@ AST::Ptr<AST::Expression> Parser::parseShiftExpression() {
     return expr;
 }
 
+// EN: Parses additive expressions (+, -).
+// FR: Parse les expressions additives (+, -).
 AST::Ptr<AST::Expression> Parser::parseAdditiveExpression() {
     auto expr = parseMultiplicativeExpression();
 
@@ -62,6 +70,8 @@ AST::Ptr<AST::Expression> Parser::parseAdditiveExpression() {
     return expr;
 }
 
+// EN: Parses multiplicative expressions (*, /, %).
+// FR: Parse les expressions multiplicatives (*, /, %).
 AST::Ptr<AST::Expression> Parser::parseMultiplicativeExpression() {
     auto expr = parseCastExpression();
 
@@ -76,4 +86,7 @@ AST::Ptr<AST::Expression> Parser::parseMultiplicativeExpression() {
     return expr;
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Add diagnostics for invalid operator precedence mixes.
+// FR: Ajouter des diagnostics pour mixes invalides de precedence.

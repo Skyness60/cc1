@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Analyzes a function declaration/definition and its body scope.
+// FR: Analyse une declaration/definition de fonction et son scope.
 void SemanticAnalyzer::visit(AST::FunctionDecl& node) {
     Symbol sym;
     sym.name = node.name;
@@ -40,4 +42,7 @@ void SemanticAnalyzer::visit(AST::FunctionDecl& node) {
     }
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Diagnose conflicting function prototypes across scopes.
+// FR: Diagnostiquer les prototypes de fonctions en conflit entre scopes.

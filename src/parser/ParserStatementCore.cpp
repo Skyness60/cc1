@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses a statement by dispatching on the current token.
+// FR: Parse une instruction en dispatchant selon le token courant.
 AST::Ptr<AST::Statement> Parser::parseStatement() {
     if (check(TokenType::Identifier) && peek().type == TokenType::Colon) {
         return parseLabeledStatement();
@@ -32,6 +34,8 @@ AST::Ptr<AST::Statement> Parser::parseStatement() {
     return parseExpressionStatement();
 }
 
+// EN: Parses a compound statement block with declarations and statements.
+// FR: Parse un bloc compose avec declarations et instructions.
 AST::Ptr<AST::CompoundStmt> Parser::parseCompoundStatement() {
     int line = current().line;
     int col = current().column;
@@ -59,4 +63,7 @@ AST::Ptr<AST::CompoundStmt> Parser::parseCompoundStatement() {
     return compound;
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Improve mixed declaration/statement ordering errors.
+// FR: Ameliorer les erreurs d ordre declaration/instruction.

@@ -3,10 +3,14 @@
 
 namespace AST {
 
+// EN: Accepts a type visitor for primitive types.
+// FR: Accepte un visiteur de type pour les types primitifs.
 void PrimitiveType::accept(TypeVisitor& visitor) const {
     visitor.visit(*this);
 }
 
+// EN: Compares this primitive type against another type.
+// FR: Compare ce type primitif a un autre type.
 bool PrimitiveType::equals(const Type& other) const {
     struct VisitorImpl : TypeVisitor {
         const PrimitiveType& self;
@@ -28,6 +32,8 @@ bool PrimitiveType::equals(const Type& other) const {
     return visitor.equal;
 }
 
+// EN: Returns a string representation of the primitive type.
+// FR: Renvoie une representation chaine du type primitif.
 std::string PrimitiveType::toString() const {
     switch (kind) {
         case PrimitiveKind::Void: return "void";
@@ -49,8 +55,13 @@ std::string PrimitiveType::toString() const {
     return "unknown";
 }
 
+// EN: Clones this primitive type with location preserved.
+// FR: Clone ce type primitif en preservant la position.
 Ptr<Type> PrimitiveType::clone() const {
     return make<PrimitiveType>(kind, line, column);
 }
 
-} // namespace AST
+} 
+
+// TODO(cc1) EN: Add C23 _Bool/_Float16 if supported.
+// FR: Ajouter _Bool/_Float16 si supporte.

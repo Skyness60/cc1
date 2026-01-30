@@ -5,12 +5,16 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Skips whitespace to align parsing positions.
+// FR: Saute les espaces pour aligner le parsing.
 void DirectiveParser::skipWhitespace(const std::string& line, size_t& pos) {
     while (pos < line.size() && std::isspace(line[pos])) {
         pos++;
     }
 }
 
+// EN: Parses an identifier token from the line.
+// FR: Parse un identifiant dans la ligne.
 std::string DirectiveParser::parseIdentifier(const std::string& line, size_t& pos) {
     std::string result;
     skipWhitespace(line, pos);
@@ -25,6 +29,8 @@ std::string DirectiveParser::parseIdentifier(const std::string& line, size_t& po
     return result;
 }
 
+// EN: Parses an include filename delimited by <> or "".
+// FR: Parse un nom de fichier include delimite par <> ou "".
 std::string DirectiveParser::parseFilename(const std::string& line, size_t& pos, bool& isSystemInclude) {
     skipWhitespace(line, pos);
 
@@ -57,6 +63,8 @@ std::string DirectiveParser::parseFilename(const std::string& line, size_t& pos,
     return filename;
 }
 
+// EN: Parses a macro parameter list and detects variadic macros.
+// FR: Parse la liste de params de macro et detecte le variadique.
 std::vector<std::string> DirectiveParser::parseMacroParams(const std::string& line, size_t& pos, bool& isVariadic) {
     std::vector<std::string> params;
     isVariadic = false;
@@ -96,6 +104,8 @@ std::vector<std::string> DirectiveParser::parseMacroParams(const std::string& li
     return params;
 }
 
+// EN: Parses the macro body after the name/params, trimming trailing spaces.
+// FR: Parse le corps de macro apres nom/params, en trimant la fin.
 std::string DirectiveParser::parseMacroBody(const std::string& line, size_t pos) {
     skipWhitespace(line, pos);
 
@@ -113,5 +123,8 @@ std::string DirectiveParser::parseMacroBody(const std::string& line, size_t pos)
     return body;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Preserve original spacing in macro bodies for exact re-expansion.
+// FR: Conserver l espacement d origine pour une re-expansion exacte.

@@ -3,6 +3,8 @@
 namespace cc1 {
 namespace {
 
+// EN: Removes qualifiers/typedef wrappers to reach the underlying type.
+// FR: Retire qualifiers/typedefs pour atteindre le type sous-jacent.
 AST::Type* stripQualifiersAndTypedef(AST::Type* type) {
     if (!type) return nullptr;
     while (auto* qual = dynamic_cast<AST::QualifiedType*>(type)) {
@@ -17,14 +19,18 @@ AST::Type* stripQualifiersAndTypedef(AST::Type* type) {
     return type;
 }
 
-} // namespace
+} 
 
+// EN: Masks an unsigned value to a given bit-width.
+// FR: Masque une valeur non signee a une largeur de bits.
 uint64_t SemanticAnalyzer::ConstExprEvalVisitor::maskUnsigned(uint64_t value, int bits) {
     if (bits >= 64) return value;
     if (bits <= 0) return 0;
     return value & ((1ULL << bits) - 1ULL);
 }
 
+// EN: Returns the bit-width for a primitive integer kind.
+// FR: Renvoie la largeur en bits pour un entier primitif.
 int SemanticAnalyzer::ConstExprEvalVisitor::widthBitsForPrim(AST::PrimitiveKind kind) const {
     switch (kind) {
         case AST::PrimitiveKind::Char:
@@ -48,6 +54,8 @@ int SemanticAnalyzer::ConstExprEvalVisitor::widthBitsForPrim(AST::PrimitiveKind 
     }
 }
 
+// EN: Infers integer width from expression shape (casts/bitwise not).
+// FR: Deduit la largeur entiere depuis l expression (cast/bitwise not).
 int SemanticAnalyzer::ConstExprEvalVisitor::inferIntWidthBits(AST::Expression* e) {
     if (!e) return 32;
 
@@ -66,4 +74,4 @@ int SemanticAnalyzer::ConstExprEvalVisitor::inferIntWidthBits(AST::Expression* e
     return 32;
 }
 
-} // namespace cc1
+} 

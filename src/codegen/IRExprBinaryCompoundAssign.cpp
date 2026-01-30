@@ -2,27 +2,31 @@
 
 namespace cc1 {
 
+// EN: Emits IR for compound assignments like +=, -=, etc.
+// FR: Genere l IR pour les assignations composees (+=, -=, etc.).
 bool IRGenerator::emitBinaryCompoundAssign(AST::BinaryExpr& node) {
     if (node.op < AST::BinaryOp::AddAssign || node.op > AST::BinaryOp::RightShiftAssign) {
         return false;
     }
 
-    // Get LHS address
+    
     node.left->accept(*this);
     IRValue lhsPtr = lastValue_;
 
-    // Load current LHS value (handles bitfields)
+    
     IRValue lhsLoaded = loadValue(lhsPtr);
     std::string lhsReg = lhsLoaded.name;
     std::string lhsType = lhsLoaded.type;
 
-    // Evaluate RHS
+    
     node.right->accept(*this);
     IRValue rhsVal = loadValue(lastValue_);
     std::string rhsReg = rhsVal.name;
 
-    // Keep RHS type compatible with LHS type.
+    
     if (rhsVal.type != lhsType) {
+        // EN: Maps integer LLVM types to bit-width for promotions.
+        // FR: Mappe les types entiers LLVM vers la largeur en bits.
         auto getIntSize = [](const std::string& t) -> int {
             if (t == "i8") return 8;
             if (t == "i16") return 16;
@@ -43,7 +47,7 @@ bool IRGenerator::emitBinaryCompoundAssign(AST::BinaryExpr& node) {
         }
     }
 
-    // Perform operation
+    
     std::string resultReg = newTemp();
     std::string opName;
     switch (node.op) {
@@ -61,11 +65,11 @@ bool IRGenerator::emitBinaryCompoundAssign(AST::BinaryExpr& node) {
     }
     emit(resultReg + " = " + opName + " " + lhsType + " " + lhsReg + ", " + rhsReg);
 
-    // Store back (handles bitfields)
+    
     storeValue(IRValue(resultReg, lhsType, false, false), lhsPtr);
 
     lastValue_ = IRValue(resultReg, lhsType, false, false);
     return true;
 }
 
-} // namespace cc1
+} 

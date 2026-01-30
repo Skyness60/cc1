@@ -2,11 +2,9 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Break Statement
-// ============================================================================
-
-void IRGenerator::visit(AST::BreakStmt& /*node*/) {
+// EN: Emits IR for break statements using the loop/switch break label.
+// FR: Genere l IR pour break via le label de sortie.
+void IRGenerator::visit(AST::BreakStmt& ) {
     if (breakLabels_.empty()) {
         hadError_ = true;
         return;
@@ -14,16 +12,14 @@ void IRGenerator::visit(AST::BreakStmt& /*node*/) {
 
     emit("br label %" + breakLabels_.top());
 
-    // Dead code after break - emit unreachable label
+    
     std::string deadLabel = newLabel("break.dead");
     emitLabel(deadLabel);
 }
 
-// ============================================================================
-// Continue Statement
-// ============================================================================
-
-void IRGenerator::visit(AST::ContinueStmt& /*node*/) {
+// EN: Emits IR for continue statements using the loop continue label.
+// FR: Genere l IR pour continue via le label de reprise.
+void IRGenerator::visit(AST::ContinueStmt& ) {
     if (continueLabels_.empty()) {
         hadError_ = true;
         return;
@@ -31,15 +27,13 @@ void IRGenerator::visit(AST::ContinueStmt& /*node*/) {
 
     emit("br label %" + continueLabels_.top());
 
-    // Dead code after continue
+    
     std::string deadLabel = newLabel("continue.dead");
     emitLabel(deadLabel);
 }
 
-// ============================================================================
-// Return Statement
-// ============================================================================
-
+// EN: Emits IR for return statements and stores the return value.
+// FR: Genere l IR pour return et stocke la valeur de retour.
 void IRGenerator::visit(AST::ReturnStmt& node) {
     if (node.value && currentFunctionReturnType_ != "void") {
         node.value->accept(*this);
@@ -49,10 +43,12 @@ void IRGenerator::visit(AST::ReturnStmt& node) {
         std::string retReg = retLoaded.name;
         std::string retType = retLoaded.type;
 
-        // Convert return value to function return type if necessary
+        
         if (retType != currentFunctionReturnType_) {
             std::string converted = newTemp();
-            // Get sizes for integer types
+            
+            // EN: Maps integer LLVM types to bit-width for promotions.
+            // FR: Mappe les types entiers LLVM vers la largeur en bits.
             auto getIntSize = [](const std::string& t) -> int {
                 if (t == "i8") return 8;
                 if (t == "i16") return 16;
@@ -78,15 +74,13 @@ void IRGenerator::visit(AST::ReturnStmt& node) {
 
     emit("br label %" + returnLabel_);
 
-    // Dead code after return
+    
     std::string deadLabel = newLabel("return.dead");
     emitLabel(deadLabel);
 }
 
-// ============================================================================
-// Goto Statement
-// ============================================================================
-
+// EN: Emits IR for goto by branching to a named label.
+// FR: Genere l IR pour goto via branchement vers label.
 void IRGenerator::visit(AST::GotoStmt& node) {
     std::string targetLabel;
 
@@ -94,22 +88,20 @@ void IRGenerator::visit(AST::GotoStmt& node) {
     if (it != gotoLabels_.end()) {
         targetLabel = it->second;
     } else {
-        // Label not seen yet - create placeholder
+        
         targetLabel = newLabel("label." + node.label);
         gotoLabels_[node.label] = targetLabel;
     }
 
     emit("br label %" + targetLabel);
 
-    // Dead code after goto
+    
     std::string deadLabel = newLabel("goto.dead");
     emitLabel(deadLabel);
 }
 
-// ============================================================================
-// Label Statement
-// ============================================================================
-
+// EN: Emits IR for a label and its associated statement body.
+// FR: Genere l IR pour un label et son corps.
 void IRGenerator::visit(AST::LabelStmt& node) {
     std::string labelName;
 
@@ -121,14 +113,14 @@ void IRGenerator::visit(AST::LabelStmt& node) {
         gotoLabels_[node.label] = labelName;
     }
 
-    // Branch to label (for fall-through)
+    
     emit("br label %" + labelName);
     emitLabel(labelName);
 
-    // Process body
+    
     if (node.body) {
         node.body->accept(*this);
     }
 }
 
-} // namespace cc1
+} 

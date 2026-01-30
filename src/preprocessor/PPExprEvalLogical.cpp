@@ -3,6 +3,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Evaluates logical OR (||) with short-circuit-like folding.
+// FR: Evalue l OR logique (||) avec evaluation type short-circuit.
 long long ExpressionEvaluator::evalLogicalOr(const std::string& expr, size_t& pos) {
     long long left = evalLogicalAnd(expr, pos);
 
@@ -20,6 +22,8 @@ long long ExpressionEvaluator::evalLogicalOr(const std::string& expr, size_t& po
     return left;
 }
 
+// EN: Evaluates logical AND (&&) with short-circuit-like folding.
+// FR: Evalue l AND logique (&&) avec evaluation type short-circuit.
 long long ExpressionEvaluator::evalLogicalAnd(const std::string& expr, size_t& pos) {
     long long left = evalBitwiseOr(expr, pos);
 
@@ -37,5 +41,8 @@ long long ExpressionEvaluator::evalLogicalAnd(const std::string& expr, size_t& p
     return left;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Implement true short-circuiting to avoid evaluating RHS.
+// FR: Implementer un vrai short-circuit pour eviter d evaluer la droite.

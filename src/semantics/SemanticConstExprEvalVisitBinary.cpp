@@ -4,6 +4,8 @@
 
 namespace cc1 {
 
+// EN: Evaluates binary constant expressions with arithmetic/comparison ops.
+// FR: Evalue les binaires constantes (arithmetique/comparaison).
 void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::BinaryExpr& node) {
     long long left, right;
     if (!sema.evaluateConstantExpr(node.left.get(), left)) {
@@ -111,4 +113,4 @@ void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::BinaryExpr& node) {
     }
 }
 
-} // namespace cc1
+} 

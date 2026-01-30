@@ -5,28 +5,40 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Stores macro table reference for defined() and expansions.
+// FR: Stocke une reference a la table de macros pour defined() et expansions.
 ExpressionEvaluator::ExpressionEvaluator(MacroTable& table)
     : macroTable_(table) {}
 
+// EN: Records a parse/eval error for later inspection.
+// FR: Enregistre une erreur de parse/eval pour consultation.
 void ExpressionEvaluator::error(const std::string& message) {
     hadError_ = true;
     errorMessage_ = message;
 }
 
+// EN: Skips whitespace to align parsing.
+// FR: Saute les espaces pour aligner le parsing.
 void ExpressionEvaluator::skipWhitespace(const std::string& expr, size_t& pos) {
     while (pos < expr.size() && std::isspace(static_cast<unsigned char>(expr[pos]))) {
         pos++;
     }
 }
 
+// EN: Checks valid identifier start characters.
+// FR: Verifie les caracteres valides pour debut d identifiant.
 bool ExpressionEvaluator::isIdentifierStart(char c) const {
     return std::isalpha(static_cast<unsigned char>(c)) || c == '_';
 }
 
+// EN: Checks valid identifier continuation characters.
+// FR: Verifie les caracteres valides pour continuation d identifiant.
 bool ExpressionEvaluator::isIdentifierChar(char c) const {
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
 }
 
+// EN: Parses an identifier token at the current position.
+// FR: Parse un identifiant a la position courante.
 std::string ExpressionEvaluator::parseIdentifier(const std::string& expr, size_t& pos) {
     std::string result;
     if (pos < expr.size() && isIdentifierStart(expr[pos])) {
@@ -38,6 +50,8 @@ std::string ExpressionEvaluator::parseIdentifier(const std::string& expr, size_t
     return result;
 }
 
+// EN: Parses an integer literal with base detection and suffix skipping.
+// FR: Parse un litteral entier avec detection de base et suffixes.
 long long ExpressionEvaluator::parseNumber(const std::string& str, size_t& pos) {
     long long val = 0;
     int base = 10;
@@ -80,6 +94,8 @@ long long ExpressionEvaluator::parseNumber(const std::string& str, size_t& pos) 
     return val;
 }
 
+// EN: Entry point for expression evaluation using ternary precedence.
+// FR: Point d entree de l evaluation en utilisant la precedence ternaire.
 long long ExpressionEvaluator::evaluate(const std::string& expression) {
     hadError_ = false;
     errorMessage_.clear();
@@ -87,6 +103,8 @@ long long ExpressionEvaluator::evaluate(const std::string& expression) {
     return evalTernary(expression, pos);
 }
 
+// EN: Evaluates ternary expressions with right associativity.
+// FR: Evalue les ternaires avec associativite a droite.
 long long ExpressionEvaluator::evalTernary(const std::string& expr, size_t& pos) {
     long long cond = evalLogicalOr(expr, pos);
     skipWhitespace(expr, pos);
@@ -105,5 +123,8 @@ long long ExpressionEvaluator::evalTernary(const std::string& expr, size_t& pos)
     return cond;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Report errors for malformed ternary expressions (missing ':').
+// FR: Signaler les erreurs pour ternaires mal formes (':' manquant).

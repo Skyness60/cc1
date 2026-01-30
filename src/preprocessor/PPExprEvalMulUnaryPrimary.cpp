@@ -5,6 +5,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Evaluates *, /, % with division-by-zero checks.
+// FR: Evalue *, /, % avec verif division par zero.
 long long ExpressionEvaluator::evalMultiplicative(const std::string& expr, size_t& pos) {
     long long left = evalUnary(expr, pos);
 
@@ -40,6 +42,8 @@ long long ExpressionEvaluator::evalMultiplicative(const std::string& expr, size_
     return left;
 }
 
+// EN: Evaluates unary operators (!, ~, +, -).
+// FR: Evalue les operateurs unaires (!, ~, +, -).
 long long ExpressionEvaluator::evalUnary(const std::string& expr, size_t& pos) {
     skipWhitespace(expr, pos);
 
@@ -65,6 +69,8 @@ long long ExpressionEvaluator::evalUnary(const std::string& expr, size_t& pos) {
     return evalPrimary(expr, pos);
 }
 
+// EN: Evaluates primary expressions: parentheses, char literals, numbers, ids.
+// FR: Evalue les primaires : parentheses, char, nombres, identifiants.
 long long ExpressionEvaluator::evalPrimary(const std::string& expr, size_t& pos) {
     skipWhitespace(expr, pos);
 
@@ -121,5 +127,8 @@ long long ExpressionEvaluator::evalPrimary(const std::string& expr, size_t& pos)
     return 0;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Expand identifier handling to support defined macros in #if.
+// FR: Etendre la gestion des identifiants pour supporter macros dans #if.

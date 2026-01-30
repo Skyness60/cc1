@@ -2,12 +2,16 @@
 
 namespace cc1 {
 
+// EN: Aligns an offset up to the requested alignment.
+// FR: Aligne un offset vers le haut selon l alignement.
 static int alignTo(int offset, int alignment) {
     if (alignment <= 0) return offset;
     int rem = offset % alignment;
     return rem == 0 ? offset : (offset + (alignment - rem));
 }
 
+// EN: Computes struct layout including padding and bitfields.
+// FR: Calcule le layout struct avec padding et bitfields.
 IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType* type) {
     StructLayout layout;
 
@@ -17,7 +21,7 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
     int fieldIndex = 0;
     bool firstField = true;
 
-    // Bitfield packing: storage-unit based (declared base type).
+    
     int currentUnitSize = 0;
     int currentUnitAlign = 1;
     int currentUnitBitsTotal = 0;
@@ -25,6 +29,8 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
     int currentUnitFieldIndex = -1;
     std::string currentUnitLLVMType;
 
+    // EN: Flushes current bitfield storage unit into the layout.
+    // FR: Vide l unite de stockage des bitfields dans le layout.
     auto flushUnit = [&]() {
         if (currentUnitBitsUsed > 0 && currentUnitSize > 0) {
             offset += currentUnitSize;
@@ -37,6 +43,8 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
         currentUnitLLVMType.clear();
     };
 
+    // EN: Inserts padding to satisfy alignment before a field.
+    // FR: Insere du padding pour respecter l alignement.
     auto ensurePaddingTo = [&](int alignment) {
         int aligned = alignTo(offset, alignment);
         int pad = aligned - offset;
@@ -49,6 +57,8 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
         }
     };
 
+    // EN: Opens a storage unit for bitfields if compatible.
+    // FR: Ouvre une unite de stockage pour bitfields si compatible.
     auto openStorageUnitIfNeeded = [&](int unitSize, int unitAlign, const std::string& unitLLVMType) {
         if (currentUnitBitsTotal == 0 || currentUnitSize != unitSize || currentUnitAlign != unitAlign) {
             flushUnit();
@@ -83,7 +93,7 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
             else if (unitSize == 4) unitLLVMType = "i32";
             else unitLLVMType = "i64";
 
-            // Zero-width bitfield forces alignment to next storage unit boundary.
+            
             if (member.bitWidth == 0) {
                 flushUnit();
                 ensurePaddingTo(unitAlign);
@@ -91,10 +101,10 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
                 continue;
             }
 
-            // Open or switch storage unit.
+            
             openStorageUnitIfNeeded(unitSize, unitAlign, unitLLVMType);
 
-            // If it doesn't fit, start a new unit.
+            
             if (currentUnitBitsUsed + member.bitWidth > currentUnitBitsTotal) {
                 flushUnit();
                 openStorageUnitIfNeeded(unitSize, unitAlign, unitLLVMType);
@@ -131,7 +141,7 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
             continue;
         }
 
-        // Non-bitfield member closes any active storage unit.
+        
         flushUnit();
 
         std::string memberType = typeToLLVM(member.type.get());
@@ -160,7 +170,7 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
         fieldIndex++;
     }
 
-    // Flush trailing partial storage unit.
+    
     flushUnit();
 
     int finalSize = alignTo(offset, maxAlign);
@@ -178,4 +188,4 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
     return layout;
 }
 
-} // namespace cc1
+} 

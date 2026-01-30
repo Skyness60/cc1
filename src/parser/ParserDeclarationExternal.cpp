@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses a top-level declaration/definition and enforces global rules.
+// FR: Parse une declaration/definition de haut niveau et applique les regles globales.
 AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
     DeclSpecifiers specs = parseDeclarationSpecifiers();
 
@@ -9,7 +11,7 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         error("expected type specifier");
     }
 
-    // Check for control flow keywords used outside of functions
+    
     if (functionDepth_ == 0) {
         if (check(TokenType::While)) {
             error("while loop outside of a function");
@@ -32,19 +34,19 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         }
     }
 
-    // Check for function definition or declaration
+    
     if (check(TokenType::Semicolon)) {
-        // Standalone struct/union/enum definition (e.g., "struct Foo { int x; };")
+        
         advance();
 
-        // Check if this is a standalone struct/union definition
+        
         if (auto* structType = dynamic_cast<AST::StructType*>(specs.type.get())) {
             if (structType->isComplete && !structType->name.empty()) {
                 auto structDecl = AST::make<AST::StructDecl>(
                     structType->name, structType->isUnion,
                     structType->line, structType->column);
 
-                // Preserve the full StructType (including bitfield widths).
+                
                 {
                     auto cloned = structType->clone();
                     structDecl->declaredType = AST::Ptr<AST::StructType>(
@@ -61,32 +63,32 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
             }
         }
 
-        // Check if this is a standalone enum definition
-        // We keep the EnumType as-is and return a VarDecl with empty name
-        // so the semantic analyzer can process the enum values
+        
+        
+        
         if (auto* enumType = dynamic_cast<AST::EnumType*>(specs.type.get())) {
             if (!enumType->name.empty() || !enumType->enumerators.empty()) {
-                // Create a dummy VarDecl with the enum type so semantic analysis processes it
+                
                 auto varDecl = AST::make<AST::VarDecl>("", std::move(specs.type), enumType->line, enumType->column);
                 return varDecl;
             }
         }
 
-        // Forward declaration or anonymous type (return nullptr)
+        
         return nullptr;
     }
 
     Declarator decl = parseDeclarator(specs.type);
 
-    // Function definition?
+    
     if (check(TokenType::LeftBrace)) {
-        // Check for redefinition at global scope only
-        // Multiple declarations are OK, but only one definition
+        
+        
         if (functionDepth_ == 0 && !decl.name.empty()) {
             if (definedFunctions_.count(decl.name)) {
                 errorAtPosition(decl.line, decl.column, "redefinition of function '" + decl.name + "'");
             } else if (globalIdentifiers_.count(decl.name)) {
-                // Check if the new type matches the declared type
+                
                 std::string newType = decl.type ? decl.type->toString() : "unknown";
                 std::string oldType = globalIdentifiers_[decl.name];
                 if (newType != oldType) {
@@ -99,9 +101,9 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         return parseFunctionDefinition(specs, decl);
     }
 
-    // Variable declaration or function prototype
+    
     if (specs.isTypedef) {
-        // Check for redefinition at global scope only
+        
         if (functionDepth_ == 0 && !decl.name.empty() && globalIdentifiers_.count(decl.name)) {
             errorAtPosition(decl.line, decl.column, "redefinition of '" + decl.name + "' as different kind of symbol");
         }
@@ -114,10 +116,10 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
                                             decl.line, decl.column);
         var->storageClass = AST::StorageClass::Typedef;
 
-        // Handle multiple declarators
+        
         while (match(TokenType::Comma)) {
             Declarator nextDecl = parseDeclarator(specs.type);
-            // Check for redefinition at global scope only
+            
             if (functionDepth_ == 0 && !nextDecl.name.empty() && globalIdentifiers_.count(nextDecl.name)) {
                 error("redefinition of '" + nextDecl.name + "' as different kind of symbol");
             }
@@ -131,8 +133,8 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         return var;
     }
 
-    // Regular variable declaration - check for redefinition at global scope only
-    // Allow redeclarations with the same type (e.g., multiple function prototypes)
+    
+    
     if (functionDepth_ == 0 && !decl.name.empty() && globalIdentifiers_.count(decl.name)) {
         std::string newType = decl.type ? decl.type->toString() : "unknown";
         std::string oldType = globalIdentifiers_[decl.name];
@@ -152,14 +154,14 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         var->initializer = parseInitializer();
     }
 
-    // Clear additional declarations from any previous call
+    
     additionalDeclarations_.clear();
 
-    // Handle multiple declarators
+    
     while (match(TokenType::Comma)) {
         Declarator nextDecl = parseDeclarator(specs.type);
-        // Check for redefinition at global scope only
-        // Allow redeclarations with the same type
+        
+        
         if (functionDepth_ == 0 && !nextDecl.name.empty() && globalIdentifiers_.count(nextDecl.name)) {
             std::string newType = nextDecl.type ? nextDecl.type->toString() : "unknown";
             std::string oldType = globalIdentifiers_[nextDecl.name];
@@ -171,7 +173,7 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
             globalIdentifiers_[nextDecl.name] = nextDecl.type ? nextDecl.type->toString() : "unknown";
         }
 
-        // Create and store additional declarations
+        
         auto nextVar = AST::make<AST::VarDecl>(nextDecl.name, std::move(nextDecl.type),
                                                 nextDecl.line, nextDecl.column);
         nextVar->storageClass = specs.storageClass;
@@ -187,4 +189,6 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
     return var;
 }
 
-} // namespace cc1
+// TODO(cc1) EN: Improve diagnostics for conflicting declarations across scopes.
+// FR: Ameliorer les diagnostics pour declarations en conflit entre scopes.
+} 

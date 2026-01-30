@@ -3,6 +3,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Evaluates equality operators (==, !=).
+// FR: Evalue les operateurs d egalite (==, !=).
 long long ExpressionEvaluator::evalEquality(const std::string& expr, size_t& pos) {
     long long left = evalRelational(expr, pos);
 
@@ -24,6 +26,8 @@ long long ExpressionEvaluator::evalEquality(const std::string& expr, size_t& pos
     return left;
 }
 
+// EN: Evaluates relational operators (<, >, <=, >=).
+// FR: Evalue les operateurs relationnels (<, >, <=, >=).
 long long ExpressionEvaluator::evalRelational(const std::string& expr, size_t& pos) {
     long long left = evalShift(expr, pos);
 
@@ -55,5 +59,8 @@ long long ExpressionEvaluator::evalRelational(const std::string& expr, size_t& p
     return left;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Add signed/unsigned comparison semantics for literal suffixes.
+// FR: Ajouter les semantiques de comparaison signe/unsigned selon suffixes.

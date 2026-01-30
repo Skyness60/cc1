@@ -2,20 +2,27 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Variable Declaration
-// ============================================================================
-
+// EN: Emits IR for variable declarations, dispatching by scope/kind.
+// FR: Genere l IR pour declarations de variables selon scope/type.
 void IRGenerator::visit(AST::VarDecl& node) {
-    // Skip typedef declarations - they don't generate code
+    
     if (node.storageClass == AST::StorageClass::Typedef) {
+        if (node.type) {
+            typedefMap_[node.name] = node.type.get();
+
+            if (auto* structType = dynamic_cast<AST::StructType*>(stripQualifiers(node.type.get()))) {
+                if (structType->name.empty()) {
+                    structType->name = node.name;
+                }
+            }
+        }
         return;
     }
 
     if (node.name.empty()) {
-        // Anonymous declaration (e.g., standalone enum definition)
+        
         if (auto* enumType = dynamic_cast<AST::EnumType*>(stripQualifiers(node.type.get()))) {
-            // Use pre-computed enum values from semantic analysis
+            
             for (const auto& enumerator : enumType->enumerators) {
                 enumValues_[enumerator.name] = enumerator.computedValue;
             }
@@ -23,7 +30,7 @@ void IRGenerator::visit(AST::VarDecl& node) {
         return;
     }
 
-    // Check if this is a function prototype (VarDecl with FunctionType)
+    
     if (auto* funcType = dynamic_cast<AST::FunctionType*>(stripQualifiers(node.type.get()))) {
         emitVarDeclFunctionPrototype(node, *funcType);
         return;
@@ -39,4 +46,4 @@ void IRGenerator::visit(AST::VarDecl& node) {
     emitLocalVarDecl(node, llvmType);
 }
 
-} // namespace cc1
+} 

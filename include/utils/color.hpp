@@ -1,7 +1,11 @@
 #pragma once
 
+
+
 #include <string>
 
+// EN: ANSI color codes for terminal output.
+// FR: Codes couleur ANSI pour sortie terminal.
 #define RED "\033[1;31m"
 #define WHITE "\033[1;37m"
 #define BLACK "\033[1;30m"
@@ -14,5 +18,7 @@
 
 namespace utils
 {
+    // EN: Returns text wrapped in a color code and reset.
+    // FR: Renvoie le texte entoure par couleur et reset.
     std::string color_text(const std::string& text, const std::string& color_code);
 }

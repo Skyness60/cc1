@@ -5,6 +5,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Expands a macro body by substituting parameters, handling # and __VA_ARGS__.
+// FR: Etend un corps de macro en substituant les params, gere # et __VA_ARGS__.
 std::string MacroExpander::expandMacro(const MacroDefinition& macro, const std::vector<std::string>& args) {
     std::string body = macro.body;
 
@@ -92,6 +94,8 @@ std::string MacroExpander::expandMacro(const MacroDefinition& macro, const std::
     return result;
 }
 
+// EN: Tokenizes text into identifiers, numbers, strings, and single chars.
+// FR: Tokenise le texte en identifiants, nombres, chaines et chars simples.
 std::vector<std::string> MacroExpander::tokenize(const std::string& text) {
     std::vector<std::string> tokens;
     size_t i = 0;
@@ -156,5 +160,8 @@ std::vector<std::string> MacroExpander::tokenize(const std::string& text) {
     return tokens;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Make tokenization match full preprocessing token grammar.
+// FR: Aligner la tokenisation sur la grammaire complete de pretraitement.

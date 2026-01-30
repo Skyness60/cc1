@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses an integer literal and validates its suffix.
+// FR: Parse un litteral entier et valide son suffixe.
 AST::Ptr<AST::Expression> Parser::parsePrimaryIntegerLiteral() {
     Token tok = current();
     advance();
@@ -9,14 +11,14 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryIntegerLiteral() {
     unsigned long long parsed = 0;
     size_t idx = 0;
     try {
-        // base=0 lets the standard library handle 0x (hex) and leading-0 (octal).
+        
         parsed = std::stoull(tok.value, &idx, 0);
     } catch (...) {
         errorAt(tok, "invalid integer constant");
     }
 
-    // Validate and accept C integer suffixes, if any.
-    // Supported: U, L, LL and combos in either order: UL, LU, ULL, LLU.
+    
+    
     if (idx < tok.value.size()) {
         std::string suf = tok.value.substr(idx);
         for (char& ch : suf) {
@@ -70,6 +72,8 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryIntegerLiteral() {
     return AST::make<AST::IntegerLiteral>(value, tok.value, tok.line, tok.column);
 }
 
+// EN: Parses a float literal using std::stod.
+// FR: Parse un litteral flottant avec std::stod.
 AST::Ptr<AST::Expression> Parser::parsePrimaryFloatLiteral() {
     Token tok = current();
     advance();
@@ -77,4 +81,7 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryFloatLiteral() {
     return AST::make<AST::FloatLiteral>(value, tok.value, tok.line, tok.column);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Add diagnostics for float suffixes and hex floats.
+// FR: Ajouter des diagnostics pour suffixes flottants et hex floats.

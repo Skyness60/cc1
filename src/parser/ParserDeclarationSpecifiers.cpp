@@ -2,18 +2,20 @@
 
 namespace cc1 {
 
+// EN: Parses declaration specifiers (storage class, type, qualifiers).
+// FR: Parse les specifiers de declaration (storage class, type, qualifiers).
 Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
     DeclSpecifiers specs;
 
-    // Track type specifiers to build combined types
+    
     bool hasVoid = false, hasChar = false, hasShort = false;
     bool hasInt = false, hasLong = false, hasFloat = false;
     bool hasDouble = false, hasSigned = false, hasUnsigned = false;
     int longCount = 0;
-    bool hasTypeSpec = false;  // Track if we already have a type
+    bool hasTypeSpec = false;  
 
     while (isDeclarationSpecifier()) {
-        // Storage class specifiers - capture position before matching
+        
         if (check(TokenType::Typedef)) {
             specs.storageClassLine = current().line;
             specs.storageClassColumn = current().column;
@@ -41,13 +43,13 @@ Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
             advance();
             specs.storageClass = AST::StorageClass::Register;
         }
-        // Type qualifiers
+        
         else if (match(TokenType::Const)) {
             specs.isConst = true;
         } else if (match(TokenType::Volatile)) {
             specs.isVolatile = true;
         }
-        // Type specifiers - only one type specifier sequence allowed
+        
         else if (!hasTypeSpec && match(TokenType::Void)) {
             hasVoid = true;
             hasTypeSpec = true;
@@ -73,17 +75,17 @@ Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
         } else if (match(TokenType::Unsigned)) {
             hasUnsigned = true;
         }
-        // Struct/Union
+        
         else if (!hasTypeSpec && (check(TokenType::Struct) || check(TokenType::Union))) {
             specs.type = parseStructOrUnionSpecifier();
             hasTypeSpec = true;
         }
-        // Enum
+        
         else if (!hasTypeSpec && check(TokenType::Enum)) {
             specs.type = parseEnumSpecifier();
             hasTypeSpec = true;
         }
-        // Typedef name
+        
         else if (!hasTypeSpec && check(TokenType::Identifier)) {
             std::string name = current().value;
             if (typedefNames_.find(name) != typedefNames_.end()) {
@@ -98,9 +100,9 @@ Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
         }
     }
 
-    // Build the type if we parsed type specifiers
+    
     if (!specs.type) {
-        AST::PrimitiveKind kind = AST::PrimitiveKind::Int; // default
+        AST::PrimitiveKind kind = AST::PrimitiveKind::Int; 
 
         if (hasVoid) {
             kind = AST::PrimitiveKind::Void;
@@ -138,7 +140,7 @@ Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
         specs.type = AST::make<AST::PrimitiveType>(kind, 0, 0);
     }
 
-    // Apply qualifiers
+    
     if (specs.isConst || specs.isVolatile) {
         specs.type = AST::make<AST::QualifiedType>(
             std::move(specs.type), specs.isConst, specs.isVolatile, 0, 0);
@@ -147,10 +149,14 @@ Parser::DeclSpecifiers Parser::parseDeclarationSpecifiers() {
     return specs;
 }
 
+// EN: Checks if current token can start a declaration specifier.
+// FR: Verifie si le token courant peut demarrer un specifier.
 bool Parser::isDeclarationSpecifier() const {
     return isStorageClassSpecifier() || isTypeSpecifier() || isTypeQualifier();
 }
 
+// EN: Checks if current token is a type specifier or typedef name.
+// FR: Verifie si le token courant est un type specifier ou un typedef.
 bool Parser::isTypeSpecifier() const {
     switch (current().type) {
         case TokenType::Void:
@@ -173,6 +179,8 @@ bool Parser::isTypeSpecifier() const {
     }
 }
 
+// EN: Checks if current token is a storage class specifier.
+// FR: Verifie si le token courant est un storage class specifier.
 bool Parser::isStorageClassSpecifier() const {
     switch (current().type) {
         case TokenType::Typedef:
@@ -186,9 +194,14 @@ bool Parser::isStorageClassSpecifier() const {
     }
 }
 
+// EN: Checks if current token is a type qualifier.
+// FR: Verifie si le token courant est un type qualifier.
 bool Parser::isTypeQualifier() const {
     return current().type == TokenType::Const ||
            current().type == TokenType::Volatile;
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Add diagnostics for invalid specifier combinations.
+// FR: Ajouter des diagnostics pour combinaisons de specifiers invalides.

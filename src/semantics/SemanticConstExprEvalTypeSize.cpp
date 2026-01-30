@@ -5,11 +5,15 @@
 namespace cc1 {
 namespace {
 
+// EN: Aligns an offset up to the requested alignment.
+// FR: Aligne un offset vers le haut selon l alignement.
 int alignTo(int offset, int alignment) {
     if (alignment <= 1) return offset;
     return (offset + (alignment - 1)) & ~(alignment - 1);
 }
 
+// EN: Removes qualifiers/typedefs to reach underlying type.
+// FR: Retire qualifiers/typedefs pour atteindre le type de base.
 AST::Type* stripQualifiersAndTypedef(AST::Type* type) {
     if (!type) return nullptr;
     while (auto* qual = dynamic_cast<AST::QualifiedType*>(type)) {
@@ -24,8 +28,10 @@ AST::Type* stripQualifiersAndTypedef(AST::Type* type) {
     return type;
 }
 
-} // namespace
+} 
 
+// EN: Computes byte size for a type, including structs/bitfields.
+// FR: Calcule la taille en octets d un type, structs/bitfields compris.
 long long SemanticAnalyzer::ConstExprEvalVisitor::getTypeSize(AST::Type* type) {
     if (!type) return 0;
     type = stripQualifiersAndTypedef(type);
@@ -47,6 +53,12 @@ long long SemanticAnalyzer::ConstExprEvalVisitor::getTypeSize(AST::Type* type) {
         return 0;
     }
     if (auto* st = dynamic_cast<AST::StructType*>(type)) {
+        if (st->members.empty() && !st->name.empty() && sema.currentScope_) {
+            Symbol* tag = sema.currentScope_->lookupTag(st->name);
+            if (tag && tag->structDecl && tag->structDecl->declaredType) {
+                return getTypeSize(tag->structDecl->declaredType.get());
+            }
+        }
         if (st->members.empty()) return 0;
 
         if (st->isUnion) {
@@ -70,6 +82,8 @@ long long SemanticAnalyzer::ConstExprEvalVisitor::getTypeSize(AST::Type* type) {
         int currentUnitBitsTotal = 0;
         int currentUnitBitsUsed = 0;
 
+        // EN: Flushes current bitfield storage unit into the size.
+        // FR: Vide l unite de stockage des bitfields dans la taille.
         auto flushUnit = [&]() {
             if (currentUnitBitsUsed > 0 && currentUnitSize > 0) {
                 offset += currentUnitSize;
@@ -80,6 +94,8 @@ long long SemanticAnalyzer::ConstExprEvalVisitor::getTypeSize(AST::Type* type) {
             currentUnitBitsUsed = 0;
         };
 
+        // EN: Opens or reopens a storage unit for compatible bitfields.
+        // FR: Ouvre/reouvre une unite de stockage pour bitfields compatibles.
         auto openStorageUnitIfNeeded = [&](int unitSize, int unitAlign) {
             if (currentUnitBitsTotal == 0 || currentUnitSize != unitSize || currentUnitAlign != unitAlign) {
                 flushUnit();
@@ -139,4 +155,4 @@ long long SemanticAnalyzer::ConstExprEvalVisitor::getTypeSize(AST::Type* type) {
     return 4;
 }
 
-} // namespace cc1
+} 

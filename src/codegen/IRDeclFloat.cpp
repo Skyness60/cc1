@@ -7,9 +7,11 @@
 
 namespace cc1 {
 
+// EN: Formats a float constant as an LLVM hex literal.
+// FR: Formate une constante float en literal hex LLVM.
 std::string IRGenerator::formatLLVMFloatConstant(float value) {
-    // LLVM textual IR accepts float constants in a 64-bit hex form (same style clang emits).
-    // We encode the rounded float value as a double bit-pattern.
+    
+    
     double asDouble = static_cast<double>(value);
     uint64_t bits = 0;
     static_assert(sizeof(bits) == sizeof(asDouble), "unexpected double size");
@@ -20,4 +22,4 @@ std::string IRGenerator::formatLLVMFloatConstant(float value) {
     return oss.str();
 }
 
-} // namespace cc1
+} 

@@ -2,15 +2,18 @@
 
 namespace cc1 {
 
+// EN: Builds a struct initializer value from a flat initializer list.
+// FR: Construit une valeur d init de struct depuis une liste plate.
 std::string IRGenerator::generateStructInitializerValue(AST::StructType* structType, AST::InitializerList* initList) {
     if (!structType || !initList) return "zeroinitializer";
+    if (structType->members.empty()) return "zeroinitializer";
 
     std::string result = "{ ";
     bool first = true;
 
-    size_t initIdx = 0;  // Track position in initializers list
+    size_t initIdx = 0;  
 
-    // Process members, being aware of bitfield packing and padding
+    
     size_t i = 0;
     while (i < structType->members.size()) {
         if (!first) result += ", ";
@@ -19,9 +22,9 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
         const auto& member = structType->members[i];
         std::string memberType = typeToLLVM(member.type.get());
 
-        // Check if this is a bitfield
+        
         if (member.isBitfield()) {
-            // Pack consecutive bitfields
+            
             int totalBits = member.bitWidth;
             size_t j = i + 1;
             while (j < structType->members.size() && structType->members[j].isBitfield()) {
@@ -29,14 +32,14 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
                 j++;
             }
 
-            // Pack all bitfield values into a single byte
+            
             long long packedValue = 0;
             int bitOffset = 0;
             for (size_t k = i; k < j; ++k) {
                 if (initIdx < initList->initializers.size()) {
                     long long val;
                     if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
-                        // Mask the value to its bitwidth and shift into position
+                        
                         long long mask = (1LL << structType->members[k].bitWidth) - 1;
                         packedValue |= (val & mask) << bitOffset;
                     }
@@ -46,7 +49,7 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
             }
             result += memberType + " " + std::to_string(packedValue);
 
-            // After bitfield packing, add padding if needed
+            
             int packingBytes = totalBits / 8;
             if (packingBytes == 1) {
                 result += ", [3 x i8] zeroinitializer";
@@ -54,24 +57,24 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
 
             i = j;
         } else {
-            // Regular (non-bitfield) member
+            
             if (initIdx < initList->initializers.size()) {
                 if (auto* elemInitList = dynamic_cast<AST::InitializerList*>(initList->initializers[initIdx].get())) {
                     result += memberType + " " + generateInitializerValue(member.type.get(), elemInitList);
                 } else {
-                    // Scalar value - check member type
+                    
                     auto* memberStructType = dynamic_cast<AST::StructType*>(stripQualifiers(member.type.get()));
                     auto* memberArrayType = dynamic_cast<AST::ArrayType*>(stripQualifiers(member.type.get()));
 
                     if (memberStructType) {
-                        // Create minimal initializer list for the struct member
+                        
                         long long val;
                         if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
-                            // Generate struct with first field initialized
+                            
                             result += memberType + " { ";
                             if (!memberStructType->members.empty()) {
                                 result += typeToLLVM(memberStructType->members[0].type.get()) + " ";
-                                // Format value based on first member type
+                                
                                 if (auto* primType = dynamic_cast<AST::PrimitiveType*>(
                                         stripQualifiers(memberStructType->members[0].type.get()))) {
                                     if (primType->kind == AST::PrimitiveKind::Float ||
@@ -90,7 +93,7 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
                             result += memberType + " " + getDefaultValue(member.type.get());
                         }
                     } else if (memberArrayType) {
-                        // Array member - consume multiple initializers, one per element
+                        
                         size_t elemCount = (memberArrayType->size > 0) ? memberArrayType->size : 0;
                         if (elemCount > 0) {
                             result += memberType + " [";
@@ -115,10 +118,10 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
                             result += memberType + " " + getDefaultValue(member.type.get());
                         }
                     } else {
-                        // Scalar primitive type
+                        
                         long long val;
                         if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
-                            // Format value based on member type
+                            
                             std::string valStr = std::to_string(val);
                             if (auto* primType = dynamic_cast<AST::PrimitiveType*>(stripQualifiers(member.type.get()))) {
                                 if (primType->kind == AST::PrimitiveKind::Float ||
@@ -135,7 +138,7 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
                 }
                 initIdx++;
             } else {
-                // No more initializers - use default
+                
                 result += memberType + " " + getDefaultValue(member.type.get());
             }
             i++;
@@ -146,4 +149,4 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
     return result;
 }
 
-} // namespace cc1
+} 

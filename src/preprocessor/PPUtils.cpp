@@ -4,6 +4,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Removes line/block comments while preserving newlines and literals.
+// FR: Supprime les commentaires en preservant les sauts de ligne et les litteraux.
 std::string CommentRemover::remove(const std::string& source) {
     std::string result;
     result.reserve(source.size());
@@ -28,10 +30,10 @@ std::string CommentRemover::remove(const std::string& source) {
         if (inBlockComment) {
             if (c == '*' && next == '/') {
                 inBlockComment = false;
-                result += ' ';  // Replace comment with space
+                result += ' ';  
                 ++i;
             } else if (c == '\n') {
-                result += c;  // Preserve newlines
+                result += c;  
             }
             continue;
         }
@@ -39,7 +41,7 @@ std::string CommentRemover::remove(const std::string& source) {
         if (inString) {
             result += c;
             if (c == '\\' && i + 1 < source.size()) {
-                result += source[++i];  // Skip escaped character
+                result += source[++i];  
             } else if (c == '"') {
                 inString = false;
             }
@@ -49,14 +51,14 @@ std::string CommentRemover::remove(const std::string& source) {
         if (inChar) {
             result += c;
             if (c == '\\' && i + 1 < source.size()) {
-                result += source[++i];  // Skip escaped character
+                result += source[++i];  
             } else if (c == '\'') {
                 inChar = false;
             }
             continue;
         }
         
-        // Not in any special context
+        
         if (c == '"') {
             inString = true;
             result += c;
@@ -77,38 +79,52 @@ std::string CommentRemover::remove(const std::string& source) {
     return result;
 }
 
+// EN: Merges adjacent string literals across whitespace to match C rules.
+// FR: Fusionne les chaines adjacentes a travers les espaces selon les regles C.
 std::string StringConcatenator::concatenate(const std::string& source) {
     std::string result;
     result.reserve(source.size());
     
     size_t i = 0;
     while (i < source.size()) {
-        // Skip whitespace
+        
         if (std::isspace(source[i])) {
             result += source[i++];
             continue;
         }
         
-        // Check for string literal
+        
         if (source[i] == '"') {
-            std::string combined = parseString(source, i);
+            auto parsed = parseString(source, i);
+            std::string combined = parsed.first;
+            bool terminated = parsed.second;
             
-            // Look for adjacent string literals
+            if (!terminated) {
+                result += combined;
+                continue;
+            }
+            
+            
             while (i < source.size()) {
                 size_t savedPos = i;
                 
-                // Skip whitespace between strings
+                
                 while (i < source.size() && (source[i] == ' ' || source[i] == '\t' || source[i] == '\n')) {
                     i++;
                 }
                 
                 if (i < source.size() && source[i] == '"') {
-                    // Another string literal - concatenate (without quotes)
-                    std::string next = parseString(source, i);
-                    // Remove quotes and concatenate
-                    combined = combined.substr(0, combined.size() - 1) + next.substr(1);
+                    
+                    auto next = parseString(source, i);
+                    
+                    if (!next.second) {
+                        i = savedPos;
+                        break;
+                    }
+                    
+                    combined = combined.substr(0, combined.size() - 1) + next.first.substr(1);
                 } else {
-                    // Not a string - restore position and break
+                    
                     i = savedPos;
                     break;
                 }
@@ -123,28 +139,35 @@ std::string StringConcatenator::concatenate(const std::string& source) {
     return result;
 }
 
-std::string StringConcatenator::parseString(const std::string& source, size_t& pos) {
+// EN: Parses one quoted string and advances the cursor safely.
+// FR: Parse une chaine guillemetee et avance le curseur en securite.
+std::pair<std::string, bool> StringConcatenator::parseString(const std::string& source, size_t& pos) {
     std::string result;
+    bool terminated = false;
     
     if (pos >= source.size() || source[pos] != '"') {
-        return result;
+        return {result, terminated};
     }
     
-    result += source[pos++];  // Opening quote
+    result += source[pos++];  
     
     while (pos < source.size()) {
         char c = source[pos++];
         result += c;
         
         if (c == '\\' && pos < source.size()) {
-            result += source[pos++];  // Escape sequence
+            result += source[pos++];  
         } else if (c == '"') {
-            break;  // End of string
+            terminated = true;
+            break;  
         }
     }
     
-    return result;
+    return {result, terminated};
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Improve handling of unterminated strings/comments with errors.
+// FR: Mieux gerer les chaines/commentaires non termines avec erreurs.

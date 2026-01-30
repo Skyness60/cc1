@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Infers expression type from cached info or AST shape.
+// FR: Deduit le type d une expression via cache ou AST.
 AST::Ptr<AST::Type> SemanticAnalyzer::getExprType(AST::Expression* expr) {
     if (!expr) return nullptr;
 
@@ -75,4 +77,4 @@ AST::Ptr<AST::Type> SemanticAnalyzer::getExprType(AST::Expression* expr) {
     return nullptr;
 }
 
-} // namespace cc1
+} 

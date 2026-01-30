@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses a struct/union specifier and its member list if present.
+// FR: Parse un specifier struct/union et ses membres si presents.
 AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
     bool isUnion = match(TokenType::Union);
     if (!isUnion) {
@@ -17,11 +19,11 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
         advance();
     }
 
-    // Check for struct definition
+    
     if (match(TokenType::LeftBrace)) {
         auto structType = AST::make<AST::StructType>(name, isUnion, line, col);
 
-        // Parse member list
+        
         while (!check(TokenType::RightBrace) && !isAtEnd()) {
             DeclSpecifiers specs = parseDeclarationSpecifiers();
 
@@ -29,7 +31,7 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
                 error("expected type in struct member");
             }
 
-            // Storage class specifiers are not allowed in struct members
+            
             if (specs.storageClass != AST::StorageClass::None || specs.isTypedef) {
                 errorAtPosition(specs.storageClassLine, specs.storageClassColumn, "type name does not allow storage class to be specified");
             }
@@ -37,11 +39,11 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
             do {
                 Declarator decl = parseDeclarator(specs.type);
 
-                // Check for bitfield - bad_semantic_6.c
+                
                 if (match(TokenType::Colon)) {
-                    // Bitfield - check that the type is integral
+                    
                     AST::Type* baseType = decl.type.get();
-                    // Strip qualifiers
+                    
                     if (auto* qual = dynamic_cast<AST::QualifiedType*>(baseType)) {
                         baseType = qual->baseType.get();
                     }
@@ -61,21 +63,21 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
                     );
 
                     if (!isIntegral) {
-                        // Get the type name for error message
+                        
                         std::string typeName = decl.type ? decl.type->toString() : "unknown";
                         errorAtPosition(decl.line, decl.column,
                             "bit-field '" + decl.name + "' has non-integral type '" + typeName + "'");
                     }
 
-                    // Parse the bitfield width expression and evaluate it
+                    
                     int bitWidth = 0;
                     auto widthExpr = parseAssignmentExpression();
                     if (widthExpr) {
-                        // Try to evaluate the expression as a constant
+                        
                         if (auto* constExpr = dynamic_cast<AST::IntegerLiteral*>(widthExpr.get())) {
                             bitWidth = static_cast<int>(constExpr->value);
                         }
-                        // If not a simple constant, bitWidth stays 0 (error handling)
+                        
                     }
 
                     structType->members.emplace_back(decl.name, std::move(decl.type),
@@ -94,10 +96,12 @@ AST::Ptr<AST::Type> Parser::parseStructOrUnionSpecifier() {
         return structType;
     }
 
-    // Just a reference to a struct type
+    
     return AST::make<AST::StructType>(name, isUnion, line, col);
 }
 
+// EN: Parses an enum specifier and enumerator list if present.
+// FR: Parse un specifier enum et la liste d enumerateurs si presente.
 AST::Ptr<AST::Type> Parser::parseEnumSpecifier() {
     consume(TokenType::Enum, "expected 'enum'");
 
@@ -113,7 +117,7 @@ AST::Ptr<AST::Type> Parser::parseEnumSpecifier() {
     auto enumType = AST::make<AST::EnumType>(name, line, col);
 
     if (match(TokenType::LeftBrace)) {
-        // Parse enumerator list
+        
         if (!check(TokenType::RightBrace)) {
             do {
                 Token nameToken = consume(TokenType::Identifier,
@@ -126,7 +130,7 @@ AST::Ptr<AST::Type> Parser::parseEnumSpecifier() {
                 AST::Ptr<AST::Expression> value;
                 if (check(TokenType::Equal)) {
                     equalCol = current().column;
-                    advance();  // consume '='
+                    advance();  
                     value = parseConstantExpression();
                 }
 
@@ -140,4 +144,7 @@ AST::Ptr<AST::Type> Parser::parseEnumSpecifier() {
     return enumType;
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Support anonymous structs/unions with typedef name inference.
+// FR: Supporter les structs/unions anonymes avec inference de typedef.

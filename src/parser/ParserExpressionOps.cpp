@@ -2,10 +2,12 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Operator Conversion Utilities
-// ============================================================================
 
+
+
+
+// EN: Maps token types to AST binary operators.
+// FR: Mappe les tokens vers operateurs binaires AST.
 AST::BinaryOp Parser::tokenToBinaryOp(TokenType type) const {
     switch (type) {
         case TokenType::Plus:
@@ -69,10 +71,12 @@ AST::BinaryOp Parser::tokenToBinaryOp(TokenType type) const {
         case TokenType::Comma:
             return AST::BinaryOp::Comma;
         default:
-            return AST::BinaryOp::Add; // Shouldn't happen
+            return AST::BinaryOp::Add; 
     }
 }
 
+// EN: Maps token types to AST unary operators.
+// FR: Mappe les tokens vers operateurs unaires AST.
 AST::UnaryOp Parser::tokenToUnaryOp(TokenType type) const {
     switch (type) {
         case TokenType::Plus:
@@ -92,10 +96,12 @@ AST::UnaryOp Parser::tokenToUnaryOp(TokenType type) const {
         case TokenType::MinusMinus:
             return AST::UnaryOp::PreDecrement;
         default:
-            return AST::UnaryOp::Plus; // Shouldn't happen
+            return AST::UnaryOp::Plus; 
     }
 }
 
+// EN: Maps token types to AST postfix unary operators.
+// FR: Mappe les tokens vers operateurs postfixes AST.
 AST::UnaryOp Parser::tokenToPostfixOp(TokenType type) const {
     switch (type) {
         case TokenType::PlusPlus:
@@ -107,4 +113,7 @@ AST::UnaryOp Parser::tokenToPostfixOp(TokenType type) const {
     }
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Handle invalid tokens with explicit errors instead of defaults.
+// FR: Gerer les tokens invalides avec erreurs explicites plutot que defaults.

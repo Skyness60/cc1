@@ -2,11 +2,13 @@
 
 namespace cc1 {
 
+// EN: Parses a character literal and decodes escape sequences.
+// FR: Parse un litteral caractere et decode les echappements.
 AST::Ptr<AST::Expression> Parser::parsePrimaryCharLiteral() {
     Token tok = current();
     advance();
 
-    // Handle escape sequences for char literals
+    
     std::string raw = tok.value.substr(1, tok.value.length() - 2);
     int value = 0;
     if (!raw.empty()) {
@@ -77,4 +79,7 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryCharLiteral() {
     return AST::make<AST::CharLiteral>(value, tok.value, tok.line, tok.column);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Validate multi-character constants per C rules.
+// FR: Valider les constantes multi-caracteres selon les regles C.

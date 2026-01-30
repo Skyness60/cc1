@@ -2,10 +2,12 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Type Parsing
-// ============================================================================
 
+
+
+
+// EN: Parses a type name used in casts/sizeof.
+// FR: Parse un type name utilise dans cast/sizeof.
 AST::Ptr<AST::Type> Parser::parseTypeName() {
     DeclSpecifiers specs = parseDeclarationSpecifiers();
     
@@ -16,11 +18,13 @@ AST::Ptr<AST::Type> Parser::parseTypeName() {
     return parseAbstractDeclarator(std::move(specs.type));
 }
 
+// EN: Parses an abstract declarator (no identifier) for type-only constructs.
+// FR: Parse un declarator abstrait (sans identifiant) pour types seuls.
 AST::Ptr<AST::Type> Parser::parseAbstractDeclarator(AST::Ptr<AST::Type> baseType) {
-    // Parse pointer part
+    
     baseType = parsePointer(std::move(baseType));
     
-    // Parse direct abstract declarator (arrays, functions)
+    
     while (true) {
         if (match(TokenType::LeftBracket)) {
             AST::Ptr<AST::Expression> size;
@@ -31,7 +35,7 @@ AST::Ptr<AST::Type> Parser::parseAbstractDeclarator(AST::Ptr<AST::Type> baseType
             baseType = AST::make<AST::ArrayType>(std::move(baseType),
                                                   std::move(size), 0, 0);
         } else if (match(TokenType::LeftParen)) {
-            // Function type
+            
             bool isVariadic = false;
             auto params = parseParameterList(isVariadic);
             consume(TokenType::RightParen, "expected ')'");
@@ -48,16 +52,23 @@ AST::Ptr<AST::Type> Parser::parseAbstractDeclarator(AST::Ptr<AST::Type> baseType
     return baseType;
 }
 
-// ============================================================================
-// Type Utility Methods
-// ============================================================================
 
+
+
+
+// EN: Checks whether the current token can start a type name.
+// FR: Verifie si le token courant peut demarrer un type name.
 bool Parser::isTypeName() const {
     return isTypeSpecifier() || isTypeQualifier();
 }
 
+// EN: Checks whether the current token can start a declaration.
+// FR: Verifie si le token courant peut demarrer une declaration.
 bool Parser::isDeclarationStart() const {
     return isDeclarationSpecifier();
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Support abstract declarators with nested parentheses.
+// FR: Supporter les declarators abstraits avec parentheses imbriquees.

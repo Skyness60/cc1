@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Analyzes struct/union declarations and registers tag symbols.
+// FR: Analyse les declarations struct/union et enregistre les tags.
 void SemanticAnalyzer::visit(AST::StructDecl& node) {
     Symbol* existingTag = currentScope_->lookupTag(node.name);
     if (existingTag) {
@@ -26,6 +28,8 @@ void SemanticAnalyzer::visit(AST::StructDecl& node) {
     }
 }
 
+// EN: Analyzes enum declarations, computes values, and registers constants.
+// FR: Analyse les enums, calcule les valeurs et enregistre les constantes.
 void SemanticAnalyzer::visit(AST::EnumDecl& node) {
     if (!node.name.empty()) {
         Symbol* existingTag = currentScope_->lookupTag(node.name);
@@ -74,6 +78,8 @@ void SemanticAnalyzer::visit(AST::EnumDecl& node) {
     }
 }
 
+// EN: Analyzes typedef declarations and registers aliases.
+// FR: Analyse les typedef et enregistre les alias.
 void SemanticAnalyzer::visit(AST::TypedefDecl& node) {
     Symbol sym;
     sym.name = node.name;
@@ -84,4 +90,7 @@ void SemanticAnalyzer::visit(AST::TypedefDecl& node) {
                           node.underlyingType ? node.underlyingType->clone() : nullptr);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Detect duplicate member names in struct/union declarations.
+// FR: Detecter les noms de membres dupliques dans struct/union.

@@ -2,11 +2,13 @@
 
 namespace cc1 {
 
+// EN: Parses a string literal and decodes escape sequences.
+// FR: Parse un litteral chaine et decode les echappements.
 AST::Ptr<AST::Expression> Parser::parsePrimaryStringLiteral() {
     Token tok = current();
     advance();
 
-    // Remove quotes and handle escape sequences
+    
     std::string raw = tok.value.substr(1, tok.value.length() - 2);
     std::string value;
     for (size_t i = 0; i < raw.size(); ++i) {
@@ -23,9 +25,7 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryStringLiteral() {
                 case 'r':
                     value += '\r';
                     break;
-                case '0':
-                    value += '\0';
-                    break;
+
                 case '\\':
                     value += '\\';
                     break;
@@ -48,14 +48,14 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryStringLiteral() {
                     value += '\v';
                     break;
                 case 'x': {
-                    // Hex escape \xNN
+                    
                     if (i + 2 < raw.size()) {
                         std::string hex = raw.substr(i + 1, 2);
                         try {
                             value += static_cast<char>(std::stoi(hex, nullptr, 16));
                             i += 2;
                         } catch (...) {
-                            value += next; // Invalid, keep as-is
+                            value += next; 
                         }
                     } else {
                         value += next;
@@ -63,7 +63,7 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryStringLiteral() {
                     break;
                 }
                 default:
-                    // Octal escape \NNN or unknown escape
+                    
                     if (next >= '0' && next <= '7') {
                         std::string oct;
                         oct += next;
@@ -73,7 +73,7 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryStringLiteral() {
                         }
                         value += static_cast<char>(std::stoi(oct, nullptr, 8));
                     } else {
-                        value += next; // Unknown escape, keep the char
+                        value += next; 
                     }
                     break;
             }
@@ -85,4 +85,7 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryStringLiteral() {
     return AST::make<AST::StringLiteral>(value, tok.value, tok.line, tok.column);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Support wide/UTF string literal prefixes in parsing.
+// FR: Supporter les prefixes wide/UTF pour les chaines.

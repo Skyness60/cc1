@@ -1,19 +1,29 @@
 #pragma once
 
+
+
 #include <lexer/IScanner.hpp>
 #include <lexer/CharClassifier.hpp>
 #include <utils/SourceLocation.hpp>
 #include <functional>
 
+// EN: Scans character literals with escape validation.
+// FR: Scanne les litteraux caractere avec validation des echappements.
 class CharScanner final : public IScanner {
 public:
     using ErrorHandler = std::function<void(const std::string&, const SourceLocation&)>;
     
+    // EN: Initializes with filename and error handler for diagnostics.
+    // FR: Initialise avec le nom de fichier et le handler d erreur.
     CharScanner(const std::string& filename, ErrorHandler onError)
         : filename_(filename), onError_(std::move(onError)) {}
     
+    // EN: Starts when the first character is a single quote.
+    // FR: Demarre si le premier caractere est un apostrophe.
     bool canScan(char c) const override { return c == '\''; }
     
+    // EN: Scans a character literal and validates termination.
+    // FR: Scanne un litteral caractere et verifie la terminaison.
     Token scan(SourceReader& reader) override {
         SourceLocation start(filename_, reader.line(), reader.column() - 1);
         std::string text = "'";
@@ -26,7 +36,7 @@ public:
         
         scanCharContent(reader, text, start);
         
-        // Multi-char constants
+        
         while (reader.peek() != '\'' && reader.peek() != '\0' && reader.peek() != '\n')
             scanCharContent(reader, text, start);
         
@@ -41,6 +51,8 @@ private:
     std::string filename_;
     ErrorHandler onError_;
     
+    // EN: Scans the content of a character literal, handling escapes.
+    // FR: Scanne le contenu d un litteral caractere avec echappements.
     void scanCharContent(SourceReader& reader, std::string& text, const SourceLocation& start) {
         if (reader.peek() == '\\') {
             text += reader.advance();
@@ -62,3 +74,6 @@ private:
         }
     }
 };
+
+// TODO(cc1) EN: Enforce length rules for multi-byte character constants.
+// FR: Appliquer les regles de longueur pour constantes caractere multi-octets.

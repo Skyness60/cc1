@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses logical OR expressions (||).
+// FR: Parse les expressions OR logique (||).
 AST::Ptr<AST::Expression> Parser::parseLogicalOrExpression() {
     auto expr = parseLogicalAndExpression();
 
@@ -16,6 +18,8 @@ AST::Ptr<AST::Expression> Parser::parseLogicalOrExpression() {
     return expr;
 }
 
+// EN: Parses logical AND expressions (&&).
+// FR: Parse les expressions AND logique (&&).
 AST::Ptr<AST::Expression> Parser::parseLogicalAndExpression() {
     auto expr = parseBitwiseOrExpression();
 
@@ -30,6 +34,8 @@ AST::Ptr<AST::Expression> Parser::parseLogicalAndExpression() {
     return expr;
 }
 
+// EN: Parses bitwise OR expressions (|).
+// FR: Parse les expressions OR bit a bit (|).
 AST::Ptr<AST::Expression> Parser::parseBitwiseOrExpression() {
     auto expr = parseBitwiseXorExpression();
 
@@ -44,6 +50,8 @@ AST::Ptr<AST::Expression> Parser::parseBitwiseOrExpression() {
     return expr;
 }
 
+// EN: Parses bitwise XOR expressions (^).
+// FR: Parse les expressions XOR bit a bit (^).
 AST::Ptr<AST::Expression> Parser::parseBitwiseXorExpression() {
     auto expr = parseBitwiseAndExpression();
 
@@ -58,6 +66,8 @@ AST::Ptr<AST::Expression> Parser::parseBitwiseXorExpression() {
     return expr;
 }
 
+// EN: Parses bitwise AND expressions (&).
+// FR: Parse les expressions AND bit a bit (&).
 AST::Ptr<AST::Expression> Parser::parseBitwiseAndExpression() {
     auto expr = parseEqualityExpression();
 
@@ -72,4 +82,7 @@ AST::Ptr<AST::Expression> Parser::parseBitwiseAndExpression() {
     return expr;
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Implement proper short-circuit behavior for logical operators.
+// FR: Implementer un vrai short-circuit pour les operateurs logiques.

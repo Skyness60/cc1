@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Returns the default zero initializer for a given type.
+// FR: Renvoie l initialiseur zero par defaut pour un type.
 std::string IRGenerator::getDefaultValue(AST::Type* type) {
     if (!type) return "0";
 
@@ -28,8 +30,11 @@ std::string IRGenerator::getDefaultValue(AST::Type* type) {
     }
 
     if (auto* structType = dynamic_cast<AST::StructType*>(type)) {
-        // For structs, generate proper initializer with all members defaulted
-        // For unions, only initialize the first member
+        
+        if (structType->members.empty()) {
+            return "zeroinitializer";
+        }
+        
         std::string result = "{ ";
         bool first = true;
 
@@ -49,4 +54,4 @@ std::string IRGenerator::getDefaultValue(AST::Type* type) {
     return "0";
 }
 
-} // namespace cc1
+} 

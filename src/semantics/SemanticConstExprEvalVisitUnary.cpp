@@ -4,6 +4,8 @@
 
 namespace cc1 {
 
+// EN: Evaluates unary constant expressions, including sizeof/deref handling.
+// FR: Evalue les unaires constantes, y compris sizeof/deref.
 void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::UnaryExpr& node) {
     if (!node.operand) {
         ok = false;
@@ -71,4 +73,4 @@ void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::UnaryExpr& node) {
     }
 }
 
-} // namespace cc1
+} 

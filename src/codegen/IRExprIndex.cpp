@@ -2,33 +2,39 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Array Index
-// ============================================================================
-
+// EN: Emits IR for array/pointer indexing with GEP.
+// FR: Genere l IR pour l indexation tableau/pointeur via GEP.
 void IRGenerator::visit(AST::IndexExpr& node) {
-    // Evaluate array expression
     node.array->accept(*this);
     IRValue arrVal = lastValue_;
 
-    // Evaluate index expression
+    
     node.index->accept(*this);
     IRValue idxVal = loadValue(lastValue_);
 
-    // If arrVal is an array value (not pointer), take its address
-    if (!arrVal.isPointer) {
+    
+    if (arrVal.isPointer) {
+        std::string dt = arrVal.derefType();
+        
+        if (!dt.empty() && dt.back() == '*' && (dt.empty() || dt.front() != '[')) {
+            arrVal = loadValue(arrVal);
+        }
+    }
+
+    
+    if (arrVal.type.empty() || arrVal.type.back() != '*') {
         std::string tempAlloca = newTemp();
         emit(tempAlloca + " = alloca " + arrVal.type);
         emit("store " + arrVal.type + " " + arrVal.name + ", " + arrVal.type + "* " + tempAlloca);
         arrVal = IRValue(tempAlloca, arrVal.type + "*", true, false);
     }
 
-    // Determine element type
+    
     std::string elemType;
     if (!arrVal.type.empty() && arrVal.type.back() == '*') {
         elemType = arrVal.derefType();
         if (!elemType.empty() && elemType.front() == '[') {
-            // array pointer, element type is inside brackets
+            
             auto xPos = elemType.find('x');
             if (xPos != std::string::npos) {
                 elemType = elemType.substr(xPos + 2);
@@ -39,12 +45,25 @@ void IRGenerator::visit(AST::IndexExpr& node) {
         }
     }
 
-    // Compute element address
+    
     std::string elemPtr = newTemp();
-    emit(elemPtr + " = getelementptr inbounds " + arrVal.derefType() + ", " + arrVal.type + " " + arrVal.name +
-         ", i32 0, i32 " + idxVal.name);
+    std::string idxType = is64bit_ ? "i64" : "i32";
+    std::string idxReg = idxVal.name;
+    if (idxType != idxVal.type) {
+        std::string castIdx = newTemp();
+        emit(castIdx + " = sext " + idxVal.type + " " + idxVal.name + " to " + idxType);
+        idxReg = castIdx;
+    }
+
+    if (!arrVal.derefType().empty() && arrVal.derefType().front() == '[') {
+        emit(elemPtr + " = getelementptr inbounds " + arrVal.derefType() + ", " + arrVal.type + " " + arrVal.name +
+             ", " + idxType + " 0, " + idxType + " " + idxReg);
+    } else {
+        emit(elemPtr + " = getelementptr inbounds " + arrVal.derefType() + ", " + arrVal.type + " " + arrVal.name +
+             ", " + idxType + " " + idxReg);
+    }
 
     lastValue_ = IRValue(elemPtr, elemType + "*", true, false);
 }
 
-} // namespace cc1
+} 

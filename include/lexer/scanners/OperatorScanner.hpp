@@ -1,10 +1,16 @@
 #pragma once
 
+
+
 #include <lexer/Token.hpp>
 #include <lexer/SourceReader.hpp>
 
+// EN: Scans operators and punctuation tokens.
+// FR: Scanne les operateurs et ponctuations.
 class OperatorScanner {
 public:
+    // EN: Attempts to scan an operator starting with c and writes to out.
+    // FR: Tente de scanner un operateur demarrant par c et ecrit dans out.
     static bool scan(char c, SourceReader& r, int l, int col, Token& out) {
         switch (c) {
             case '(': out = Token(TokenType::LeftParen, "(", l, col); return true;
@@ -68,3 +74,6 @@ public:
         }
     }
 };
+
+// TODO(cc1) EN: Centralize operator definitions to avoid duplication with parser.
+// FR: Centraliser les definitions d operateurs pour eviter les doublons parser.

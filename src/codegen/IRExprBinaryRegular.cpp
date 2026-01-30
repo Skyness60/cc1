@@ -2,8 +2,10 @@
 
 namespace cc1 {
 
+// EN: Emits IR for non-assignment binary operators.
+// FR: Genere l IR pour les binaires non-assignation.
 void IRGenerator::emitBinaryRegular(AST::BinaryExpr& node) {
-    // Regular binary operations
+    
     node.left->accept(*this);
     IRValue lhsVal = loadValue(lastValue_);
 
@@ -16,7 +18,9 @@ void IRGenerator::emitBinaryRegular(AST::BinaryExpr& node) {
     std::string rhsReg = rhsVal.name;
     std::string rhsType = rhsVal.type;
 
-    // Promote integer types to common type for arithmetic operations
+    
+    // EN: Maps integer LLVM types to bit-width for promotions.
+    // FR: Mappe les types entiers LLVM vers la largeur en bits.
     auto getIntSize = [](const std::string& t) -> int {
         if (t == "i8") return 8;
         if (t == "i16") return 16;
@@ -28,7 +32,7 @@ void IRGenerator::emitBinaryRegular(AST::BinaryExpr& node) {
     int lhsSize = getIntSize(lhsType);
     int rhsSize = getIntSize(rhsType);
 
-    // Promote to larger type if both are integers
+    
     if (lhsSize > 0 && rhsSize > 0 && lhsSize != rhsSize) {
         if (lhsSize > rhsSize) {
             std::string promoted = newTemp();
@@ -57,7 +61,7 @@ void IRGenerator::emitBinaryRegular(AST::BinaryExpr& node) {
     }
 
     if (node.op == AST::BinaryOp::Comma) {
-        // Comma operator: result is RHS
+        
         lastValue_ = IRValue(rhsReg, rhsVal.derefType(), false, false);
         return;
     }
@@ -67,4 +71,4 @@ void IRGenerator::emitBinaryRegular(AST::BinaryExpr& node) {
     lastValue_ = IRValue(result, lhsType, false, false);
 }
 
-} // namespace cc1
+} 

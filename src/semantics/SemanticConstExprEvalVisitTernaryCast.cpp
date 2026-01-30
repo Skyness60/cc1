@@ -4,6 +4,8 @@
 
 namespace cc1 {
 
+// EN: Evaluates ternary constant expressions by selecting a branch.
+// FR: Evalue les ternaires constantes en choisissant une branche.
 void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::TernaryExpr& node) {
     long long cond;
     if (!sema.evaluateConstantExpr(node.condition.get(), cond)) {
@@ -17,6 +19,8 @@ void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::TernaryExpr& node) {
     }
 }
 
+// EN: Applies integer cast semantics to constant-expression results.
+// FR: Applique les conversions entieres aux resultats constants.
 void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::CastExpr& node) {
     if (!sema.evaluateConstantExpr(node.operand.get(), result)) {
         ok = false;
@@ -83,4 +87,4 @@ void SemanticAnalyzer::ConstExprEvalVisitor::visit(AST::CastExpr& node) {
     ok = true;
 }
 
-} // namespace cc1
+} 

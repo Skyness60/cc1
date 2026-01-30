@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses an if statement with optional else branch.
+// FR: Parse une instruction if avec else optionnel.
 AST::Ptr<AST::Statement> Parser::parseIfStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -21,6 +23,8 @@ AST::Ptr<AST::Statement> Parser::parseIfStatement() {
                                   line, col);
 }
 
+// EN: Parses a while loop statement.
+// FR: Parse une boucle while.
 AST::Ptr<AST::Statement> Parser::parseWhileStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -34,6 +38,8 @@ AST::Ptr<AST::Statement> Parser::parseWhileStatement() {
     return AST::make<AST::WhileStmt>(std::move(condition), std::move(body), line, col);
 }
 
+// EN: Parses a do-while loop statement.
+// FR: Parse une boucle do-while.
 AST::Ptr<AST::Statement> Parser::parseDoWhileStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -49,6 +55,8 @@ AST::Ptr<AST::Statement> Parser::parseDoWhileStatement() {
     return AST::make<AST::DoWhileStmt>(std::move(body), std::move(condition), line, col);
 }
 
+// EN: Parses a for loop statement with init/cond/increment.
+// FR: Parse une boucle for avec init/cond/increment.
 AST::Ptr<AST::Statement> Parser::parseForStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -79,6 +87,8 @@ AST::Ptr<AST::Statement> Parser::parseForStatement() {
                                    std::move(body), line, col);
 }
 
+// EN: Parses a switch statement and tracks switch depth.
+// FR: Parse un switch et suit la profondeur de switch.
 AST::Ptr<AST::Statement> Parser::parseSwitchStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -94,6 +104,8 @@ AST::Ptr<AST::Statement> Parser::parseSwitchStatement() {
     return AST::make<AST::SwitchStmt>(std::move(condition), std::move(body), line, col);
 }
 
+// EN: Parses a case label inside a switch statement.
+// FR: Parse un label case dans un switch.
 AST::Ptr<AST::Statement> Parser::parseCaseStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -110,6 +122,8 @@ AST::Ptr<AST::Statement> Parser::parseCaseStatement() {
     return AST::make<AST::CaseStmt>(std::move(value), std::move(stmt), line, col);
 }
 
+// EN: Parses a default label inside a switch statement.
+// FR: Parse un label default dans un switch.
 AST::Ptr<AST::Statement> Parser::parseDefaultStatement() {
     int line = previous().line;
     int col = previous().column;
@@ -125,4 +139,7 @@ AST::Ptr<AST::Statement> Parser::parseDefaultStatement() {
     return AST::make<AST::DefaultStmt>(std::move(stmt), line, col);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Support C23 'case ...' ranges if desired.
+// FR: Supporter les ranges de case C23 si souhaite.

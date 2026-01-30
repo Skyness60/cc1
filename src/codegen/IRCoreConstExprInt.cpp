@@ -2,10 +2,8 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Constant Expression Evaluation (integer)
-// ============================================================================
-
+// EN: Evaluates integer constant expressions for compile-time init.
+// FR: Evalue les expressions constantes entieres pour init compile-time.
 bool IRGenerator::evaluateConstantExpr(AST::Expression* expr, long long& result) {
     if (!expr) return false;
 
@@ -131,11 +129,11 @@ bool IRGenerator::evaluateConstantExpr(AST::Expression* expr, long long& result)
             result = getTypeSize(sizeofExpr->targetType.get());
             return true;
         }
-        // sizeof(expr) - would need type inference
+        
         return false;
     }
 
     return false;
 }
 
-} // namespace cc1
+} 

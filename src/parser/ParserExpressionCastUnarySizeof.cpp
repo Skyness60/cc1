@@ -2,12 +2,14 @@
 
 namespace cc1 {
 
+// EN: Parses cast expressions, disambiguating from parenthesized expressions.
+// FR: Parse les expressions de cast, en distinguant les parentheses simples.
 AST::Ptr<AST::Expression> Parser::parseCastExpression() {
-    // Check for cast: (type-name) cast-expression
+    
     if (check(TokenType::LeftParen)) {
-        // Look ahead to see if this is a cast
+        
         size_t saved = currentIndex_;
-        advance(); // consume '('
+        advance(); 
 
         if (isTypeName()) {
             auto type = parseTypeName();
@@ -20,15 +22,17 @@ AST::Ptr<AST::Expression> Parser::parseCastExpression() {
             return AST::make<AST::CastExpr>(std::move(type), std::move(operand), line, col);
         }
 
-        // Not a cast, backtrack
+        
         currentIndex_ = saved;
     }
 
     return parseUnaryExpression();
 }
 
+// EN: Parses unary expressions including prefix operators and sizeof.
+// FR: Parse les expressions unaires avec operateurs prefixes et sizeof.
 AST::Ptr<AST::Expression> Parser::parseUnaryExpression() {
-    // Prefix operators
+    
     if (matchAny({TokenType::PlusPlus, TokenType::MinusMinus})) {
         Token op = previous();
         auto operand = parseUnaryExpression();
@@ -52,6 +56,8 @@ AST::Ptr<AST::Expression> Parser::parseUnaryExpression() {
     return parsePostfixExpression();
 }
 
+// EN: Parses sizeof expressions for types or expressions.
+// FR: Parse les expressions sizeof pour types ou expressions.
 AST::Ptr<AST::Expression> Parser::parseSizeofExpression() {
     int line = previous().line;
     int col = previous().column;
@@ -63,15 +69,18 @@ AST::Ptr<AST::Expression> Parser::parseSizeofExpression() {
             return AST::make<AST::SizeofExpr>(std::move(type), line, col);
         }
 
-        // sizeof (expression)
+        
         auto expr = parseExpression();
         consume(TokenType::RightParen, "expected ')'");
         return AST::make<AST::SizeofExpr>(std::move(expr), line, col);
     }
 
-    // sizeof unary-expression
+    
     auto expr = parseUnaryExpression();
     return AST::make<AST::SizeofExpr>(std::move(expr), line, col);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Handle GNU typeof or _Alignof if supported.
+// FR: Gérer typeof GNU ou _Alignof si supporte.

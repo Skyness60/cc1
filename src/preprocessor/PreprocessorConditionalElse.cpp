@@ -4,6 +4,8 @@
 
 namespace cc1 {
 
+// EN: Handles #elif by evaluating only if no prior branch matched.
+// FR: Traite #elif en evaluant seulement si aucune branche n a matche.
 void Preprocessor::visit(pp::ElifDirective& dir) {
     if (conditionalStack_.empty()) {
         error("#elif without #if");
@@ -68,6 +70,8 @@ void Preprocessor::visit(pp::ElifDirective& dir) {
     }
 }
 
+// EN: Handles #else by activating it only if no earlier branch was true.
+// FR: Traite #else en l activant seulement si aucune branche precedente n etait vraie.
 void Preprocessor::visit(pp::ElseDirective&) {
     if (conditionalStack_.empty()) {
         error("#else without #if");
@@ -102,6 +106,8 @@ void Preprocessor::visit(pp::ElseDirective&) {
     }
 }
 
+// EN: Closes the current conditional block.
+// FR: Ferme le bloc conditionnel courant.
 void Preprocessor::visit(pp::EndifDirective&) {
     if (conditionalStack_.empty()) {
         error("#endif without #if");
@@ -111,4 +117,6 @@ void Preprocessor::visit(pp::EndifDirective&) {
     conditionalStack_.pop();
 }
 
-} // namespace cc1
+// TODO(cc1) EN: Refactor duplicated defined() parsing between #if and #elif.
+// FR: Factoriser le parsing de defined() entre #if et #elif.
+} 

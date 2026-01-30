@@ -2,29 +2,27 @@
 
 namespace cc1 {
 
-// ============================================================================
-// While Statement
-// ============================================================================
-
+// EN: Emits IR for while loops with condition/branch blocks.
+// FR: Genere l IR pour les boucles while avec blocs condition.
 void IRGenerator::visit(AST::WhileStmt& node) {
     DebugLocGuard loc(*this, node.line, node.column);
     std::string condLabel = newLabel("while.cond");
     std::string bodyLabel = newLabel("while.body");
     std::string endLabel = newLabel("while.end");
 
-    // Push break/continue targets
+    
     breakLabels_.push(endLabel);
     continueLabels_.push(condLabel);
 
-    // Branch to condition
+    
     emit("br label %" + condLabel);
 
-    // Condition block
+    
     emitLabel(condLabel);
     node.condition->accept(*this);
     IRValue condVal = lastValue_;
 
-    // Convert to rvalue (also extracts bitfields).
+    
     IRValue condLoaded = loadValue(condVal);
     std::string condReg = condLoaded.name;
     std::string condType = condLoaded.type;
@@ -37,47 +35,45 @@ void IRGenerator::visit(AST::WhileStmt& node) {
     }
     emit("br i1 " + cmpReg + ", label %" + bodyLabel + ", label %" + endLabel);
 
-    // Body block
+    
     emitLabel(bodyLabel);
     node.body->accept(*this);
     emit("br label %" + condLabel);
 
-    // End block
+    
     emitLabel(endLabel);
 
-    // Pop break/continue targets
+    
     breakLabels_.pop();
     continueLabels_.pop();
 }
 
-// ============================================================================
-// Do-While Statement
-// ============================================================================
-
+// EN: Emits IR for do-while loops with body-first execution.
+// FR: Genere l IR pour les boucles do-while (corps d abord).
 void IRGenerator::visit(AST::DoWhileStmt& node) {
     DebugLocGuard loc(*this, node.line, node.column);
     std::string bodyLabel = newLabel("do.body");
     std::string condLabel = newLabel("do.cond");
     std::string endLabel = newLabel("do.end");
 
-    // Push break/continue targets
+    
     breakLabels_.push(endLabel);
     continueLabels_.push(condLabel);
 
-    // Branch to body
+    
     emit("br label %" + bodyLabel);
 
-    // Body block
+    
     emitLabel(bodyLabel);
     node.body->accept(*this);
     emit("br label %" + condLabel);
 
-    // Condition block
+    
     emitLabel(condLabel);
     node.condition->accept(*this);
     IRValue condVal = lastValue_;
 
-    // Convert to rvalue (also extracts bitfields).
+    
     IRValue condLoaded = loadValue(condVal);
     std::string condReg = condLoaded.name;
     std::string condType = condLoaded.type;
@@ -90,18 +86,16 @@ void IRGenerator::visit(AST::DoWhileStmt& node) {
     }
     emit("br i1 " + cmpReg + ", label %" + bodyLabel + ", label %" + endLabel);
 
-    // End block
+    
     emitLabel(endLabel);
 
-    // Pop break/continue targets
+    
     breakLabels_.pop();
     continueLabels_.pop();
 }
 
-// ============================================================================
-// For Statement
-// ============================================================================
-
+// EN: Emits IR for for-loops with init/cond/inc blocks.
+// FR: Genere l IR pour les boucles for (init/cond/inc).
 void IRGenerator::visit(AST::ForStmt& node) {
     DebugLocGuard loc(*this, node.line, node.column);
     std::string condLabel = newLabel("for.cond");
@@ -111,23 +105,23 @@ void IRGenerator::visit(AST::ForStmt& node) {
 
     enterScope();
 
-    // Init
+    
     if (node.init) {
         node.init->accept(*this);
     }
     emit("br label %" + condLabel);
 
-    // Push break/continue targets
+    
     breakLabels_.push(endLabel);
     continueLabels_.push(incLabel);
 
-    // Condition
+    
     emitLabel(condLabel);
     if (node.condition) {
         node.condition->accept(*this);
         IRValue condVal = lastValue_;
 
-        // Convert to rvalue (also extracts bitfields).
+        
         IRValue condLoaded = loadValue(condVal);
         std::string condReg = condLoaded.name;
         std::string condType = condLoaded.type;
@@ -143,28 +137,28 @@ void IRGenerator::visit(AST::ForStmt& node) {
         emit("br label %" + bodyLabel);
     }
 
-    // Body
+    
     emitLabel(bodyLabel);
     if (node.body) {
         node.body->accept(*this);
     }
     emit("br label %" + incLabel);
 
-    // Increment
+    
     emitLabel(incLabel);
     if (node.increment) {
         node.increment->accept(*this);
     }
     emit("br label %" + condLabel);
 
-    // End
+    
     emitLabel(endLabel);
 
-    // Pop break/continue targets
+    
     breakLabels_.pop();
     continueLabels_.pop();
 
     exitScope();
 }
 
-} // namespace cc1
+} 

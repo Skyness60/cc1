@@ -2,27 +2,25 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Member Access
-// ============================================================================
-
+// EN: Emits IR for struct/union member access using GEP.
+// FR: Genere l IR pour l acces membre via GEP.
 void IRGenerator::visit(AST::MemberExpr& node) {
-    // Evaluate base expression
+    
     node.object->accept(*this);
     IRValue baseVal = lastValue_;
 
-    // If base is a pointer, load it to get struct value
+    
     bool isPtr = baseVal.type.size() > 1 && baseVal.type.back() == '*';
 
-    // Determine struct type
+    
     std::string structType = baseVal.derefType();
 
-    // Handle pointer to struct
+    
     if (isPtr) {
-        // baseVal is pointer to struct, use it directly
-        // structType already is dereferenced type
+        
+        
     } else {
-        // baseVal is value, take address by storing to temp
+        
         std::string tempAlloca = newTemp();
         emit(tempAlloca + " = alloca " + baseVal.type);
         emit("store " + baseVal.type + " " + baseVal.name + ", " + baseVal.type + "* " + tempAlloca);
@@ -31,7 +29,7 @@ void IRGenerator::visit(AST::MemberExpr& node) {
         isPtr = true;
     }
 
-    // Look up struct layout
+    
     std::string structName;
     if (structType.find("%struct.") == 0) {
         structName = structType.substr(8);
@@ -42,7 +40,7 @@ void IRGenerator::visit(AST::MemberExpr& node) {
         layout = getStructLayout(structName);
     }
 
-    // Fallback: try inline struct member map if layout not found
+    
     int memberIndex = -1;
     std::string memberLLVMType = "i32";
 
@@ -63,14 +61,14 @@ void IRGenerator::visit(AST::MemberExpr& node) {
         return;
     }
 
-    // Compute member address
+    
     std::string memberPtr = newTemp();
     emit(memberPtr + " = getelementptr inbounds " + structType + ", " + structType + "* " + baseVal.name +
          ", i32 0, i32 " + std::to_string(memberIndex));
 
     IRValue memberVal(memberPtr, memberLLVMType + "*", true, false);
 
-    // Bitfield support: turn into a bitfield ref if needed.
+    
     if (layout && layout->bitfieldWidths.count(node.member)) {
         memberVal.isBitfieldRef = true;
         memberVal.bitfieldStorageType = memberLLVMType;
@@ -82,4 +80,4 @@ void IRGenerator::visit(AST::MemberExpr& node) {
     lastValue_ = memberVal;
 }
 
-} // namespace cc1
+} 

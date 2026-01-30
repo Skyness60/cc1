@@ -5,14 +5,20 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Stores a reference to the macro table for lookup and expansion.
+// FR: Stocke une reference a la table de macros pour lookup et expansion.
 MacroExpander::MacroExpander(MacroTable& table)
     : macroTable_(table) {}
 
+// EN: Clears recursion state and expands all macros in the text.
+// FR: Reinitialise l etat de recursion et expand toutes les macros du texte.
 std::string MacroExpander::expand(const std::string& text) {
     expandingMacros_.clear();
     return expand(text, "", 0);
 }
 
+// EN: Recursively expands macros, skipping literals and guarding depth.
+// FR: Etend recursivement les macros, ignore les litteraux et limite la profondeur.
 std::string MacroExpander::expand(const std::string& text, const std::string& expandingMacro, int depth) {
     static_cast<void>(expandingMacro);
 
@@ -96,5 +102,8 @@ std::string MacroExpander::expand(const std::string& text, const std::string& ex
     return result;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Implement token-pasting (##) and stringification (#) semantics.
+// FR: Implementer le collage (##) et la stringification (#).

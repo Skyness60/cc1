@@ -2,10 +2,8 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Constant Expression Evaluation (float)
-// ============================================================================
-
+// EN: Evaluates floating constant expressions for compile-time init.
+// FR: Evalue les expressions constantes flottantes pour init compile-time.
 bool IRGenerator::evaluateConstantFloatExpr(AST::Expression* expr, double& result) {
     if (!expr) return false;
 
@@ -163,4 +161,4 @@ bool IRGenerator::evaluateConstantFloatExpr(AST::Expression* expr, double& resul
     return false;
 }
 
-} // namespace cc1
+} 

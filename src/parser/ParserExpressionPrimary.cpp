@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Parses primary expressions (literals, identifiers, parenthesized).
+// FR: Parse les expressions primaires (litteraux, identifiants, parentheses).
 AST::Ptr<AST::Expression> Parser::parsePrimaryExpression() {
     if (check(TokenType::IntegerLiteral)) {
         return parsePrimaryIntegerLiteral();
@@ -34,4 +36,6 @@ AST::Ptr<AST::Expression> Parser::parsePrimaryExpression() {
     error("expected statement");
 }
 
-} // namespace cc1
+// TODO(cc1) EN: Improve error message to say "expected expression".
+// FR: Ameliorer le message d erreur vers "expected expression".
+} 

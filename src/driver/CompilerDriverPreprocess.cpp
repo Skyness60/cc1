@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+// EN: Checks if a string ends with a given suffix.
+// FR: Verifie si une chaine se termine par un suffixe.
 static bool endsWith(const std::string& s, const std::string& suffix)
 {
     if (s.size() < suffix.size())
@@ -13,6 +15,8 @@ static bool endsWith(const std::string& s, const std::string& suffix)
     return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+// EN: Reads an entire file into a string.
+// FR: Lit un fichier entier dans une chaine.
 static bool readWholeFile(const std::string& filename, std::string& out)
 {
     std::ifstream in(filename);
@@ -26,6 +30,8 @@ static bool readWholeFile(const std::string& filename, std::string& out)
     return true;
 }
 
+// EN: Runs preprocessing for all input files and handles -E output.
+// FR: Lance le pretraitement pour tous les fichiers et gere -E.
 bool CompilerDriver::runPreprocessing()
 {
     if (input_files_.empty()) {
@@ -35,12 +41,12 @@ bool CompilerDriver::runPreprocessing()
 
     cc1::Preprocessor preprocessor;
 
-    // Add include paths
+    
     for (const auto& path : include_paths_) {
         preprocessor.addIncludePath(path);
     }
 
-    // Process -D options
+    
     for (const auto& def : defines_) {
         size_t eq = def.find('=');
         if (eq != std::string::npos) {
@@ -50,18 +56,18 @@ bool CompilerDriver::runPreprocessing()
         }
     }
 
-    // Process -U options
+    
     for (const auto& undef : undefines_) {
         preprocessor.undefineMacro(undef);
     }
 
-    // Process all input files
+    
     source_.clear();
     for (const auto& filename : input_files_) {
         std::string fileSource;
 
-        // POSIX c17: a .i operand is already the output of preprocessing (-E).
-        // It shall not be preprocessed again when compiled.
+        
+        
         if (endsWith(filename, ".i")) {
             if (!readWholeFile(filename, fileSource))
                 return false;
@@ -78,9 +84,11 @@ bool CompilerDriver::runPreprocessing()
         source_ += fileSource;
     }
 
-    // If -E flag, output preprocessed source
+    
     if (preprocess_only_) {
-        if (!output_file_.empty()) {
+        // Treat '-' as stdout. If output_file_ is non-empty and not "-", write to file;
+        // otherwise print to stdout.
+        if (!output_file_.empty() && output_file_ != "-") {
             std::ofstream out(output_file_);
             if (out.is_open()) {
                 out << source_;
@@ -90,9 +98,11 @@ bool CompilerDriver::runPreprocessing()
                 return false;
             }
         } else {
+            // empty or '-' -> stdout
             std::cout << source_;
         }
     }
+
 
     return true;
 }

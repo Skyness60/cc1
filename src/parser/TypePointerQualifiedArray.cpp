@@ -3,10 +3,14 @@
 
 namespace AST {
 
+// EN: Accepts a type visitor for pointer types.
+// FR: Accepte un visiteur de type pour les pointeurs.
 void PointerType::accept(TypeVisitor& visitor) const {
     visitor.visit(*this);
 }
 
+// EN: Compares pointer types by comparing pointee types.
+// FR: Compare les types pointeurs via le type pointe.
 bool PointerType::equals(const Type& other) const {
     struct VisitorImpl : TypeVisitor {
         const PointerType& self;
@@ -28,18 +32,26 @@ bool PointerType::equals(const Type& other) const {
     return visitor.equal;
 }
 
+// EN: Returns a string representation of the pointer type.
+// FR: Renvoie une representation chaine du type pointeur.
 std::string PointerType::toString() const {
     return pointee->toString() + " *";
 }
 
+// EN: Clones the pointer type with location preserved.
+// FR: Clone le type pointeur en preservant la position.
 Ptr<Type> PointerType::clone() const {
     return make<PointerType>(pointee->clone(), line, column);
 }
 
+// EN: Accepts a type visitor for qualified types.
+// FR: Accepte un visiteur de type pour les types qualifies.
 void QualifiedType::accept(TypeVisitor& visitor) const {
     visitor.visit(*this);
 }
 
+// EN: Compares qualified types including qualifiers.
+// FR: Compare les types qualifies y compris qualifiers.
 bool QualifiedType::equals(const Type& other) const {
     struct VisitorImpl : TypeVisitor {
         const QualifiedType& self;
@@ -64,6 +76,8 @@ bool QualifiedType::equals(const Type& other) const {
     return visitor.equal;
 }
 
+// EN: Returns a string representation of the qualified type.
+// FR: Renvoie une representation chaine du type qualifie.
 std::string QualifiedType::toString() const {
     std::string result;
     if (isConst) result += "const ";
@@ -72,14 +86,20 @@ std::string QualifiedType::toString() const {
     return result;
 }
 
+// EN: Clones the qualified type with location preserved.
+// FR: Clone le type qualifie en preservant la position.
 Ptr<Type> QualifiedType::clone() const {
     return make<QualifiedType>(baseType->clone(), isConst, isVolatile, line, column);
 }
 
+// EN: Accepts a type visitor for array types.
+// FR: Accepte un visiteur de type pour les tableaux.
 void ArrayType::accept(TypeVisitor& visitor) const {
     visitor.visit(*this);
 }
 
+// EN: Compares array types by element type.
+// FR: Compare les types tableau par type d element.
 bool ArrayType::equals(const Type& other) const {
     struct VisitorImpl : TypeVisitor {
         const ArrayType& self;
@@ -101,10 +121,14 @@ bool ArrayType::equals(const Type& other) const {
     return visitor.equal;
 }
 
+// EN: Returns a string representation of the array type.
+// FR: Renvoie une representation chaine du type tableau.
 std::string ArrayType::toString() const {
     return elementType->toString() + "[]";
 }
 
+// EN: Clones the array type, attempting to resolve constant sizes.
+// FR: Clone le type tableau en essayant de resoudre la taille constante.
 Ptr<Type> ArrayType::clone() const {
     if (size >= 0) {
         return make<ArrayType>(elementType->clone(), size, line, column);
@@ -130,4 +154,7 @@ Ptr<Type> ArrayType::clone() const {
     return make<ArrayType>(elementType->clone(), nullptr, line, column);
 }
 
-} // namespace AST
+} 
+
+// TODO(cc1) EN: Preserve array sizes from expressions beyond integer literals.
+// FR: Preserver les tailles de tableau issues d expressions non literals.

@@ -2,12 +2,10 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Ternary Expression
-// ============================================================================
-
+// EN: Emits IR for ternary expressions using labels and phi.
+// FR: Genere l IR pour les ternaires via labels et phi.
 void IRGenerator::visit(AST::TernaryExpr& node) {
-    // Evaluate condition
+    
     node.condition->accept(*this);
     IRValue condVal = loadValue(lastValue_);
 
@@ -19,7 +17,7 @@ void IRGenerator::visit(AST::TernaryExpr& node) {
     emit(cmpReg + " = icmp ne " + condVal.type + " " + condVal.name + ", 0");
     emit("br i1 " + cmpReg + ", label %" + thenLabel + ", label %" + elseLabel);
 
-    // Then block
+    
     emitLabel(thenLabel);
     node.thenExpr->accept(*this);
     IRValue thenVal = loadValue(lastValue_);
@@ -28,7 +26,7 @@ void IRGenerator::visit(AST::TernaryExpr& node) {
     emitLabel(thenFrom);
     emit("br label %" + endLabel);
 
-    // Else block
+    
     emitLabel(elseLabel);
     node.elseExpr->accept(*this);
     IRValue elseVal = loadValue(lastValue_);
@@ -37,10 +35,10 @@ void IRGenerator::visit(AST::TernaryExpr& node) {
     emitLabel(elseFrom);
     emit("br label %" + endLabel);
 
-    // End block
+    
     emitLabel(endLabel);
 
-    // Use then type as result type (best-effort)
+    
     std::string resultType = thenVal.type;
     std::string phiReg = newTemp();
     emit(phiReg + " = phi " + resultType + " [ " + thenVal.name + ", %" + thenFrom + " ], [ " + elseVal.name + ", %" + elseFrom + " ]");
@@ -48,14 +46,12 @@ void IRGenerator::visit(AST::TernaryExpr& node) {
     lastValue_ = IRValue(phiReg, resultType, false, false);
 }
 
-// ============================================================================
-// Initializer List (as expression)
-// ============================================================================
-
+// EN: Emits a placeholder IR value for initializer lists in expressions.
+// FR: Genere une valeur IR placeholder pour les listes d init.
 void IRGenerator::visit(AST::InitializerList& node) {
-    // Treat as zero for expression context; handled specially in decl init.
+    
     (void)node;
     lastValue_ = IRValue("0", "i32", false, true);
 }
 
-} // namespace cc1
+} 

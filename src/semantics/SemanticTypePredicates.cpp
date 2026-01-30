@@ -2,6 +2,8 @@
 
 namespace cc1 {
 
+// EN: Checks if a type is void after stripping qualifiers.
+// FR: Verifie si un type est void apres retrait des qualifiers.
 bool SemanticAnalyzer::isVoidType(AST::Type* type) {
     if (!type) return false;
     type = stripQualifiers(type);
@@ -11,6 +13,8 @@ bool SemanticAnalyzer::isVoidType(AST::Type* type) {
     return false;
 }
 
+// EN: Checks if a type is any integer or enum kind.
+// FR: Verifie si un type est un entier ou enum.
 bool SemanticAnalyzer::isIntegerType(AST::Type* type) {
     if (!type) return false;
     type = stripQualifiers(type);
@@ -38,6 +42,8 @@ bool SemanticAnalyzer::isIntegerType(AST::Type* type) {
     return false;
 }
 
+// EN: Checks if a type is a floating-point kind.
+// FR: Verifie si un type est flottant.
 bool SemanticAnalyzer::isFloatType(AST::Type* type) {
     if (!type) return false;
     type = stripQualifiers(type);
@@ -54,24 +60,32 @@ bool SemanticAnalyzer::isFloatType(AST::Type* type) {
     return false;
 }
 
+// EN: Checks if a type is a pointer.
+// FR: Verifie si un type est un pointeur.
 bool SemanticAnalyzer::isPointerType(AST::Type* type) {
     if (!type) return false;
     type = stripQualifiers(type);
     return dynamic_cast<AST::PointerType*>(type) != nullptr;
 }
 
+// EN: Checks if a type is an array.
+// FR: Verifie si un type est un tableau.
 bool SemanticAnalyzer::isArrayType(AST::Type* type) {
     if (!type) return false;
     type = stripQualifiers(type);
     return dynamic_cast<AST::ArrayType*>(type) != nullptr;
 }
 
+// EN: Checks if a type is a struct.
+// FR: Verifie si un type est une struct.
 bool SemanticAnalyzer::isStructType(AST::Type* type) {
     if (!type) return false;
     type = stripQualifiers(type);
     return dynamic_cast<AST::StructType*>(type) != nullptr;
 }
 
+// EN: Checks whether a type is const-qualified.
+// FR: Verifie si un type est qualifie const.
 bool SemanticAnalyzer::isConstQualified(AST::Type* type) {
     if (!type) return false;
     if (auto* qual = dynamic_cast<AST::QualifiedType*>(type)) {
@@ -80,10 +94,14 @@ bool SemanticAnalyzer::isConstQualified(AST::Type* type) {
     return false;
 }
 
+// EN: Checks if a type is scalar (int/float/pointer).
+// FR: Verifie si un type est scalaire (entier/float/pointeur).
 bool SemanticAnalyzer::isScalarType(AST::Type* type) {
     return isIntegerType(type) || isFloatType(type) || isPointerType(type);
 }
 
+// EN: Strips top-level qualifier wrappers to get base type.
+// FR: Retire les qualifiers de tete pour obtenir le type de base.
 AST::Type* SemanticAnalyzer::stripQualifiers(AST::Type* type) {
     while (auto* qual = dynamic_cast<AST::QualifiedType*>(type)) {
         type = qual->baseType.get();
@@ -91,11 +109,15 @@ AST::Type* SemanticAnalyzer::stripQualifiers(AST::Type* type) {
     return type;
 }
 
+// EN: Returns a readable string for a type, or "unknown".
+// FR: Renvoie une chaine lisible du type, ou "unknown".
 std::string SemanticAnalyzer::typeToString(AST::Type* type) {
     if (!type) return "unknown";
     return type->toString();
 }
 
+// EN: Checks assignment/compatibility between two types.
+// FR: Verifie la compatibilite entre deux types.
 bool SemanticAnalyzer::typesCompatible(AST::Type* left, AST::Type* right) {
     if (!left || !right) return false;
 
@@ -133,7 +155,9 @@ bool SemanticAnalyzer::typesCompatible(AST::Type* left, AST::Type* right) {
     return false;
 }
 
-bool SemanticAnalyzer::canAssign(AST::Type* target, AST::Type* source, bool /*isInit*/) {
+// EN: Determines if a value of source type can be assigned to target.
+// FR: Determine si une valeur source peut etre assignee a cible.
+bool SemanticAnalyzer::canAssign(AST::Type* target, AST::Type* source, bool ) {
     if (!target || !source) return false;
 
     AST::Type* targetBase = stripQualifiers(target);
@@ -169,4 +193,4 @@ bool SemanticAnalyzer::canAssign(AST::Type* target, AST::Type* source, bool /*is
     return false;
 }
 
-} // namespace cc1
+} 

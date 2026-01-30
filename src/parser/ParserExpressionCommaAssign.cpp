@@ -2,10 +2,12 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Expression Parsing
-// ============================================================================
 
+
+
+
+// EN: Parses comma-separated expressions.
+// FR: Parse les expressions separees par virgules.
 AST::Ptr<AST::Expression> Parser::parseExpression() {
     auto expr = parseAssignmentExpression();
 
@@ -20,6 +22,8 @@ AST::Ptr<AST::Expression> Parser::parseExpression() {
     return expr;
 }
 
+// EN: Parses assignment expressions with right associativity.
+// FR: Parse les affectations avec associativite a droite.
 AST::Ptr<AST::Expression> Parser::parseAssignmentExpression() {
     auto expr = parseConditionalExpression();
 
@@ -40,11 +44,13 @@ AST::Ptr<AST::Expression> Parser::parseAssignmentExpression() {
     return expr;
 }
 
+// EN: Parses ternary conditional expressions.
+// FR: Parse les expressions conditionnelles ternaires.
 AST::Ptr<AST::Expression> Parser::parseConditionalExpression() {
     auto expr = parseLogicalOrExpression();
 
     if (match(TokenType::Question)) {
-        // Use position of condition expression, not '?' operator
+        
         int line = expr->line;
         int col = expr->column;
         auto thenExpr = parseExpression();
@@ -58,8 +64,13 @@ AST::Ptr<AST::Expression> Parser::parseConditionalExpression() {
     return expr;
 }
 
+// EN: Parses a constant expression (currently same as conditional).
+// FR: Parse une expression constante (actuellement comme conditionnelle).
 AST::Ptr<AST::Expression> Parser::parseConstantExpression() {
     return parseConditionalExpression();
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Enforce lvalue requirement for assignment left-hand side.
+// FR: Appliquer la contrainte lvalue pour la gauche d affectation.

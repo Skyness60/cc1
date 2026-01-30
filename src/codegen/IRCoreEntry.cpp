@@ -2,17 +2,17 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Main Generation Entry Point
-// ============================================================================
-
+// EN: Generates IR by visiting the translation unit.
+// FR: Genere l IR en visitant l unite de traduction.
 void IRGenerator::generate(AST::TranslationUnit& unit) {
     currentBuffer_ = &globalBuffer_;
     unit.accept(*this);
 }
 
+// EN: Assembles and returns the final IR module text.
+// FR: Assemble et renvoie le texte IR final du module.
 std::string IRGenerator::getIR() const {
-    // Build struct type definitions
+    
     std::stringstream structs;
     for (const auto& pair : namedStructDefs_) {
         if (!pair.second.first.empty()) {
@@ -20,7 +20,7 @@ std::string IRGenerator::getIR() const {
         }
     }
 
-    // Build metadata for PIE (Position Independent Executable) and (optionally) debug info.
+    
     std::stringstream meta;
     meta << "!llvm.module.flags = !{";
     if (debugInfo_) {
@@ -39,7 +39,7 @@ std::string IRGenerator::getIR() const {
         }
     }
 
-    // Build function declarations (only for functions not defined)
+    
     std::stringstream decls;
     for (const auto& pair : functionDeclarations_) {
         if (!definedFunctions_.count(pair.first)) {
@@ -47,10 +47,10 @@ std::string IRGenerator::getIR() const {
         }
     }
 
-    // Order: header, struct type definitions, globals, string literals,
-    // function declarations, function definitions, debug metadata, module metadata
+    
+    
     return headerBuffer_.str() + structs.str() + globalBuffer_.str() + stringBuffer_.str() +
            decls.str() + funcDefBuffer_.str() + debugMetaBuffer_.str() + meta.str();
 }
 
-} // namespace cc1
+} 

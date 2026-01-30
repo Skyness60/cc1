@@ -4,10 +4,12 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Constructor
-// ============================================================================
 
+
+
+
+// EN: Initializes parser state with token stream and source context.
+// FR: Initialise l etat du parseur avec tokens et contexte source.
 Parser::Parser(const std::vector<Token>& tokens,
                const std::string& filename,
                const std::string& source)
@@ -17,10 +19,12 @@ Parser::Parser(const std::vector<Token>& tokens,
 {
 }
 
-// ============================================================================
-// Main Entry Point
-// ============================================================================
 
+
+
+
+// EN: Parses the full translation unit, stopping on fatal parse errors.
+// FR: Parse l unite de traduction complete et s arrete sur erreur fatale.
 AST::Ptr<AST::TranslationUnit> Parser::parse() {
     auto unit = AST::make<AST::TranslationUnit>(1, 1);
     
@@ -33,7 +37,7 @@ AST::Ptr<AST::TranslationUnit> Parser::parse() {
         } catch (const ParseError& e) {
             hadError_ = true;
             std::cerr << e.what() << std::endl;
-            // Stop after first error like clang does
+            
             break;
         }
     }
@@ -41,17 +45,21 @@ AST::Ptr<AST::TranslationUnit> Parser::parse() {
     return unit;
 }
 
-// ============================================================================
-// Token Stream Management
-// ============================================================================
 
+
+
+
+// EN: Returns the current token, falling back to EOF if out of range.
+// FR: Renvoie le token courant, ou EOF si hors limites.
 const Token& Parser::current() const {
     if (currentIndex_ >= tokens_.size()) {
-        return tokens_.back(); // Should be EOF
+        return tokens_.back(); 
     }
     return tokens_[currentIndex_];
 }
 
+// EN: Peeks ahead by offset, returning EOF if out of range.
+// FR: Regarde en avant d un offset, ou EOF si hors limites.
 const Token& Parser::peek(int offset) const {
     size_t index = currentIndex_ + offset;
     if (index >= tokens_.size()) {
@@ -60,6 +68,8 @@ const Token& Parser::peek(int offset) const {
     return tokens_[index];
 }
 
+// EN: Returns the previously consumed token.
+// FR: Renvoie le token consomme precedent.
 const Token& Parser::previous() const {
     if (currentIndex_ == 0) {
         return tokens_[0];
@@ -67,14 +77,20 @@ const Token& Parser::previous() const {
     return tokens_[currentIndex_ - 1];
 }
 
+// EN: Checks whether the current token is EOF.
+// FR: Verifie si le token courant est EOF.
 bool Parser::isAtEnd() const {
     return current().type == TokenType::EndOfFile;
 }
 
+// EN: Tests whether the current token matches a type.
+// FR: Teste si le token courant correspond a un type.
 bool Parser::check(TokenType type) const {
     return current().type == type;
 }
 
+// EN: Tests whether the current token matches any of the given types.
+// FR: Teste si le token courant correspond a un des types donnes.
 bool Parser::checkAny(std::initializer_list<TokenType> types) const {
     for (TokenType type : types) {
         if (check(type)) return true;
@@ -82,6 +98,8 @@ bool Parser::checkAny(std::initializer_list<TokenType> types) const {
     return false;
 }
 
+// EN: Advances the token cursor and returns the consumed token.
+// FR: Avance le curseur et renvoie le token consomme.
 const Token& Parser::advance() {
     if (!isAtEnd()) {
         currentIndex_++;
@@ -89,6 +107,8 @@ const Token& Parser::advance() {
     return previous();
 }
 
+// EN: Consumes the current token if it matches the expected type.
+// FR: Consomme le token courant s il correspond au type attendu.
 bool Parser::match(TokenType type) {
     if (check(type)) {
         advance();
@@ -97,6 +117,8 @@ bool Parser::match(TokenType type) {
     return false;
 }
 
+// EN: Consumes the current token if it matches any given type.
+// FR: Consomme le token courant s il correspond a un des types donnes.
 bool Parser::matchAny(std::initializer_list<TokenType> types) {
     for (TokenType type : types) {
         if (match(type)) return true;
@@ -104,6 +126,8 @@ bool Parser::matchAny(std::initializer_list<TokenType> types) {
     return false;
 }
 
+// EN: Requires a specific token type or raises a parse error.
+// FR: Exige un type de token ou leve une erreur de parse.
 const Token& Parser::consume(TokenType type, const std::string& message) {
     if (check(type)) {
         return advance();
@@ -111,6 +135,8 @@ const Token& Parser::consume(TokenType type, const std::string& message) {
     error(message);
 }
 
+// EN: Synchronizes parsing after an error by skipping to a safe token.
+// FR: Synchronise le parsing apres erreur en sautant a un token sur.
 void Parser::synchronize() {
     advance();
     
@@ -148,24 +174,32 @@ void Parser::synchronize() {
     }
 }
 
-// ============================================================================
-// Error Handling
-// ============================================================================
 
+
+
+
+// EN: Raises a parse error at the current token.
+// FR: Leve une erreur de parse au token courant.
 [[noreturn]] void Parser::error(const std::string& message) {
     errorAt(current(), message);
 }
 
+// EN: Raises a parse error at a specific token.
+// FR: Leve une erreur de parse a un token specifique.
 [[noreturn]] void Parser::errorAt(const Token& token, const std::string& message) {
     SourceLocation loc(filename_, token.line, token.column);
     throw ParseError(message, loc, getSourceLine(token.line));
 }
 
+// EN: Raises a parse error at an explicit line/column.
+// FR: Leve une erreur de parse a une position ligne/colonne.
 [[noreturn]] void Parser::errorAtPosition(int line, int column, const std::string& message) {
     SourceLocation loc(filename_, line, column);
     throw ParseError(message, loc, getSourceLine(line));
 }
 
+// EN: Retrieves a specific source line for diagnostics.
+// FR: Recupere une ligne source pour diagnostics.
 std::string Parser::getSourceLine(int line) const {
     std::istringstream stream(source_);
     std::string currentLine;
@@ -180,8 +214,13 @@ std::string Parser::getSourceLine(int line) const {
     return "";
 }
 
+// EN: Builds a SourceLocation from a token.
+// FR: Construit une SourceLocation depuis un token.
 SourceLocation Parser::makeLocation(const Token& tok) const {
     return SourceLocation(filename_, tok.line, tok.column);
 }
 
-} // namespace cc1
+// TODO(cc1) EN: Improve error recovery to continue parsing after errors.
+// FR: Ameliorer la recuperation d erreurs pour continuer le parsing.
+
+} 

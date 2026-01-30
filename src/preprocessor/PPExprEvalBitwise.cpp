@@ -3,6 +3,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Evaluates bitwise OR (|) with correct precedence.
+// FR: Evalue le OR bit a bit (|) avec la bonne precedence.
 long long ExpressionEvaluator::evalBitwiseOr(const std::string& expr, size_t& pos) {
     long long left = evalBitwiseXor(expr, pos);
 
@@ -21,6 +23,8 @@ long long ExpressionEvaluator::evalBitwiseOr(const std::string& expr, size_t& po
     return left;
 }
 
+// EN: Evaluates bitwise XOR (^) with correct precedence.
+// FR: Evalue le XOR bit a bit (^) avec la bonne precedence.
 long long ExpressionEvaluator::evalBitwiseXor(const std::string& expr, size_t& pos) {
     long long left = evalBitwiseAnd(expr, pos);
 
@@ -38,6 +42,8 @@ long long ExpressionEvaluator::evalBitwiseXor(const std::string& expr, size_t& p
     return left;
 }
 
+// EN: Evaluates bitwise AND (&) with correct precedence.
+// FR: Evalue le AND bit a bit (&) avec la bonne precedence.
 long long ExpressionEvaluator::evalBitwiseAnd(const std::string& expr, size_t& pos) {
     long long left = evalEquality(expr, pos);
 
@@ -56,5 +62,8 @@ long long ExpressionEvaluator::evalBitwiseAnd(const std::string& expr, size_t& p
     return left;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Add diagnostics for invalid operator sequences like "| |".
+// FR: Ajouter des diagnostics pour sequences d operateurs invalides.

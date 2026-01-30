@@ -2,12 +2,6 @@
 
 namespace cc1 {
 
-// Split implementation units (all <200 lines):
-// - src/parser/ParserDeclarationExternal.cpp
-// - src/parser/ParserDeclarationSpecifiers.cpp
-// - src/parser/ParserDeclarator.cpp
-// - src/parser/ParserFunctionDefinition.cpp
-// - src/parser/ParserTagSpecifiers.cpp
-// - src/parser/ParserInitializer.cpp
-
-} // namespace cc1
+// TODO(cc1) EN: Implement declaration helpers here if parser grows.
+// FR: Implementer ici des helpers de declaration si le parseur grossit.
+} 

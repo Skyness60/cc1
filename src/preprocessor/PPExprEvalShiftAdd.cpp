@@ -3,6 +3,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Evaluates bit shifts (<<, >>) with correct precedence.
+// FR: Evalue les decalages (<<, >>) avec la bonne precedence.
 long long ExpressionEvaluator::evalShift(const std::string& expr, size_t& pos) {
     long long left = evalAdditive(expr, pos);
 
@@ -24,6 +26,8 @@ long long ExpressionEvaluator::evalShift(const std::string& expr, size_t& pos) {
     return left;
 }
 
+// EN: Evaluates addition/subtraction (+, -).
+// FR: Evalue addition/soustraction (+, -).
 long long ExpressionEvaluator::evalAdditive(const std::string& expr, size_t& pos) {
     long long left = evalMultiplicative(expr, pos);
 
@@ -45,5 +49,8 @@ long long ExpressionEvaluator::evalAdditive(const std::string& expr, size_t& pos
     return left;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Add overflow checks for shifts and arithmetic where needed.
+// FR: Ajouter des checks d overflow pour shifts et arithmetique si besoin.

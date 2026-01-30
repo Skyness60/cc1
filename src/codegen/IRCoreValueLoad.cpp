@@ -2,13 +2,11 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Value Management (load)
-// ============================================================================
-
+// EN: Loads an IRValue from memory, handling bitfields and pointers.
+// FR: Charge une IRValue depuis la memoire, bitfields/pointeurs compris.
 IRValue IRGenerator::loadValue(const IRValue& val) {
     if (val.isBitfieldRef) {
-        // Load and extract the bitfield value from its storage unit.
+        
         std::string storagePtr = val.name;
         std::string storageTy = val.bitfieldStorageType.empty() ? val.derefType() : val.bitfieldStorageType;
 
@@ -33,7 +31,7 @@ IRValue IRGenerator::loadValue(const IRValue& val) {
         std::string masked = newTemp();
         emit(masked + " = and " + storageTy + " " + shifted + ", " + std::to_string(mask));
 
-        // Normalize to i32 as the expression value.
+        
         std::string asI32;
         if (storageTy == "i32") {
             asI32 = masked;
@@ -65,7 +63,7 @@ IRValue IRGenerator::loadValue(const IRValue& val) {
     std::string temp = newTemp();
     std::string loadType = val.derefType();
 
-    // Emit: %temp = load type, type* ptr
+    
     emit(temp + " = load " + loadType + ", " + val.type + " " + val.name);
 
     IRValue result;
@@ -77,4 +75,4 @@ IRValue IRGenerator::loadValue(const IRValue& val) {
     return result;
 }
 
-} // namespace cc1
+} 

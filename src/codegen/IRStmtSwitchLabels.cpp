@@ -2,13 +2,11 @@
 
 namespace cc1 {
 
-// ============================================================================
-// Case Statement
-// ============================================================================
-
+// EN: Emits IR for a case label within the current switch context.
+// FR: Genere l IR pour un label case dans le switch courant.
 void IRGenerator::visit(AST::CaseStmt& node) {
     if (switchStack_.empty()) {
-        // Error: case outside switch
+        
         hadError_ = true;
         return;
     }
@@ -21,7 +19,7 @@ void IRGenerator::visit(AST::CaseStmt& node) {
     }
     const std::string& caseLabel = it->second;
 
-    // Fallthrough to this labeled statement.
+    
     if (!blockTerminated_) {
         emit("br label %" + caseLabel);
     }
@@ -32,10 +30,8 @@ void IRGenerator::visit(AST::CaseStmt& node) {
     }
 }
 
-// ============================================================================
-// Default Statement
-// ============================================================================
-
+// EN: Emits IR for the default label within the current switch context.
+// FR: Genere l IR pour le label default dans le switch courant.
 void IRGenerator::visit(AST::DefaultStmt& node) {
     if (switchStack_.empty()) {
         hadError_ = true;
@@ -60,4 +56,4 @@ void IRGenerator::visit(AST::DefaultStmt& node) {
     }
 }
 
-} // namespace cc1
+} 

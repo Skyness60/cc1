@@ -4,22 +4,26 @@
 
 namespace cc1 {
 
+// EN: Strips qualifiers and resolves typedef chains to a base type.
+// FR: Retire qualifiers et resout les typedefs vers le type de base.
 AST::Type* IRGenerator::stripQualifiers(AST::Type* type) {
     while (auto* qual = dynamic_cast<AST::QualifiedType*>(type)) {
         type = qual->baseType.get();
     }
-    // Also strip typedefs by looking them up
+    
     while (auto* typedefType = dynamic_cast<AST::TypedefType*>(type)) {
         AST::Type* resolved = resolveTypedef(typedefType->name);
         if (resolved) {
             type = resolved;
         } else {
-            break;  // Unresolved typedef
+            break;  
         }
     }
     return type;
 }
 
+// EN: Resolves a typedef name to its underlying type if known.
+// FR: Resout un typedef vers son type sous-jacent si connu.
 AST::Type* IRGenerator::resolveTypedef(const std::string& name) {
     auto it = typedefMap_.find(name);
     if (it != typedefMap_.end() && it->second) {
@@ -28,15 +32,17 @@ AST::Type* IRGenerator::resolveTypedef(const std::string& name) {
     return nullptr;
 }
 
+// EN: Extracts a field type from an inline LLVM struct type string.
+// FR: Extrait le type d un champ depuis un type struct LLVM inline.
 std::string IRGenerator::extractFieldTypeFromInlineStruct(const std::string& inlineStructType, int fieldIndex) {
-    // Parse inline struct type like "{ float, [2 x i32], { i32 } }"
-    // and extract the Nth field type
+    
+    
 
     if (inlineStructType.empty() || inlineStructType[0] != '{') {
-        return "i32";  // Not an inline struct
+        return "i32";  
     }
 
-    // Skip the opening brace
+    
     size_t pos = 1;
     int currentField = 0;
     int braceDepth = 0;
@@ -45,22 +51,22 @@ std::string IRGenerator::extractFieldTypeFromInlineStruct(const std::string& inl
     while (pos < inlineStructType.size()) {
         char c = inlineStructType[pos];
 
-        // Track nested braces
+        
         if (c == '{' || c == '[') {
             braceDepth++;
         } else if (c == '}' || c == ']') {
             braceDepth--;
             if (c == '}' && braceDepth == -1) {
-                // End of outer struct
+                
                 break;
             }
         }
-        // Comma separates fields (only at depth 0)
+        
         else if (c == ',' && braceDepth == 0) {
             if (currentField == fieldIndex) {
-                // Extract the field type
+                
                 std::string fieldType = inlineStructType.substr(fieldStart, pos - fieldStart);
-                // Trim whitespace
+                
                 while (!fieldType.empty() && std::isspace(static_cast<unsigned char>(fieldType.front()))) {
                     fieldType = fieldType.substr(1);
                 }
@@ -70,16 +76,16 @@ std::string IRGenerator::extractFieldTypeFromInlineStruct(const std::string& inl
                 return fieldType;
             }
             currentField++;
-            fieldStart = pos + 1;  // Skip the comma
+            fieldStart = pos + 1;  
         }
 
         pos++;
     }
 
-    // Last field or single field
+    
     if (currentField == fieldIndex) {
         std::string fieldType = inlineStructType.substr(fieldStart, pos - fieldStart);
-        // Trim whitespace
+        
         while (!fieldType.empty() && std::isspace(static_cast<unsigned char>(fieldType.front()))) {
             fieldType = fieldType.substr(1);
         }
@@ -89,14 +95,16 @@ std::string IRGenerator::extractFieldTypeFromInlineStruct(const std::string& inl
         return fieldType;
     }
 
-    return "i32";  // Field not found, return default
+    return "i32";  
 }
 
+// EN: Registers member indices for inline struct types.
+// FR: Enregistre les indices des membres pour structs inline.
 void IRGenerator::registerInlineStructMembers(const std::string& llvmType, AST::StructType* structType) {
     if (!structType || llvmType.empty()) return;
 
     try {
-        // Create a map of member names to indices for this struct
+        
         std::map<std::string, int> memberMap;
 
         StructLayout layout = computeStructLayout(structType);
@@ -109,15 +117,17 @@ void IRGenerator::registerInlineStructMembers(const std::string& llvmType, AST::
             }
         }
 
-        // Store in the global map
+        
         if (!memberMap.empty()) {
             inlineStructMembers_[llvmType] = memberMap;
         }
     } catch (...) {
-        // Silently ignore any errors during registration
+        
     }
 }
 
+// EN: Finds a member index in a cached inline struct mapping.
+// FR: Cherche l index d un membre dans une struct inline cachee.
 int IRGenerator::findMemberIndexInInlineStruct(const std::string& llvmType, const std::string& memberName) {
     auto it = inlineStructMembers_.find(llvmType);
     if (it != inlineStructMembers_.end()) {
@@ -129,9 +139,9 @@ int IRGenerator::findMemberIndexInInlineStruct(const std::string& llvmType, cons
         }
     }
 
-    // Not found - return -1 to indicate lookup failed
+    
     DebugLogger::instance().log("[InlineStruct] Member '" + memberName + "' not found in " + llvmType);
     return -1;
 }
 
-} // namespace cc1
+} 

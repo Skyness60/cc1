@@ -3,9 +3,13 @@
 #include <stdexcept>
 #include <iostream>
 
+// EN: Stores argc/argv for later parsing.
+// FR: Stocke argc/argv pour parsing ulterieur.
 ArgumentParser::ArgumentParser(int argc, char** argv)
     : argc_(argc), argv_(argv) {}
 
+// EN: Parses CLI arguments into CompilerOptions, with early exits for help/version.
+// FR: Parse les arguments CLI en CompilerOptions, avec sorties help/version.
 CompilerOptions ArgumentParser::parse() {
     CompilerOptions opts;
     
@@ -59,7 +63,7 @@ CompilerOptions ArgumentParser::parse() {
             continue;
         }
         
-        // -D macro definition
+        
         if (arg.substr(0, 2) == "-D") {
             if (arg.length() > 2) {
                 opts.defines.push_back(arg.substr(2));
@@ -69,7 +73,7 @@ CompilerOptions ArgumentParser::parse() {
             continue;
         }
         
-        // -U macro undefinition
+        
         if (arg.substr(0, 2) == "-U") {
             if (arg.length() > 2) {
                 opts.undefines.push_back(arg.substr(2));
@@ -79,7 +83,7 @@ CompilerOptions ArgumentParser::parse() {
             continue;
         }
         
-        // -I include path
+        
         if (arg.substr(0, 2) == "-I") {
             if (arg.length() > 2) {
                 opts.includePaths.push_back(arg.substr(2));
@@ -96,6 +100,16 @@ CompilerOptions ArgumentParser::parse() {
         } else if (isOption(arg)) {
             throw std::invalid_argument("unknown option: " + arg);
         } else {
+            // Validate input file extensions:
+            // - allow '-' for stdin
+            // - accept C sources: .c or .C
+            // - accept preprocessed sources: .i
+            if (arg != "-" &&
+                !(arg.size() >= 2 && (arg.substr(arg.size() - 2) == ".c" ||
+                                     arg.substr(arg.size() - 2) == ".C" ||
+                                     arg.substr(arg.size() - 2) == ".i"))) {
+                throw std::invalid_argument("input file must have .c or .i extension: " + arg);
+            }
             opts.inputFiles.emplace_back(arg);
         }
     }
@@ -107,6 +121,8 @@ CompilerOptions ArgumentParser::parse() {
     return opts;
 }
 
+// EN: Parses the -o option with a required filename.
+// FR: Parse l option -o avec un nom de fichier requis.
 void ArgumentParser::parseOutputOption(int& i, CompilerOptions& opts) {
     if (i + 1 >= argc_) {
         throw std::invalid_argument("missing filename after '-o'");
@@ -114,10 +130,14 @@ void ArgumentParser::parseOutputOption(int& i, CompilerOptions& opts) {
     opts.outputFile = argv_[++i];
 }
 
+// EN: Returns true when an argument looks like an option.
+// FR: Indique si un argument ressemble a une option.
 bool ArgumentParser::isOption(const std::string& arg) const {
     return !arg.empty() && arg[0] == '-';
 }
 
+// EN: Prints usage/help text to stdout.
+// FR: Affiche l aide/usage sur stdout.
 void ArgumentParser::printUsage(const char* programName) {
     std::cout << WHITE "NAME" RESET "\n"
               << "       " << programName << " - C89 to LLVM IR compiler\n"
@@ -166,6 +186,8 @@ void ArgumentParser::printUsage(const char* programName) {
               << "       Written by " MAGENTA "Sperron | Skyness" RESET ".\n";
 }
 
+// EN: Prints version information to stdout.
+// FR: Affiche les infos de version sur stdout.
 void ArgumentParser::printVersion() {
     std::cout << WHITE "cc1" RESET " version " GREEN "0.1.0" RESET "\n"
               << "Target: " CYAN "i386-linux-gnu / x86_64-linux-gnu (select with -m32/-m64)" RESET "\n"

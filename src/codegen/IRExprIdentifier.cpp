@@ -1,22 +1,24 @@
 #include <codegen/IRGenerator.hpp>
 
+#include <iostream>
+
 namespace cc1 {
 
-// ============================================================================
-// Identifier
-// ============================================================================
-
+// EN: Emits IR for identifiers by resolving symbols and enum constants.
+// FR: Genere l IR pour les identifiants via symboles et enums.
 void IRGenerator::visit(AST::Identifier& node) {
-    // Check for enum constant first
+    
     auto enumIt = enumValues_.find(node.name);
     if (enumIt != enumValues_.end()) {
         lastValue_ = IRValue(std::to_string(enumIt->second), "i32", false, true);
         return;
     }
 
-    // Look up in symbol table
+    
     IRSymbol* sym = lookupSymbol(node.name);
     if (!sym) {
+        std::cerr << "error: unknown identifier in codegen: '" << node.name
+                  << "' at " << node.line << ":" << node.column << std::endl;
         hadError_ = true;
         lastValue_ = IRValue("0", "i32", false, true);
         return;
@@ -25,9 +27,9 @@ void IRGenerator::visit(AST::Identifier& node) {
     if (sym->isFunction) {
         lastValue_ = IRValue(sym->irName, sym->type + "*", false, false);
     } else {
-        // Variable - return pointer to it (lvalue)
+        
         lastValue_ = IRValue(sym->irName, sym->type + "*", true, false);
     }
 }
 
-} // namespace cc1
+} 

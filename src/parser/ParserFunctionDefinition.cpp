@@ -2,10 +2,12 @@
 
 namespace cc1 {
 
+// EN: Parses a function definition, assembling signature and body.
+// FR: Parse une definition de fonction, assemble signature et corps.
 AST::Ptr<AST::FunctionDecl> Parser::parseFunctionDefinition(
     const DeclSpecifiers& specs, const Declarator& decl) {
 
-    // Check for nested function definition (not allowed in C89)
+    
     if (functionDepth_ > 0) {
         error("function definition is not allowed here");
     }
@@ -13,12 +15,12 @@ AST::Ptr<AST::FunctionDecl> Parser::parseFunctionDefinition(
     auto func = AST::make<AST::FunctionDecl>(decl.name, nullptr,
                                               decl.line, decl.column);
 
-    // Extract return type from function type if available
+    
     if (auto* funcType = dynamic_cast<AST::FunctionType*>(decl.type.get())) {
         func->returnType = std::move(funcType->returnType);
     } else {
-        // decl.type is the return type itself
-        // This happens when there's no function type wrapper
+        
+        
         func->returnType = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Int, 0, 0);
     }
 
@@ -30,7 +32,7 @@ AST::Ptr<AST::FunctionDecl> Parser::parseFunctionDefinition(
     func->storageClass = specs.storageClass;
     func->isDefinition = true;
 
-    // Parse function body with incremented depth
+    
     functionDepth_++;
     func->body = parseCompoundStatement();
     functionDepth_--;
@@ -38,17 +40,19 @@ AST::Ptr<AST::FunctionDecl> Parser::parseFunctionDefinition(
     return func;
 }
 
+// EN: Parses a parameter list, handling void and variadic markers.
+// FR: Parse une liste de parametres avec gestion de void et variadique.
 std::vector<AST::Ptr<AST::ParamDecl>> Parser::parseParameterList(bool& isVariadic) {
     std::vector<AST::Ptr<AST::ParamDecl>> params;
     isVariadic = false;
 
     if (check(TokenType::RightParen)) {
-        return params; // Empty parameter list
+        return params; 
     }
 
-    // Check for void parameter
+    
     if (check(TokenType::Void) && peek().type == TokenType::RightParen) {
-        advance(); // consume void
+        advance(); 
         return params;
     }
 
@@ -67,6 +71,8 @@ std::vector<AST::Ptr<AST::ParamDecl>> Parser::parseParameterList(bool& isVariadi
     return params;
 }
 
+// EN: Parses a single parameter declaration, including function-pointer cases.
+// FR: Parse une declaration de parametre, y compris pointeurs de fonction.
 AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
     DeclSpecifiers specs = parseDeclarationSpecifiers();
 
@@ -74,26 +80,26 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
         error("expected type in parameter declaration");
     }
 
-    // Parameter can have abstract declarator (no name) or concrete declarator (with name)
+    
     std::string name;
     int line = current().line;
     int col = current().column;
 
-    // Handle pointer prefix
+    
     AST::Ptr<AST::Type> type = parsePointer(std::move(specs.type));
 
-    // Check for parenthesized declarator (for function pointer parameters like `int (*)(long)` or `int (*f)(long)`)
+    
     if (check(TokenType::LeftParen)) {
-        // Could be abstract parenthesized declarator or concrete declarator
-        // Save position to potentially backtrack
+        
+        
         size_t savedPos = currentIndex_;
-        advance(); // consume '('
+        advance(); 
 
         if (check(TokenType::Star) || check(TokenType::LeftParen)) {
-            // Declarator like (*) or (*f) or ((*))
+            
             AST::Ptr<AST::Type> innerType = parsePointer(type->clone());
 
-            // Check for optional name after the pointer (like (*f))
+            
             if (check(TokenType::Identifier)) {
                 name = current().value;
                 line = current().line;
@@ -101,13 +107,13 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
                 advance();
             }
 
-            // Handle nested parentheses
+            
             while (check(TokenType::LeftParen)) {
                 size_t nestedPos = currentIndex_;
                 advance();
                 if (check(TokenType::Star) || check(TokenType::LeftParen)) {
                     innerType = parsePointer(std::move(innerType));
-                    // Check for name in nested case
+                    
                     if (check(TokenType::Identifier) && name.empty()) {
                         name = current().value;
                         line = current().line;
@@ -123,7 +129,7 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
 
             consume(TokenType::RightParen, "expected ')' after declarator");
 
-            // Now check for function suffix
+            
             if (match(TokenType::LeftParen)) {
                 bool isVariadic = false;
                 auto params = parseParameterList(isVariadic);
@@ -140,8 +146,8 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
                 type = std::move(innerType);
             }
         } else if (check(TokenType::Identifier)) {
-            // Might be a named declarator like (foo) - but this is rare in parameters
-            // Backtrack and use regular declarator parsing
+            
+            
             currentIndex_ = savedPos;
             Declarator decl = parseDirectDeclarator(type);
             name = decl.name;
@@ -149,7 +155,7 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
             line = decl.line;
             col = decl.column;
         } else {
-            // Backtrack - it's probably function suffix on the main type
+            
             currentIndex_ = savedPos;
         }
     }
@@ -160,7 +166,7 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
         col = current().column;
         advance();
 
-        // Check for array or function suffixes
+        
         while (true) {
             if (match(TokenType::LeftBracket)) {
                 AST::Ptr<AST::Expression> size;
@@ -168,10 +174,10 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
                     size = parseConstantExpression();
                 }
                 consume(TokenType::RightBracket, "expected ']'");
-                // Arrays decay to pointers in parameters
+                
                 type = AST::make<AST::PointerType>(std::move(type), 0, 0);
             } else if (match(TokenType::LeftParen)) {
-                // Function parameter suffix
+                
                 bool isVariadic = false;
                 auto params = parseParameterList(isVariadic);
                 consume(TokenType::RightParen, "expected ')' after parameters");
@@ -192,4 +198,7 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
     return AST::make<AST::ParamDecl>(name, std::move(type), line, col);
 }
 
-} // namespace cc1
+} 
+
+// TODO(cc1) EN: Simplify complex parameter declarator parsing.
+// FR: Simplifier le parsing complexe des declarators de parametres.

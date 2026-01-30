@@ -5,6 +5,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Dispatches to specific directive parsers based on the keyword.
+// FR: Dispatch vers le parser de directive selon le mot-cle.
 std::unique_ptr<Directive> DirectiveParser::parse(const std::string& line) {
     size_t pos = 0;
 
@@ -46,6 +48,8 @@ std::unique_ptr<Directive> DirectiveParser::parse(const std::string& line) {
     return std::unique_ptr<Directive>();
 }
 
+// EN: Parses a #define directive including optional parameters and body.
+// FR: Parse une directive #define avec params optionnels et corps.
 std::unique_ptr<DefineDirective> DirectiveParser::parseDefine(const std::string& line, size_t pos) {
     std::string name = parseIdentifier(line, pos);
 
@@ -67,6 +71,8 @@ std::unique_ptr<DefineDirective> DirectiveParser::parseDefine(const std::string&
     return std::unique_ptr<DefineDirective>(new DefineDirective(name, params, body, isFunctionLike, isVariadic));
 }
 
+// EN: Parses a #undef directive containing the macro name.
+// FR: Parse une directive #undef avec le nom de macro.
 std::unique_ptr<UndefDirective> DirectiveParser::parseUndef(const std::string& line, size_t pos) {
     std::string name = parseIdentifier(line, pos);
 
@@ -77,6 +83,8 @@ std::unique_ptr<UndefDirective> DirectiveParser::parseUndef(const std::string& l
     return std::unique_ptr<UndefDirective>(new UndefDirective(name));
 }
 
+// EN: Parses a #include directive with local/system delimiters.
+// FR: Parse une directive #include avec delimiteurs local/systeme.
 std::unique_ptr<IncludeDirective> DirectiveParser::parseInclude(const std::string& line, size_t pos) {
     bool isSystemInclude = false;
     std::string filename = parseFilename(line, pos, isSystemInclude);
@@ -88,6 +96,8 @@ std::unique_ptr<IncludeDirective> DirectiveParser::parseInclude(const std::strin
     return std::unique_ptr<IncludeDirective>(new IncludeDirective(filename, isSystemInclude));
 }
 
+// EN: Parses a #if directive capturing the condition string.
+// FR: Parse une directive #if et capture la condition.
 std::unique_ptr<IfDirective> DirectiveParser::parseIf(const std::string& line, size_t pos) {
     skipWhitespace(line, pos);
 
@@ -102,6 +112,8 @@ std::unique_ptr<IfDirective> DirectiveParser::parseIf(const std::string& line, s
     return std::unique_ptr<IfDirective>(new IfDirective(condition));
 }
 
+// EN: Parses #ifdef/#ifndef into a directive with inversion flag.
+// FR: Parse #ifdef/#ifndef en directive avec flag d inversion.
 std::unique_ptr<IfdefDirective> DirectiveParser::parseIfdef(const std::string& line, size_t pos, bool isIfndef) {
     std::string name = parseIdentifier(line, pos);
 
@@ -112,6 +124,8 @@ std::unique_ptr<IfdefDirective> DirectiveParser::parseIfdef(const std::string& l
     return std::unique_ptr<IfdefDirective>(new IfdefDirective(name, isIfndef));
 }
 
+// EN: Parses a #elif directive capturing the condition string.
+// FR: Parse une directive #elif et capture la condition.
 std::unique_ptr<ElifDirective> DirectiveParser::parseElif(const std::string& line, size_t pos) {
     skipWhitespace(line, pos);
 
@@ -126,6 +140,8 @@ std::unique_ptr<ElifDirective> DirectiveParser::parseElif(const std::string& lin
     return std::unique_ptr<ElifDirective>(new ElifDirective(condition));
 }
 
+// EN: Parses a #error directive capturing its message.
+// FR: Parse une directive #error et capture son message.
 std::unique_ptr<ErrorDirective> DirectiveParser::parseError(const std::string& line, size_t pos) {
     skipWhitespace(line, pos);
 
@@ -140,6 +156,8 @@ std::unique_ptr<ErrorDirective> DirectiveParser::parseError(const std::string& l
     return std::unique_ptr<ErrorDirective>(new ErrorDirective(message));
 }
 
+// EN: Parses a #pragma directive capturing raw content.
+// FR: Parse une directive #pragma et capture le contenu brut.
 std::unique_ptr<PragmaDirective> DirectiveParser::parsePragma(const std::string& line, size_t pos) {
     skipWhitespace(line, pos);
 
@@ -154,6 +172,8 @@ std::unique_ptr<PragmaDirective> DirectiveParser::parsePragma(const std::string&
     return std::unique_ptr<PragmaDirective>(new PragmaDirective(content));
 }
 
+// EN: Parses a #line directive with line number and optional filename.
+// FR: Parse une directive #line avec numero et fichier optionnel.
 std::unique_ptr<LineDirective> DirectiveParser::parseLine(const std::string& line, size_t pos) {
     skipWhitespace(line, pos);
 
@@ -176,5 +196,8 @@ std::unique_ptr<LineDirective> DirectiveParser::parseLine(const std::string& lin
     return std::unique_ptr<LineDirective>(new LineDirective(lineNum, filename));
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Add error reporting for unknown directives instead of silent ignore.
+// FR: Ajouter des erreurs pour directives inconnues au lieu d ignorer.

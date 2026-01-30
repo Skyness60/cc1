@@ -3,6 +3,8 @@
 namespace cc1 {
 namespace pp {
 
+// EN: Parses macro arguments, handling nested parentheses and literals.
+// FR: Parse les arguments de macro avec parentheses imbriquees et litteraux.
 std::vector<std::string> MacroExpander::parseArguments(const std::string& text, size_t& pos) {
     std::vector<std::string> args;
 
@@ -78,6 +80,8 @@ std::vector<std::string> MacroExpander::parseArguments(const std::string& text, 
     return args;
 }
 
+// EN: Stringifies a macro argument by escaping quotes and backslashes.
+// FR: Stringifie un argument en echappant guillemets et backslashes.
 std::string MacroExpander::stringify(const std::string& arg) {
     std::string result = "\"";
     for (size_t i = 0; i < arg.size(); i++) {
@@ -90,5 +94,8 @@ std::string MacroExpander::stringify(const std::string& arg) {
     return result;
 }
 
-} // namespace pp
-} // namespace cc1
+} 
+} 
+
+// TODO(cc1) EN: Preserve original spacing in arguments for exact stringification.
+// FR: Preserver l espacement original des arguments pour stringification exacte.

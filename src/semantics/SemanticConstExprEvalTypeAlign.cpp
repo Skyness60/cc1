@@ -5,6 +5,8 @@
 namespace cc1 {
 namespace {
 
+// EN: Removes qualifiers/typedefs to reach underlying type.
+// FR: Retire qualifiers/typedefs pour atteindre le type de base.
 AST::Type* stripQualifiersAndTypedef(AST::Type* type) {
     if (!type) return nullptr;
     while (auto* qual = dynamic_cast<AST::QualifiedType*>(type)) {
@@ -19,8 +21,10 @@ AST::Type* stripQualifiersAndTypedef(AST::Type* type) {
     return type;
 }
 
-} // namespace
+} 
 
+// EN: Returns byte size for primitive kinds (target-dependent).
+// FR: Renvoie la taille en octets pour types primitifs.
 int SemanticAnalyzer::ConstExprEvalVisitor::getPrimitiveSize(AST::PrimitiveKind kind) const {
     switch (kind) {
         case AST::PrimitiveKind::Void:
@@ -51,6 +55,8 @@ int SemanticAnalyzer::ConstExprEvalVisitor::getPrimitiveSize(AST::PrimitiveKind 
     return 4;
 }
 
+// EN: Computes alignment for a type using target pointer size.
+// FR: Calcule l alignement d un type selon la taille pointeur.
 int SemanticAnalyzer::ConstExprEvalVisitor::getTypeAlign(AST::Type* type) {
     if (!type) return 1;
     type = stripQualifiersAndTypedef(type);
@@ -80,4 +86,4 @@ int SemanticAnalyzer::ConstExprEvalVisitor::getTypeAlign(AST::Type* type) {
     return 4;
 }
 
-} // namespace cc1
+} 

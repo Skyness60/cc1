@@ -2,16 +2,20 @@
 
 namespace cc1 {
 
+// EN: Aligns an offset up to the requested alignment.
+// FR: Aligne un offset vers le haut selon l alignement.
 static int alignTo(int offset, int alignment) {
     if (alignment <= 0) return offset;
     int rem = offset % alignment;
     return rem == 0 ? offset : (offset + (alignment - rem));
 }
 
+// EN: Computes struct layout from a struct declaration node.
+// FR: Calcule le layout struct depuis une declaration.
 IRGenerator::StructLayout IRGenerator::computeStructLayout(AST::StructDecl* decl) {
     StructLayout layout;
 
-    // Prefer the preserved StructType if available (keeps bitfield widths).
+    
     if (decl && decl->declaredType) {
         layout = computeStructLayout(decl->declaredType.get());
         layout.llvmType = "%struct." + decl->name + " = type " + layout.llvmType;
@@ -19,7 +23,7 @@ IRGenerator::StructLayout IRGenerator::computeStructLayout(AST::StructDecl* decl
     }
 
     if (decl->isUnion) {
-        // Union: all members overlap at offset 0; alignment is max member alignment.
+        
         layout.llvmType = "%struct." + decl->name + " = type { ";
         int maxSize = 1;
         int maxAlign = 1;
@@ -65,7 +69,7 @@ IRGenerator::StructLayout IRGenerator::computeStructLayout(AST::StructDecl* decl
         layout.totalSize = desiredSize;
         layout.alignment = maxAlign;
     } else {
-        // Struct: add explicit padding fields to match ABI alignment.
+        
         layout.llvmType = "%struct." + decl->name + " = type { ";
         int offset = 0;
         int maxAlign = 1;
@@ -116,4 +120,4 @@ IRGenerator::StructLayout IRGenerator::computeStructLayout(AST::StructDecl* decl
     return layout;
 }
 
-} // namespace cc1
+} 

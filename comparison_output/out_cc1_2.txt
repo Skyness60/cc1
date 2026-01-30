@@ -1,4 +1,0 @@
-comparison_output/cc1_2
-arg1
-arg2
-arg3
