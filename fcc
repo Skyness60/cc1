@@ -450,9 +450,9 @@ for idx in "${!inputs[@]}"; do
 
   # Preprocess using clang -E -std=c89 (POSIX c17 requirement)
   if [[ "$arch" == "m64" ]]; then
-    run clang -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
+    run clang -E -P -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
   else
-    run clang -m32 -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
+    run clang -m32 -E -P -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
   fi
 
   if [[ $mode_preprocess_only -eq 1 ]]; then
