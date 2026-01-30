@@ -1,257 +1,168 @@
 # cc1
 
-Compiler C89/ANSI C vers LLVM IR. Ce repo contient le compilateur `cc1`, un driver `fcc`, des tests, et des echantillons.
+Compilateur C89 → LLVM IR avec driver complet `fcc` (préproc clang -E, compilation cc1, abaissement llc/llc-12, assemblage, lien).
 
-## Build et usage
+## Build & prérequis
 
-- Build: `make`
-- Lancer: `./cc1 <fichier.c>`
-- Preprocess only: `./cc1 -E <fichier.c>`
-- Driver complet: `./fcc <fichier.c>` (pipeline cc1 -> llc -> as -> clang)
+- Dépendances : `clang`, `llc` (ou `llc-12`), `as`, `clang` (lien).
+- Build : `make`
+- Nettoyer : `make clean`
 
+## Usage rapide
 
-### include/
-#### include/driver
-- `include/driver/ArgumentParser.hpp` - Interface du parseur d'options CLI.
-- `include/driver/CompilerDriver.hpp` - Interface du driver de compilation.
+- Compiler et lier : `./fcc prog.c`
+- Arrêter à l’IR : `./cc1 prog.c > prog.ll`
+- Préprocesser seulement : `./cc1 -E prog.c`
+- Conserver les temporaires : `FCC_KEEP_TMP=1 ./fcc prog.c`
 
-#### include/lexer
-- `include/lexer/Lexer.hpp` - Interface principale du lexer.
-- `include/lexer/LexerError.hpp` - Exception d'erreur lexicale.
-- `include/lexer/KeywordMatcher.hpp` - Mapping identifiant -> mot-cle.
-- `include/lexer/IScanner.hpp` - Interface de scanner specialise (id, nombre, etc.).
-- `include/lexer/CharClassifier.hpp` - Helpers de classification des caracteres.
-- `include/lexer/SourceReader.hpp` - Lecture line/column du source.
-- `include/lexer/SourceExtractor.hpp` - Extraction de ligne pour diagnostics.
-- `include/lexer/Token.hpp` - Definition des tokens.
+Le driver :
+- Utilise `llc` si disponible, sinon `llc-12`, sinon erreur.
+- Strip les marqueurs de ligne `# 1 "file"` après préproc pour éviter les erreurs sur certaines plateformes.
+- Supprime les module flags PIC/PIE dans l’IR avant llc-12.
 
-#### include/lexer/scanners
-- `include/lexer/scanners/IdentifierScanner.hpp` - Scan des identifiants et mots-cles.
-- `include/lexer/scanners/NumberScanner.hpp` - Scan des litteraux numeriques.
-- `include/lexer/scanners/StringScanner.hpp` - Scan des chaines.
-- `include/lexer/scanners/CharScanner.hpp` - Scan des caracteres.
-- `include/lexer/scanners/OperatorScanner.hpp` - Scan des operateurs/punctuations.
-- `include/lexer/scanners/DecimalScanner.hpp` - Scan des nombres decimaux.
-- `include/lexer/scanners/OctalScanner.hpp` - Scan des nombres octaux.
-- `include/lexer/scanners/HexScanner.hpp` - Scan des nombres hex.
+## Pipelines
 
-#### include/parser
-- `include/parser/Parser.hpp` - Interface du parser C89.
-- `include/parser/ParseError.hpp` - Exception d'erreur de parsing.
-- `include/parser/Visitor.hpp` - Interface visitor generique.
-- `include/parser/AST.hpp` - AST racine (interface globale).
+- Minimal : `clang -E` → `cc1` → `llc/llc-12` → `as` → `clang` (lien)
+- Variantes :
+  - `./fcc -S prog.c` produit `prog.s`
+  - `./fcc -c prog.c` produit `prog.o`
+  - `./fcc -E prog.c` affiche le préprocesseur
+- Exemple (pipeline manuel équivalent) :
+```/dev/null/pipeline_example.sh#L1-3
+clang -E prog.c | ./cc1 > prog.ll
+llc prog.ll -o prog.s
+as prog.s -o prog.o && clang prog.o -o prog
+```
 
-#### include/parser/ast
-- `include/parser/ast/AST.hpp` - Noeud racine AST.
-- `include/parser/ast/Node.hpp` - Base commune des noeuds AST.
-- `include/parser/ast/Type.hpp` - Types de l'AST.
-- `include/parser/ast/Expression.hpp` - Noeuds d'expressions.
-- `include/parser/ast/Statement.hpp` - Noeuds de statements.
-- `include/parser/ast/Declaration.hpp` - Noeuds de declarations.
-- `include/parser/ast/Visitor.hpp` - Interface visitor AST.
+### Driver
+- `src/driver/ArgumentParser.cpp` : parse les options CLI (`-E`, `-S`, `-c`, `-o`, `-m32/-m64`, etc.) pour normaliser les arguments et protéger le reste du pipeline des erreurs d’entrée.
+- `src/driver/CompilerDriver.cpp` : orchestre la chaîne complète (préproc → cc1 → llc → as → clang) pour offrir une commande unique cohérente.
+- `src/driver/CompilerDriverPreprocess.cpp` : exécute uniquement l’étape préprocesseur quand demandée, afin de fournir un mode `-E` isolé sans passer par le reste de la chaîne.
+- Exemple (pipeline complet) :
+```/dev/null/driver_example.sh#L1-4
+./fcc hello.c          # compile et lie
+./fcc -S hello.c       # s'arrête à l'ASM
+./fcc -E hello.c       # préproc only
+FCC_KEEP_TMP=1 ./fcc hello.c  # conserve les temporaires
+```
 
-#### include/preprocessor
-- `include/preprocessor/Preprocessor.hpp` - Interface du preprocessseur.
-- `include/preprocessor/PPDirective.hpp` - Definition des directives.
-- `include/preprocessor/PPExprEval.hpp` - Evaluation d'expressions #if.
-- `include/preprocessor/PPFileHandler.hpp` - Gestion des includes et fichiers.
-- `include/preprocessor/PPMacro.hpp` - Definition de macros.
-- `include/preprocessor/PPParser.hpp` - Parser des directives de preproc.
-- `include/preprocessor/PPUtils.hpp` - Helpers utilitaires pour preproc.
+### Lexer
+- `src/lexer/CharClassifier.cpp` : classification des caractères (lettres, digits, espace, opérateurs) pour diriger rapidement chaque caractère vers le bon scanner.
+- `src/lexer/KeywordMatcher.cpp` : reconnaissance des mots-clés C89 afin de différencier identifiants et mots réservés.
+- Exemple (mot réservé vs identifiant) :
+```/dev/null/keyword_example.c#L1-3
+int main(void) {  /* 'int' et 'void' sont des mots réservés, 'main' est un identifiant */
+  return 0;
+}
+```
+- `src/lexer/Lexer.cpp` : boucle principale de lexing et émission des tokens, première barrière pour valider la syntaxe de surface.
+- `src/lexer/SourceExtractor.cpp` : extrait les lignes pour les messages d’erreur, pour des diagnostics contextualisés.
+- `src/lexer/SourceReader.cpp` : lecture caractère par caractère avec suivi ligne/colonne, nécessaire aux positions précises dans les erreurs.
+- `src/lexer/Token.cpp` : définition et helpers sur les tokens, base de communication entre lexer et parser.
+- Exemple (tokens attendus : int/ident/assign/int_literal/semicolon/EOF) :
+```/dev/null/lexer_example.c#L1-3
+int x = 42;
+```
 
-#### include/semantics
-- `include/semantics/SemanticAnalyzer.hpp` - Interface de l'analyse semantique.
-- `include/semantics/SemanticConstExprVisitors.hpp` - Visitors pour const-expr.
-- `include/semantics/SymbolTable.hpp` - Table des symboles.
+### Préprocesseur
+- `src/preprocessor/PreprocessorCore.cpp` : pipeline général (lecture, macros, directives, sortie) pour orchestrer toutes les étapes du préproc.
+- `src/preprocessor/PreprocessorDiagnostics.cpp` : messages d’erreur/avertissements préproc afin de signaler proprement les directives invalides.
+- `src/preprocessor/PreprocessorDirectivesBasic.cpp` : directives simples (#define, #undef, #include…) pour couvrir le socle C89.
+- `src/preprocessor/PreprocessorConditionalIf.cpp` : gestion #if/#elif pour activer/désactiver des branches de code.
+- `src/preprocessor/PreprocessorConditionalElse.cpp` : gestion #else/#endif pour fermer proprement les conditionnels.
+- `src/preprocessor/PreprocessorBuiltins.cpp` : macros prédéfinies (__DATE__, __TIME__, etc.) pour compatibilité avec les toolchains classiques.
+- `src/preprocessor/PPDirective.cpp` : représentation des directives (#pragma, #line, #error…) pour uniformiser leur traitement.
+- `src/preprocessor/PPExprEval*.cpp` : évaluation d’expressions #if (compare, bitwise, logique, arithmétique) afin de décider des branches actives.
+- `src/preprocessor/PPFileHandler.cpp` : ouverture de fichiers et résolution des includes pour gérer correctement les dépendances.
+- `src/preprocessor/PPMacro*.cpp` : stockage, parsing, expansion et substitution de macros pour implémenter le cœur de la macro-expansion.
+- `src/preprocessor/PPParser*.cpp` : parsing des directives et utilitaires de parsing pour convertir les lignes `#` en structures internes.
+- `src/preprocessor/PPUtils.cpp` : fonctions utilitaires communes au préprocesseur pour factoriser le code partagé.
+- Exemple (#if + macro) :
+```/dev/null/pp_example.c#L1-10
+#define FLAG 1
+#define ADD(x,y) ((x)+(y))
 
-#### include/codegen
-- `include/codegen/IRGenerator.hpp` - Interface generation LLVM IR.
-- `include/codegen/IRExprCallHelpers.hpp` - Helpers pour appels de fonctions.
+int main(void) {
+#if FLAG
+  return ADD(20, 22);  /* 42 */
+#else
+  return 0;
+#endif
+}
+```
 
-#### include/utils
-- `include/utils/Diagnostic.hpp` - Outils de diagnostics/erreurs.
-- `include/utils/SourceLocation.hpp` - Structure line/column/source.
-- `include/utils/color.hpp` - Helpers de coloration console.
+### Parser
+- `src/parser/ParserCore.cpp` : boucle principale de parsing, coordination des sous-parsers pour construire l’AST complet.
+- `src/parser/ParserType.cpp` : parsing des types de base pour poser les fondations du typage.
+- `src/parser/ParserDeclarator.cpp` : parsing des declarators (pointeurs, arrays, fonctions) afin d’associer les identifiants à leur forme déclarative.
+- `src/parser/ParserDeclaration*.cpp` : parsing des déclarations (externes, specifiers, entrées) pour enregistrer symboles et propriétés.
+- `src/parser/ParserFunctionDefinition.cpp` : parsing des définitions de fonctions pour assembler prototypes, corps et paramètres.
+- `src/parser/ParserInitializer.cpp` : parsing des initialiseurs (scalaires et composites) afin de peupler correctement les objets.
+- `src/parser/ParserStatement*.cpp` : parsing des statements (if/while/for/switch, jump, blocs) pour structurer le contrôle de flux.
+- `src/parser/ParserExpression*.cpp` : parsing des expressions (primaires, postfix, unary, cast, arith, logique, assign) pour produire les arbres d’expressions typables.
+- `src/parser/ParserTagSpecifiers.cpp` : parsing des struct/union/enum pour définir les types agrégés.
+- `src/parser/Type*.cpp` : structures de type (primitifs, pointeurs/qualifs/arrays, fonctions, struct/union/enum/typedef) pour matérialiser le système de types.
+- `src/parser/AST.cpp`, `Declaration.cpp`, `Statement.cpp`, `Expression.cpp` : construction et gestion des nœuds AST pour fournir une représentation intermédiaire cohérente au reste du pipeline.
+- Exemple (déclaration, définition, appel) :
+```/dev/null/parser_example.c#L1-11
+int add(int a, int b);
 
-#### include/
-- `include/core.hpp` - Definitions centrales (types communs/namespace).
+int add(int a, int b) { return a + b; }
 
-### src/
-#### src/main.cpp
-- `src/main.cpp` - Point d'entree: parse args, lance le driver.
+int main(void) {
+  return add(20, 22); /* parser : decl -> def -> call */
+}
+```
 
-#### src/driver
-- `src/driver/ArgumentParser.cpp` - Implementation du parsing CLI.
-- `src/driver/CompilerDriver.cpp` - Orchestration pipeline compilation.
-- `src/driver/CompilerDriverPreprocess.cpp` - Etape preprocessing.
+### Sémantique
+- `src/semantics/SemanticCore.cpp` : orchestration de l’analyse sémantique sur l’AST pour déclencher toutes les vérifications.
+- `src/semantics/SemanticScope.cpp` : gestion des portées et des symboles pour garantir la résolution correcte des identifiants.
+- `src/semantics/SemanticStmt.cpp` : vérifications des statements afin d’assurer la validité des flux de contrôle.
+- `src/semantics/SemanticDecl*.cpp` : vérifications des déclarations (fonctions, tags, variables/paramètres, translation unit) pour valider signatures et liaisons.
+- `src/semantics/SemanticExpr*.cpp` : typage et vérifications des expressions (littéraux, opérateurs, conversions) pour produire des expressions bien typées avant IR.
+- `src/semantics/SemanticEnum.cpp` : vérifications spécifiques aux enums pour respecter les règles de valeur et de portée.
+- `src/semantics/SemanticTypePredicates.cpp` : prédicats et utilitaires de types pour factoriser les règles de compatibilité.
+- `src/semantics/SemanticConstExpr*.cpp` : évaluation et vérification des constantes à la compilation (div0, sizeof/alignof, largeur, etc.) pour détecter tôt les erreurs de constantes.
+- `src/semantics/SemanticConstExprInternalUtils.cpp` : helpers internes pour l’éval const-expr afin de centraliser les routines partagées.
+- Exemple (enum + portée/valeur) :
+```/dev/null/sem_enum_example.c#L1-8
+enum Color { RED = 1, GREEN, BLUE };
 
-#### src/lexer
-- `src/lexer/Lexer.cpp` - Implementation du lexer et scan de tokens.
-- `src/lexer/Token.cpp` - Implementation des tokens.
-- `src/lexer/SourceReader.cpp` - Lecture du source (line/column).
-- `src/lexer/SourceExtractor.cpp` - Extraction de lignes pour erreurs.
-- `src/lexer/KeywordMatcher.cpp` - Mapping mots-cles.
-- `src/lexer/CharClassifier.cpp` - Helpers de classification.
+int main(void) {
+  enum Color c = BLUE;
+  int x = RED + 1;      /* valeurs entières autorisées */
+  return c == BLUE ? x : -1;
+}
+```
+- Exemple (compatibilité de types) :
+```/dev/null/sem_typepred_example.c#L1-6
+int *p;
+double *q;
 
-#### src/preprocessor
-- `src/preprocessor/Preprocessor.cpp` - Orchestrateur du preprocessseur.
-- `src/preprocessor/PreprocessorCore.cpp` - Coeur du preprocessseur.
-- `src/preprocessor/PreprocessorDiagnostics.cpp` - Diagnostics preproc.
-- `src/preprocessor/PreprocessorDirectivesBasic.cpp` - Directives simples.
-- `src/preprocessor/PreprocessorConditionalIf.cpp` - Gestion #if/#elif.
-- `src/preprocessor/PreprocessorConditionalElse.cpp` - Gestion #else/#endif.
-- `src/preprocessor/PreprocessorBuiltins.cpp` - Macros builtin.
-- `src/preprocessor/PPDirective.cpp` - Representations directives.
-- `src/preprocessor/PPExprEval.cpp` - Evaluation expressions #if.
-- `src/preprocessor/PPExprEvalCore.cpp` - Coeur eval #if.
-- `src/preprocessor/PPExprEvalCompare.cpp` - Comparaisons dans #if.
-- `src/preprocessor/PPExprEvalBitwise.cpp` - Bitwise dans #if.
-- `src/preprocessor/PPExprEvalLogical.cpp` - Logique dans #if.
-- `src/preprocessor/PPExprEvalShiftAdd.cpp` - Shift/add/sub dans #if.
-- `src/preprocessor/PPExprEvalMulUnaryPrimary.cpp` - Mul/unary/primary #if.
-- `src/preprocessor/PPFileHandler.cpp` - IO fichiers/include.
-- `src/preprocessor/PPMacro.cpp` - Definition macros.
-- `src/preprocessor/PPMacroArgs.cpp` - Parsing des args macro.
-- `src/preprocessor/PPMacroTable.cpp` - Table de macros.
-- `src/preprocessor/PPMacroExpand.cpp` - Expansion macros.
-- `src/preprocessor/PPMacroSubstitute.cpp` - Substitution macros.
-- `src/preprocessor/PPParser.cpp` - Parser directives preproc.
-- `src/preprocessor/PPParserParse.cpp` - Regles de parsing.
-- `src/preprocessor/PPParserUtils.cpp` - Helpers parser preproc.
-- `src/preprocessor/PPUtils.cpp` - Utilitaires preproc.
+int main(void) {
+  p = q; /* devrait être signalé : pointeurs incompatibles */
+  return 0;
+}
+```
+- Exemple (const-expr + vérification) :
+```/dev/null/sem_example.c#L1-9
+int arr[2] = {1, 2};
+int sz = sizeof(arr) / sizeof(arr[0]);
 
-#### src/parser
-- `src/parser/ParserCore.cpp` - Coeur du parser (flux principal).
-- `src/parser/ParserType.cpp` - Parsing des types.
-- `src/parser/ParserDeclarator.cpp` - Parsing des declarators.
-- `src/parser/ParserDeclaration.cpp` - Parsing des declarations.
-- `src/parser/ParserDeclarationEntry.cpp` - Parsing d'une declaration.
-- `src/parser/ParserDeclarationExternal.cpp` - Parsing des declarations externes.
-- `src/parser/ParserDeclarationSpecifiers.cpp` - Specifiers de declaration.
-- `src/parser/ParserFunctionDefinition.cpp` - Parsing def. de fonction.
-- `src/parser/ParserInitializer.cpp` - Parsing des initializers.
-- `src/parser/ParserStatement.cpp` - Parsing des statements (dispatcher).
-- `src/parser/ParserStatementCore.cpp` - Statements de base.
-- `src/parser/ParserStatementControl.cpp` - if/while/for/switch.
-- `src/parser/ParserStatementJump.cpp` - return/break/continue/goto.
-- `src/parser/ParserExpression.cpp` - Parsing expressions (dispatcher).
-- `src/parser/ParserExpressionPrimary.cpp` - Expressions primaires.
-- `src/parser/ParserExpressionPrimaryIntFloat.cpp` - Literaux int/float.
-- `src/parser/ParserExpressionPrimaryChar.cpp` - Literaux char.
-- `src/parser/ParserExpressionPrimaryString.cpp` - Literaux string.
-- `src/parser/ParserExpressionPostfix.cpp` - Postfix (call, index, member).
-- `src/parser/ParserExpressionCastUnarySizeof.cpp` - cast/unary/sizeof.
-- `src/parser/ParserExpressionRelShiftAddMul.cpp` - rel/shift/add/mul.
-- `src/parser/ParserExpressionLogicalBitwise.cpp` - logiques/bitwise.
-- `src/parser/ParserExpressionOps.cpp` - Operators divers.
-- `src/parser/ParserExpressionCommaAssign.cpp` - comma/assign.
-- `src/parser/ParserTagSpecifiers.cpp` - struct/union/enum tags.
-- `src/parser/Type.cpp` - Definition type AST.
-- `src/parser/TypePrimitive.cpp` - Types primitifs.
-- `src/parser/TypePointerQualifiedArray.cpp` - Pointeurs/qualifiers/arrays.
-- `src/parser/TypeFunction.cpp` - Types fonction.
-- `src/parser/TypeRecordEnumTypedef.cpp` - struct/union/enum/typedef.
-- `src/parser/AST.cpp` - Construction/gestion AST.
-- `src/parser/Declaration.cpp` - Noeuds de declaration.
-- `src/parser/Statement.cpp` - Noeuds de statement.
-- `src/parser/Expression.cpp` - Noeuds d'expression.
+int main(void) {
+  int x = 1 / 0; /* devrait signaler div0 en const-expr si évalué */
+  return sz;
+}
+```
 
-#### src/semantics
-- `src/semantics/SemanticCore.cpp` - Orchestrateur semantique.
-- `src/semantics/SemanticScope.cpp` - Gestion des scopes.
-- `src/semantics/SemanticStmt.cpp` - Verification des statements.
-- `src/semantics/SemanticDecl.cpp` - Verification des declarations.
-- `src/semantics/SemanticDeclFunction.cpp` - Verification des fonctions.
-- `src/semantics/SemanticDeclTranslationUnit.cpp` - Verification TU.
-- `src/semantics/SemanticDeclTag.cpp` - Verification struct/union/enum tags.
-- `src/semantics/SemanticDeclVarParam.cpp` - Verification vars/params.
-- `src/semantics/SemanticExpr.cpp` - Verification expressions.
-- `src/semantics/SemanticExprOperators.cpp` - Types/ops.
-- `src/semantics/SemanticExprLiterals.cpp` - Literaux.
-- `src/semantics/SemanticExprType.cpp` - Typage expressions.
-- `src/semantics/SemanticEnum.cpp` - Verification enum.
-- `src/semantics/SemanticTypeUtils.cpp` - Utils de types.
-- `src/semantics/SemanticTypePredicates.cpp` - Predicats de types.
-- `src/semantics/SemanticConstExpr.cpp` - Const-expr: facade.
-- `src/semantics/SemanticConstExprAPI.cpp` - API const-expr.
-- `src/semantics/SemanticConstExprDivZero.cpp` - Check division par zero.
-- `src/semantics/SemanticConstExprInternal.hpp` - Helpers internes.
-- `src/semantics/SemanticConstExprInternalUtils.cpp` - Utils internes.
-- `src/semantics/SemanticConstExprEval.cpp` - Eval const-expr.
-- `src/semantics/SemanticConstExprEvalExpr.cpp` - Eval expr.
-- `src/semantics/SemanticConstExprEvalCtor.cpp` - Eval des constructeurs/initializers.
-- `src/semantics/SemanticConstExprEvalVisitAtoms.cpp` - Eval atomes.
-- `src/semantics/SemanticConstExprEvalVisitBinary.cpp` - Eval binaire.
-- `src/semantics/SemanticConstExprEvalVisitUnary.cpp` - Eval unaire.
-- `src/semantics/SemanticConstExprEvalVisitTernaryCast.cpp` - Eval ternary/cast.
-- `src/semantics/SemanticConstExprEvalTypeSize.cpp` - sizeof constant.
-- `src/semantics/SemanticConstExprEvalTypeAlign.cpp` - alignof constant.
-- `src/semantics/SemanticConstExprEvalWidth.cpp` - Width/range.
-- `src/semantics/SemanticConstExprEvalHelpers.cpp` - Helpers eval.
-- `src/semantics/SemanticConstExprTypeSizerBasic.cpp` - Size calc types simples.
-- `src/semantics/SemanticConstExprTypeSizerStruct.cpp` - Size calc struct/union.
-- `src/semantics/SemanticConstExprIsConst.cpp` - Check constness.
+### Codegen (LLVM IR)
+- `src/codegen/IRCore*.cpp` : gestion des blocs, temporaires, symboles, entrées, émission finale pour structurer le module LLVM.
+- `src/codegen/IRDecl*.cpp` : génération IR pour déclarations (TU, fonctions, variables locales/globales, protos, floats, divers) pour matérialiser les entités C dans l’IR.
+- `src/codegen/IRExpr*.cpp` : génération IR pour expressions (arith, comparaison, logique, assign, appels, identifiants, index, membres, littéraux, unaires, ternaires/init-list) afin de traduire l’AST en instructions LLVM.
+- `src/codegen/IRStmt*.cpp` : génération IR pour statements (if/else, loops, switch, labels, jumps, expressions composées) pour construire le contrôle de flux LLVM.
+- `src/codegen/IRTypes*.cpp` : mappage type C → type LLVM, tailles/alignements, flatten des structs/arrays, initializers pour assurer la correspondance fidèle des types.
+- `src/codegen/IRCoreConstructorDebug.cpp` : infos de debug lors de la construction IR pour aider au diagnostic des issues de génération.
+- `src/codegen/IRCoreConstExpr*.cpp` : matérialisation IR pour const-expr int/float pour insérer des constantes évaluées à la compilation.
 
-#### src/codegen
-- `src/codegen/IRCore.cpp` - Coeur generation IR.
-- `src/codegen/IRCoreEntry.cpp` - Entrees/initialisation IR.
-- `src/codegen/IRCoreEmit.cpp` - Emission finale IR.
-- `src/codegen/IRCoreTemps.cpp` - Gestion temporaires IR.
-- `src/codegen/IRCoreSymbols.cpp` - Symboles et scopes IR.
-- `src/codegen/IRCoreValueLoad.cpp` - Load d'adresses/valeurs.
-- `src/codegen/IRCoreValueStore.cpp` - Store d'adresses/valeurs.
-- `src/codegen/IRCoreConstExprInt.cpp` - Const expr int en IR.
-- `src/codegen/IRCoreConstExprFloat.cpp` - Const expr float en IR.
-- `src/codegen/IRCoreConstructorDebug.cpp` - Debug info/constructors IR.
-- `src/codegen/IRDecl.cpp` - Declarations IR (dispatcher).
-- `src/codegen/IRDeclTranslationUnit.cpp` - TU IR.
-- `src/codegen/IRDeclFunction.cpp` - Fonctions IR.
-- `src/codegen/IRDeclVar.cpp` - Variables IR (dispatcher).
-- `src/codegen/IRDeclVarGlobal.cpp` - Vars globales.
-- `src/codegen/IRDeclVarLocal.cpp` - Vars locales.
-- `src/codegen/IRDeclVarFunctionProto.cpp` - Protos de fonction.
-- `src/codegen/IRDeclFloat.cpp` - Litteraux float.
-- `src/codegen/IRDeclMisc.cpp` - Decls diverses.
-- `src/codegen/IRExpr.cpp` - Expressions IR (dispatcher).
-- `src/codegen/IRExprBinaryEntry.cpp` - Entrypoint binaire.
-- `src/codegen/IRExprBinaryArithmetic.cpp` - Arithmetique.
-- `src/codegen/IRExprBinaryComparison.cpp` - Comparaison.
-- `src/codegen/IRExprBinaryLogical.cpp` - Logique.
-- `src/codegen/IRExprBinaryAssign.cpp` - Assign.
-- `src/codegen/IRExprBinaryCompoundAssign.cpp` - Assign compose.
-- `src/codegen/IRExprBinaryRegular.cpp` - Cas binaire generique.
-- `src/codegen/IRExprUnary.cpp` - Unaire.
-- `src/codegen/IRExprCastSizeof.cpp` - Cast/sizeof.
-- `src/codegen/IRExprIdentifier.cpp` - Identifiants.
-- `src/codegen/IRExprLiterals.cpp` - Literaux.
-- `src/codegen/IRExprMember.cpp` - Acces membre.
-- `src/codegen/IRExprIndex.cpp` - Indexation tableaux.
-- `src/codegen/IRExprCall.cpp` - Appels de fonctions.
-- `src/codegen/IRExprTernaryInitList.cpp` - Ternary / init list.
-- `src/codegen/IRStmt.cpp` - Statements IR (dispatcher).
-- `src/codegen/IRStmtCompoundExpr.cpp` - Compound expressions.
-- `src/codegen/IRStmtIf.cpp` - If/else.
-- `src/codegen/IRStmtLoops.cpp` - Boucles.
-- `src/codegen/IRStmtSwitch.cpp` - Switch.
-- `src/codegen/IRStmtSwitchLabels.cpp` - Labels de switch.
-- `src/codegen/IRStmtJump.cpp` - return/break/continue/goto.
-- `src/codegen/IRTypes.cpp` - Types IR (dispatcher).
-- `src/codegen/IRTypesDefaults.cpp` - Defaults types.
-- `src/codegen/IRTypesSizeAlign.cpp` - Size/align.
-- `src/codegen/IRTypesTypeMapping.cpp` - Mapping type C -> IR.
-- `src/codegen/IRTypesQualifiersTypedef.cpp` - Qualifiers/typedef.
-- `src/codegen/IRTypesStructRegistry.cpp` - Registre des structs.
-- `src/codegen/IRTypesStructLayoutType.cpp` - Layout types.
-- `src/codegen/IRTypesStructLayoutTypeStruct.cpp` - Layout struct.
-- `src/codegen/IRTypesStructLayoutTypeUnion.cpp` - Layout union.
-- `src/codegen/IRTypesStructLayoutDecl.cpp` - Layout decl.
-- `src/codegen/IRTypesFlatCount.cpp` - Comptage flatten.
-- `src/codegen/IRTypesFlattenedArray.cpp` - Flatten arrays.
-- `src/codegen/IRTypesFlattenedStructFromInit.cpp` - Flatten struct init.
-- `src/codegen/IRTypesFlatStructInit.cpp` - Init struct flatten.
-- `src/codegen/IRTypesInitializerEntry.cpp` - Init entry.
-- `src/codegen/IRTypesInitializerArray.cpp` - Init array.
-- `src/codegen/IRTypesInitializerStruct.cpp` - Init struct.
-
-#### src/utils
-- `src/utils/color.cpp` - Implementation des couleurs console.
+### Utils
+- `src/utils/color.cpp` : coloration des diagnostics pour rendre les messages plus lisibles.
