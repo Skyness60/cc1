@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -O2 -g -fno-stack-protector -Iinclude -MMD -MP
+CXXFLAGS = -std=c++11 -Wall -Wextra -Werror -Iinclude -MMD -MP
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -10,7 +10,6 @@ SRCS = $(shell find $(SRC_DIR) -name '*.cpp')
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS = $(OBJS:.o=.d)
 
-# Test sources (excluding main.cpp from OBJS)
 MAIN_OBJ = $(OBJ_DIR)/main.o
 TEST_OBJS = $(filter-out $(MAIN_OBJ),$(OBJS))
 

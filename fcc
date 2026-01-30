@@ -94,6 +94,14 @@ run() {
 
 # Tool locations
 cc1_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cc1"
+if command -v llc >/dev/null 2>&1; then
+  llc_bin="llc"
+elif command -v llc-12 >/dev/null 2>&1; then
+  llc_bin="llc-12"
+else
+  echo "fcc: error: neither llc nor llc-12 found in PATH" >&2
+  exit 1
+fi
 
 # Options
 mode_link=1
@@ -465,6 +473,10 @@ for idx in "${!inputs[@]}"; do
     continue
   fi
 
+  # Strip preprocessor line markers before feeding cc1
+  stripped_pp="$workdir/$stem.noline.i"
+  run sh -c "grep -v '^[[:space:]]*#[[:space:]]*[0-9]' \"$pp\" > \"$stripped_pp\""
+
   # cc1: C -> LLVM IR (consumes preprocessed .i)
   cc1_args=()
   if [[ "$arch" == "m64" ]]; then
@@ -473,13 +485,17 @@ for idx in "${!inputs[@]}"; do
     cc1_args+=("-m32")
   fi
   cc1_args+=("${cc1_flags[@]}")
-  run "$cc1_bin" "${cc1_args[@]}" "$pp" -o "$ll"
+  run "$cc1_bin" "${cc1_args[@]}" "$stripped_pp" -o "$ll"
+
+  # Drop PIC/PIE module flags for older llc (e.g. llc-12)
+  ll_noflags="$workdir/$stem.noflags.ll"
+  run sh -c "grep -v '^!llvm.module.flags' \"$ll\" | grep -v '\"PIC Level\"' | grep -v '\"PIE Level\"' > \"$ll_noflags\""
 
   # llc: LLVM IR -> asm
   if [[ "$arch" == "m64" ]]; then
-    run llc -march=x86-64 "${llc_flags[@]}" "$ll" -o "$sfile"
+    run "$llc_bin" -march=x86-64 "${llc_flags[@]}" "$ll_noflags" -o "$sfile"
   else
-    run llc -march=x86 -relocation-model=pic -mattr=+sse2 "${llc_flags[@]}" "$ll" -o "$sfile"
+    run "$llc_bin" -march=x86 -relocation-model=pic -mattr=+sse2 "${llc_flags[@]}" "$ll_noflags" -o "$sfile"
   fi
 
   if [[ $mode_compile_only -eq 1 ]]; then
