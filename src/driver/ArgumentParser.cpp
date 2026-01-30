@@ -53,6 +53,44 @@ CompilerOptions ArgumentParser::parse() {
             continue;
         }
 
+        if (arg == "-c" || arg == "-S") {
+            // Accepted for POSIX compatibility; handled by outer driver.
+            continue;
+        }
+
+        if (arg == "-s") {
+            // Strip symbols (linker flag), ignored here.
+            continue;
+        }
+
+        if (arg.size() >= 2 && arg[0] == '-' && arg[1] == 'O') {
+            // Accept -O0/-O1/-O2/-O3 (ignore internally).
+            continue;
+        }
+
+        if (arg == "-L") {
+            // Library search path; consume operand if present.
+            if (i + 1 < argc_) { ++i; }
+            continue;
+        }
+        if (arg.rfind("-L", 0) == 0 && arg.size() > 2) {
+            continue;
+        }
+
+        if (arg == "-l") {
+            // Link with library; consume operand if present.
+            if (i + 1 < argc_) { ++i; }
+            continue;
+        }
+        if (arg.rfind("-l", 0) == 0 && arg.size() > 2) {
+            continue;
+        }
+
+        if (arg == "-pipe") {
+            // Common frontend flag; ignored.
+            continue;
+        }
+
         if (arg == "-m32") {
             opts.is64bit = false;
             continue;
@@ -144,16 +182,25 @@ void ArgumentParser::printUsage(const char* programName) {
               << "\n"
               << WHITE "SYNOPSIS" RESET "\n"
               << "       " WHITE << programName << RESET " [" CYAN "OPTIONS" RESET "] " GREEN "<input-files>" RESET "...\n"
+              << "       " WHITE << programName << RESET " [" CYAN "OPTIONS" RESET "] -       (read from stdin)\n"
               << "\n"
               << WHITE "DESCRIPTION" RESET "\n"
-              << "       Compile C89/ANSI C source files to LLVM IR.\n"
+              << "       Compile C89/ANSI C source files to LLVM IR. With -E, stop after\n"
+              << "       preprocessing (translation phases 1-4). With -S, emit assembly and\n"
+              << "       stop. With -c, produce object files and stop before linking.\n"
               << "\n"
               << WHITE "OPTIONS" RESET "\n"
+              << "       " CYAN "-E" RESET "\n"
+              << "              Preprocess only; write preprocessed source to stdout (or -o).\n"
+              << "\n"
+              << "       " CYAN "-S" RESET "\n"
+              << "              Compile only; write assembly (.s) and stop.\n"
+              << "\n"
+              << "       " CYAN "-c" RESET "\n"
+              << "              Compile and assemble; write object (.o) and stop.\n"
+              << "\n"
               << "       " CYAN "-o" RESET " " GREEN "<file>" RESET "\n"
               << "              Write output to " GREEN "<file>" RESET ".\n"
-              << "\n"
-              << "       " CYAN "-E" RESET "\n"
-              << "              Preprocess only; do not compile.\n"
               << "\n"
               << "       " CYAN "-D" RESET " " GREEN "<macro>[=value]" RESET "\n"
               << "              Define a preprocessor macro.\n"
@@ -164,23 +211,39 @@ void ArgumentParser::printUsage(const char* programName) {
               << "       " CYAN "-I" RESET " " GREEN "<dir>" RESET "\n"
               << "              Add directory to include search path.\n"
               << "\n"
+              << "       " CYAN "-g" RESET "\n"
+              << "              Emit debug information (LLVM debug metadata).\n"
+              << "\n"
+              << "       " CYAN "-m32" RESET ", " CYAN "-m64" RESET "\n"
+              << "              Target i386 (32-bit) or x86_64 (64-bit).\n"
+              << "\n"
               << "       " CYAN "-h" RESET ", " CYAN "--help" RESET "\n"
               << "              Display this help message and exit.\n"
               << "\n"
               << "       " CYAN "-v" RESET ", " CYAN "--version" RESET "\n"
               << "              Display version information and exit.\n"
               << "\n"
-              << "       " CYAN "-fsyntax-only" RESET "\n"
-              << "              Only run the lexer and parser, then stop.\n"
+              << "       Common compatibility flags accepted/ignored: " CYAN "-O0..-O3" RESET ", "
+              << CYAN "-L<dir>" RESET ", " CYAN "-l<lib>" RESET ", " CYAN "-s" RESET ", " CYAN "-pipe" RESET ".\n"
               << "\n"
-              << "       " CYAN "-m32" RESET "\n"
-              << "              Target i386 (32-bit).\n"
+              << WHITE "OPERANDS" RESET "\n"
+              << "       One or more C source files " GREEN "<input-files>" RESET ". Use '-' to read from stdin.\n"
               << "\n"
-              << "       " CYAN "-m64" RESET "\n"
-              << "              Target x86_64 (64-bit).\n"
+              << WHITE "STDIN" RESET "\n"
+              << "       If an operand is '-', source is read from standard input (only once).\n"
               << "\n"
-              << "       " CYAN "-g" RESET "\n"
-              << "              Emit debug information (LLVM debug metadata).\n"
+              << WHITE "INPUT FILES" RESET "\n"
+              << "       C sources with .c (or preprocessed .i). The driver may accept '-' for stdin.\n"
+              << "\n"
+              << WHITE "STDOUT" RESET "\n"
+              << "       Default output for -E is stdout unless -o is given. Other modes write\n"
+              << "       their outputs to files (use -o where applicable).\n"
+              << "\n"
+              << WHITE "STDERR" RESET "\n"
+              << "       Diagnostics and error messages are written to stderr.\n"
+              << "\n"
+              << WHITE "EXIT STATUS" RESET "\n"
+              << "       0 on success; non-zero on any error.\n"
               << "\n"
               << WHITE "AUTHOR" RESET "\n"
               << "       Written by " MAGENTA "Sperron | Skyness" RESET ".\n";

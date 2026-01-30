@@ -21,6 +21,7 @@ struct CompilerOptions {
     std::vector<std::string> defines;      
     std::vector<std::string> undefines;    
     std::vector<std::string> includePaths; 
+    std::vector<std::string> ignoredOptions; 
 };
 
 

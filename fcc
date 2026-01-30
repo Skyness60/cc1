@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # fcc - Forty-two Compiler Collection
-# Driver: cc1 (with internal preprocessor) -> llc -> as -> clang (link)
+# Driver: clang -E (C89) -> cc1 -> llc -> as -> clang (link)
 
 print_usage() {
   cat <<'EOF'
@@ -14,7 +14,7 @@ SYNOPSIS
 
 DESCRIPTION
        fcc runs the full compilation toolchain:
-         1) Preprocess C sources using: cc1 -E
+         1) Preprocess C sources using: clang -E -std=c89 (with -m32 or -m64)
          2) Compile to LLVM IR using:   cc1
          3) Lower to assembly using:    llc
          4) Assemble to objects using:  as -c
@@ -448,26 +448,14 @@ for idx in "${!inputs[@]}"; do
   sfile="$workdir/$stem.s"
   ofile="$workdir/$stem.o"
 
-  if [[ $mode_preprocess_only -eq 1 ]]; then
-    # Preprocess using cc1's internal preprocessor (bonus).
-    # For strict mandatory wording, you can set FCC_USE_CLANG_CPP=1 to use clang -E -std=c89.
-    cc1_pp_args=()
-    if [[ "$arch" == "m64" ]]; then
-      cc1_pp_args+=("-m64")
-    else
-      cc1_pp_args+=("-m32")
-    fi
-    if [[ "${FCC_USE_CLANG_CPP:-0}" == "1" ]]; then
-      if [[ "$arch" == "m64" ]]; then
-        run clang -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
-      else
-        run clang -m32 -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
-      fi
-    else
-      cc1_pp_args+=("${cc1_flags[@]}" "-E" "${cpp_flags[@]}" "$src" -o "$pp")
-      run "$cc1_bin" "${cc1_pp_args[@]}"
-    fi
+  # Preprocess using clang -E -std=c89 (POSIX c17 requirement)
+  if [[ "$arch" == "m64" ]]; then
+    run clang -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
+  else
+    run clang -m32 -E -std=c89 "${cpp_flags[@]}" "$src" -o "$pp"
+  fi
 
+  if [[ $mode_preprocess_only -eq 1 ]]; then
     if [[ -n "$output_file" ]]; then
       # If multiple inputs, concatenate (simple behavior)
       cat "$pp" >> "$output_file"
@@ -477,7 +465,7 @@ for idx in "${!inputs[@]}"; do
     continue
   fi
 
-  # cc1: C -> LLVM IR (includes internal preprocessing)
+  # cc1: C -> LLVM IR (consumes preprocessed .i)
   cc1_args=()
   if [[ "$arch" == "m64" ]]; then
     cc1_args+=("-m64")
@@ -485,8 +473,7 @@ for idx in "${!inputs[@]}"; do
     cc1_args+=("-m32")
   fi
   cc1_args+=("${cc1_flags[@]}")
-  cc1_args+=("${cpp_flags[@]}")
-  run "$cc1_bin" "${cc1_args[@]}" "$src" -o "$ll"
+  run "$cc1_bin" "${cc1_args[@]}" "$pp" -o "$ll"
 
   # llc: LLVM IR -> asm
   if [[ "$arch" == "m64" ]]; then
