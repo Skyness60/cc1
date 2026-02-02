@@ -150,13 +150,29 @@ void IRGenerator::visit(AST::CallExpr& node) {
         finalArgs.emplace_back(argType, argName);
     }
 
+    std::string calleeType;
+    if (!paramTypes.empty() || isVariadic || !protoReturnType.empty()) {
+        calleeType = retType + " (";
+        for (size_t i = 0; i < paramTypes.size(); ++i) {
+            if (i > 0) calleeType += ", ";
+            calleeType += paramTypes[i];
+        }
+        if (isVariadic) {
+            if (!paramTypes.empty()) calleeType += ", ";
+            calleeType += "...";
+        }
+        calleeType += ")*";
+    } else if (!funcType.empty()) {
+        calleeType = funcType + "*";
+    }
+
     std::string result;
     std::string callInst;
     if (retType == "void") {
-        callInst = "call void " + funcName + "(";
+        callInst = "call " + (calleeType.empty() ? std::string("void ") + funcName : calleeType + " " + funcName) + "(";
     } else {
         result = newTemp();
-        callInst = result + " = call " + retType + " " + funcName + "(";
+        callInst = result + " = call " + (calleeType.empty() ? retType + " " + funcName : calleeType + " " + funcName) + "(";
     }
 
     for (size_t i = 0; i < finalArgs.size(); ++i) {
