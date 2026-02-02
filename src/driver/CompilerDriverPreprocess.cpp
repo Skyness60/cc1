@@ -71,6 +71,10 @@ bool CompilerDriver::runPreprocessing()
         if (endsWith(filename, ".i")) {
             if (!readWholeFile(filename, fileSource))
                 return false;
+            fileSource = preprocessor.preprocessString(fileSource, filename);
+            if (preprocessor.hadError()) {
+                return false;
+            }
             source_ += fileSource;
             continue;
         }
