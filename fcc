@@ -94,11 +94,7 @@ run() {
 
 # Tool locations
 cc1_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cc1"
-llc_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tools/llc-12"
-if [[ ! -x "$llc_bin" ]]; then
-  echo "fcc: error: llc docker wrapper not found or not executable: $llc_bin" >&2
-  exit 1
-fi
+llc_bin=llc-12
 
 
 # Options
