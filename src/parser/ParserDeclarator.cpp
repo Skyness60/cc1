@@ -39,6 +39,36 @@ AST::Ptr<AST::Type> wrapDerived(const AST::Ptr<AST::Type>& typeNode, const Build
     return builder(typeNode->clone());
 }
 
+// C declarator rule fix for function pointers (parenthesized only):
+//
+// The rewrite must apply only to declarators like:   char (*f)(int)
+// where the pointer is parenthesized and applies to the declarator `f`.
+//
+// It must NOT apply to:   char *f(int)
+// which is a function returning a pointer (return type is char*).
+//
+// This helper rewrites:
+//   PointerType(T) + function-suffix ( ... )  ==>  PointerType(FunctionType(T, ...))
+// but ONLY when the pointer came from a parenthesized declarator.
+static AST::Ptr<AST::Type> makeFunctionDerivedForParenPointer(AST::Ptr<AST::Type> base,
+                                                              std::vector<AST::Ptr<AST::Type>> paramTypes,
+                                                              bool isVariadic,
+                                                              bool wasParenthesized) {
+    if (wasParenthesized) {
+        if (auto* pointer = dynamic_cast<AST::PointerType*>(base.get())) {
+            AST::Ptr<AST::Type> pointee = pointer->pointee->clone();
+            AST::Ptr<AST::Type> func = AST::make<AST::FunctionType>(std::move(pointee),
+                                                                    std::move(paramTypes),
+                                                                    isVariadic, 0, 0);
+            return AST::make<AST::PointerType>(std::move(func), 0, 0);
+        }
+    }
+
+    return AST::make<AST::FunctionType>(std::move(base),
+                                        std::move(paramTypes),
+                                        isVariadic, 0, 0);
+}
+
 }  // namespace
 
 namespace cc1 {
@@ -126,9 +156,10 @@ Parser::Declarator Parser::parseDirectDeclarator(const AST::Ptr<AST::Type>& base
             }
 
             auto makeFunc = [&](AST::Ptr<AST::Type> base) {
-                return AST::make<AST::FunctionType>(std::move(base),
-                                                    std::move(paramTypes),
-                                                    isVariadic, 0, 0);
+                return makeFunctionDerivedForParenPointer(std::move(base),
+                                                          std::move(paramTypes),
+                                                          isVariadic,
+                                                          wasParenthesized);
             };
             applyDerived(makeFunc);
         } else {

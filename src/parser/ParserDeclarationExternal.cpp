@@ -185,7 +185,7 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
         additionalDeclarations_.push_back(std::move(nextVar));
     }
 
-    consume(TokenType::Semicolon, "expected ';' after declaration");
+    consume(TokenType::Semicolon, "expected ';' after top level declarator");
     return var;
 }
 

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <cstdlib>
 
 // EN: Checks if a string ends with a given suffix.
 // FR: Verifie si une chaine se termine par un suffixe.
@@ -15,17 +16,27 @@ static bool endsWith(const std::string& s, const std::string& suffix)
     return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-// EN: Reads an entire file into a string.
-// FR: Lit un fichier entier dans une chaine.
+// EN: Reads an entire file into a string (supports '-' for stdin).
+// FR: Lit un fichier entier dans une chaine (support '-' pour stdin).
 static bool readWholeFile(const std::string& filename, std::string& out)
 {
-    std::ifstream in(filename);
-    if (!in.is_open()) {
-        std::cerr << "Error: Could not open input file " << filename << std::endl;
-        return false;
-    }
     std::ostringstream ss;
-    ss << in.rdbuf();
+    
+    if (filename == "-") {
+        // EN: Read from stdin
+        // FR: Lire depuis stdin
+        ss << std::cin.rdbuf();
+    } else {
+        // EN: Read from file
+        // FR: Lire depuis un fichier
+        std::ifstream in(filename);
+        if (!in.is_open()) {
+            std::cerr << "Error: Could not open input file " << filename << std::endl;
+            return false;
+        }
+        ss << in.rdbuf();
+    }
+    
     out = ss.str();
     return true;
 }
@@ -65,13 +76,17 @@ bool CompilerDriver::runPreprocessing()
     source_.clear();
     for (const auto& filename : input_files_) {
         std::string fileSource;
+        std::string originalSource;
 
-        
-        
+        const char* origEnv = std::getenv("FCC_ORIG_SOURCE");
+        std::string origPath = origEnv ? std::string(origEnv) : filename;
+
+        if (!readWholeFile(origPath, originalSource))
+            return false;
+        setDisplaySource(originalSource);
+
         if (endsWith(filename, ".i")) {
-            if (!readWholeFile(filename, fileSource))
-                return false;
-            fileSource = preprocessor.preprocessString(fileSource, filename);
+            fileSource = preprocessor.preprocessString(originalSource, filename);
             if (preprocessor.hadError()) {
                 return false;
             }
@@ -79,7 +94,15 @@ bool CompilerDriver::runPreprocessing()
             continue;
         }
 
-        fileSource = preprocessor.preprocess(filename);
+        // EN: For stdin ("-") or regular files, use preprocess or preprocessString accordingly
+        // FR: Pour stdin ("-") ou fichiers reguliers, utiliser preprocess ou preprocessString
+        if (filename == "-") {
+            // EN: stdin is already read, preprocess as string
+            // FR: stdin est deja lu, pretraiter comme string
+            fileSource = preprocessor.preprocessString(originalSource, "<stdin>");
+        } else {
+            fileSource = preprocessor.preprocess(filename);
+        }
 
         if (preprocessor.hadError()) {
             return false;

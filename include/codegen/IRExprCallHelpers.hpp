@@ -83,7 +83,13 @@ inline bool parseFunctionDeclParamTypes(const std::string& declLine,
         if (tok == "...") {
             outIsVariadic = true;
         } else if (!tok.empty()) {
-            outParamTypes.push_back(tok);
+            // Extract just the type part, discarding parameter names.
+            // For example, "i32 %0" -> "i32", or "i8*" -> "i8*"
+            // The type is everything up to the first space (which starts a parameter name),
+            // or the entire token if there's no space.
+            size_t spacePos = tok.find(' ');
+            std::string typeOnly = (spacePos != std::string::npos) ? tok.substr(0, spacePos) : tok;
+            outParamTypes.push_back(typeOnly);
         }
         if (comma == std::string::npos) break;
         pos = comma + 1;

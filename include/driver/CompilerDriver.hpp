@@ -23,6 +23,7 @@ class CompilerDriver
         std::vector<std::string> input_files_;
         std::string output_file_;
         std::string source_;  
+        std::string display_source_;
         bool syntax_only_;
         bool preprocess_only_;
         bool debug_mode_;
@@ -46,6 +47,14 @@ class CompilerDriver
         // EN: Runs the compilation pipeline with phase controls.
         // FR: Execute le pipeline de compilation avec controle des phases.
         bool compile();
+
+        // EN: Returns the source line buffer to display in diagnostics (prefers original if set).
+        // FR: Renvoie la source a afficher pour les diagnostics (prefere l originale si definie).
+        const std::string& diagnosticSource() const { return display_source_.empty() ? source_ : display_source_; }
+
+        // EN: Override the source used for diagnostics (e.g., preprocessed vs original).
+        // FR: Surcharge la source utilisee pour les diagnostics (ex: pretraitee vs originale).
+        void setDisplaySource(const std::string& src) { display_source_ = src; }
 
     private:
         // EN: Runs preprocessing (includes, macros, -E).

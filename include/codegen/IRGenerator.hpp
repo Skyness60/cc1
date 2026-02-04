@@ -27,6 +27,11 @@ public:
     // EN: Enables or disables logging.
     // FR: Active ou desactive le logging.
     void setEnabled(bool enabled) { enabled_ = enabled; }
+
+    // EN: Returns whether logging is enabled.
+    // FR: Indique si le logging est actif.
+    bool isEnabled() const { return enabled_; }
+
     // EN: Sets the output file for log messages.
     // FR: Definit le fichier de sortie des logs.
     void setOutputFile(const std::string& filename) {
@@ -350,6 +355,7 @@ public:
         std::map<std::string, bool> bitfieldIsUnsigned;  
         int totalSize = 0;
         int alignment = 1;
+        bool isUnion = false;
     };
     // EN: Computes layout for a struct declaration.
     // FR: Calcule le layout pour une declaration de struct.

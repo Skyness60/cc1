@@ -25,24 +25,30 @@ public:
     // EN: Scans a string literal, handling escapes and unterminated cases.
     // FR: Scanne une chaine, gere les echappements et les cas non termines.
     Token scan(SourceReader& reader) override {
+        // NOTE: the opening quote has already been consumed by the lexer.
         SourceLocation start(filename_, reader.line(), reader.column() - 1);
         std::string text = "\"";
         
         while (reader.peek() != '"' && reader.peek() != '\0' && reader.peek() != '\n') {
             if (reader.peek() == '\\') {
                 text += reader.advance();
+                // Backslash-newline: allow line continuation in string literals.
                 if (reader.peek() == '\n') { text += reader.advance(); continue; }
-                if (reader.peek() == '\0') onError_("missing terminating '\"' character", start);
+                if (reader.peek() == '\0') break;
                 text += reader.advance();
             } else {
                 text += reader.advance();
             }
         }
         
-        if (reader.peek() != '"')
-            onError_("missing terminating '\"' character", start);
+        if (reader.peek() != '"') {
+            // Unterminated string literal (newline or EOF reached).
+            // Clang emits "missing terminating \" character" at the opening quote.
+            onError_("missing terminating \" character", start);
+            return Token(TokenType::StringLiteral, text, start.line, start.column);
+        }
         
-        text += reader.advance();
+        text += reader.advance(); // consume closing quote
         return Token(TokenType::StringLiteral, text, start.line, start.column);
     }
 

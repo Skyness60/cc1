@@ -94,14 +94,12 @@ run() {
 
 # Tool locations
 cc1_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cc1"
-if command -v llc >/dev/null 2>&1; then
-  llc_bin="llc"
-elif command -v llc-12 >/dev/null 2>&1; then
-  llc_bin="llc-12"
-else
-  echo "fcc: error: neither llc nor llc-12 found in PATH" >&2
+llc_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tools/llc-12"
+if [[ ! -x "$llc_bin" ]]; then
+  echo "fcc: error: llc docker wrapper not found or not executable: $llc_bin" >&2
   exit 1
 fi
+
 
 # Options
 mode_link=1
@@ -163,6 +161,10 @@ while [[ $# -gt 0 ]]; do
     -g)
       cc1_flags+=("-g")
       debug_info=1
+      shift
+      ;;
+    -debug)
+      cc1_flags+=("-debug")
       shift
       ;;
     -B)
@@ -385,7 +387,9 @@ if [[ ! -x "$cc1_bin" ]]; then
   exit 1
 fi
 
-workdir="$(mktemp -d -t fcc.XXXXXX)"
+tmp_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.tmp"
+mkdir -p "$tmp_root"
+workdir="$(mktemp -d -p "$tmp_root" fcc.XXXXXX)"
 cleanup() {
   if [[ "${FCC_KEEP_TMP:-0}" == "1" ]]; then
     echo "fcc: note: keeping temporary directory: $workdir" >&2
@@ -485,7 +489,17 @@ for idx in "${!inputs[@]}"; do
     cc1_args+=("-m32")
   fi
   cc1_args+=("${cc1_flags[@]}")
-  run "$cc1_bin" "${cc1_args[@]}" "$stripped_pp" -o "$ll"
+
+  # Feed cc1 the *original* source path for diagnostics, and keep the original
+  # file name in cc1's output instead of the temporary .noline.i path.
+  #
+  # - FCC_ORIG_SOURCE lets cc1 read the original file content for caret lines.
+  # - We copy the preprocessed content to a temp file that has the same basename
+  #   as the original input so filename in diagnostics matches clang closer.
+  cc1_in="$workdir/$base"
+  run cp "$stripped_pp" "$cc1_in"
+
+  FCC_ORIG_SOURCE="$src" run "$cc1_bin" "${cc1_args[@]}" "$cc1_in" -o "$ll"
 
   # Drop PIC/PIE module flags for older llc (e.g. llc-12)
   ll_noflags="$workdir/$stem.noflags.ll"

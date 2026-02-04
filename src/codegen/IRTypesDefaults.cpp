@@ -30,6 +30,10 @@ std::string IRGenerator::getDefaultValue(AST::Type* type) {
     }
 
     if (auto* structType = dynamic_cast<AST::StructType*>(type)) {
+        // For unions, just use zeroinitializer (they're now byte arrays)
+        if (structType->isUnion) {
+            return "zeroinitializer";
+        }
         
         if (structType->members.empty()) {
             return "zeroinitializer";
@@ -38,8 +42,7 @@ std::string IRGenerator::getDefaultValue(AST::Type* type) {
         std::string result = "{ ";
         bool first = true;
 
-        size_t memberCount = structType->isUnion ? 1 : structType->members.size();
-        for (size_t i = 0; i < memberCount; ++i) {
+        for (size_t i = 0; i < structType->members.size(); ++i) {
             if (!first) result += ", ";
             first = false;
             const auto& member = structType->members[i];

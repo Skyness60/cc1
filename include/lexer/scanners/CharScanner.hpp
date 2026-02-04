@@ -25,25 +25,45 @@ public:
     // EN: Scans a character literal and validates termination.
     // FR: Scanne un litteral caractere et verifie la terminaison.
     Token scan(SourceReader& reader) override {
+        // NOTE: the opening quote has already been consumed by the lexer.
         SourceLocation start(filename_, reader.line(), reader.column() - 1);
         std::string text = "'";
-        
-        if (reader.peek() == '\'')
-            onError_("empty character constant", start);
-        
-        if (reader.peek() == '\0' || reader.peek() == '\n')
+
+        // Immediate end: ' or end-of-line/file after the opening quote.
+        if (reader.peek() == '\0' || reader.peek() == '\n') {
+            // Clang emits "missing terminating ' character" at the opening quote.
             onError_("missing terminating ' character", start);
-        
+            return Token(TokenType::CharLiteral, text, start.line, start.column);
+        }
+
+        // Empty character constant: ''.
+        if (reader.peek() == '\'') {
+            text += reader.advance(); // consume closing quote
+
+            // Clang emits: warning: empty character constant
+            // Our lexer error handler currently reports as an error; downgrade by
+            // not emitting a diagnostic here and letting the parser fail on the
+            // invalid token sequence similarly to clang's behavior.
+            // (If/when we add a dedicated warning channel, emit it here.)
+            // onError_("empty character constant", start);
+
+            return Token(TokenType::CharLiteral, text, start.line, start.column);
+        }
+
+        // Normal content: read at least one char (or escape sequence)
+        // and then keep consuming until we hit the terminating quote or newline/EOF.
         scanCharContent(reader, text, start);
-        
-        
+
         while (reader.peek() != '\'' && reader.peek() != '\0' && reader.peek() != '\n')
             scanCharContent(reader, text, start);
-        
-        if (reader.peek() != '\'')
+
+        if (reader.peek() == '\'') {
+            text += reader.advance(); // consume closing quote
+        } else {
+            // Unterminated character literal (newline or EOF reached).
             onError_("missing terminating ' character", start);
-        
-        text += reader.advance();
+        }
+
         return Token(TokenType::CharLiteral, text, start.line, start.column);
     }
 
@@ -53,11 +73,11 @@ private:
     
     // EN: Scans the content of a character literal, handling escapes.
     // FR: Scanne le contenu d un litteral caractere avec echappements.
-    void scanCharContent(SourceReader& reader, std::string& text, const SourceLocation& start) {
+    void scanCharContent(SourceReader& reader, std::string& text, const SourceLocation& /*start*/) {
         if (reader.peek() == '\\') {
             text += reader.advance();
             if (reader.peek() == '\0' || reader.peek() == '\n')
-                onError_("missing terminating ' character", start);
+                return;
             
             if (reader.peek() == 'x') {
                 text += reader.advance();

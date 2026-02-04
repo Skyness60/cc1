@@ -25,7 +25,15 @@ void IRGenerator::visit(AST::Identifier& node) {
     }
 
     if (sym->isFunction) {
-        lastValue_ = IRValue(sym->irName, sym->type + "*", false, false);
+        // Functions are not objects: in LLVM IR, a direct function reference is a
+        // function value, and its pointer type is obtained by adding one '*'.
+        //
+        // Here, `sym->type` is already the full function type spelling like:
+        //   "i8 (i32, i8)"   for: char (*)(unsigned int, char)
+        //
+        // So the function *value* should have type `sym->type` (NOT `sym->type + "*"`,
+        // which would turn it into a pointer-to-function-pointer and break indirect calls).
+        lastValue_ = IRValue(sym->irName, sym->type, false, false);
     } else {
         
         lastValue_ = IRValue(sym->irName, sym->type + "*", true, false);

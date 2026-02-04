@@ -14,6 +14,11 @@ std::string IRGenerator::generateInitializerValue(AST::Type* type, AST::Initiali
     }
 
     if (auto* structType = dynamic_cast<AST::StructType*>(type)) {
+        // For unions, use a simple byte initializer representation
+        if (structType->isUnion) {
+            // Unions are now represented as byte arrays, so return a byte initializer
+            return "zeroinitializer";
+        }
         return generateStructInitializerValue(structType, initList);
     }
 

@@ -66,7 +66,22 @@ void IRGenerator::visit(AST::MemberExpr& node) {
     emit(memberPtr + " = getelementptr inbounds " + structType + ", " + structType + "* " + baseVal.name +
          ", i32 0, i32 " + std::to_string(memberIndex));
 
-    IRValue memberVal(memberPtr, memberLLVMType + "*", true, false);
+    // For unions, the LLVM representation uses a byte array, so after GEP we get
+    // a pointer to the byte array. We need to cast it to the proper member type pointer.
+    std::string finalMemberPtr = memberPtr;
+    std::string finalMemberType = memberLLVMType;
+    
+    if (layout && layout->isUnion) {
+        // The GEP gives us a pointer to the byte array. Cast it to pointer-to-member-type.
+        finalMemberPtr = newTemp();
+        std::string gepResultType = "[" + std::to_string(layout->totalSize) + " x i8]*";
+        if (layout->totalSize <= 1) {
+            gepResultType = "i8*";
+        }
+        emit(finalMemberPtr + " = bitcast " + gepResultType + " " + memberPtr + " to " + memberLLVMType + "*");
+    }
+
+    IRValue memberVal(finalMemberPtr, memberLLVMType + "*", true, false);
 
     
     if (layout && layout->bitfieldWidths.count(node.member)) {

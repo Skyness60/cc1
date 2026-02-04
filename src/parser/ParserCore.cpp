@@ -1,8 +1,11 @@
 #include <parser/Parser.hpp>
 #include <sstream>
 #include <iostream>
+#include <utils/Diagnostic.hpp>
 
 namespace cc1 {
+
+
 
 
 
@@ -132,7 +135,11 @@ const Token& Parser::consume(TokenType type, const std::string& message) {
     if (check(type)) {
         return advance();
     }
-    error(message);
+    int colAdjust = current().column;
+    if (colAdjust > 3 && message.find("expected ';'") != std::string::npos) {
+        colAdjust -= 3;
+    }
+    errorAtPosition(current().line, colAdjust, message);
 }
 
 // EN: Synchronizes parsing after an error by skipping to a safe token.
@@ -191,8 +198,6 @@ void Parser::synchronize() {
     throw ParseError(message, loc, getSourceLine(token.line));
 }
 
-// EN: Raises a parse error at an explicit line/column.
-// FR: Leve une erreur de parse a une position ligne/colonne.
 [[noreturn]] void Parser::errorAtPosition(int line, int column, const std::string& message) {
     SourceLocation loc(filename_, line, column);
     throw ParseError(message, loc, getSourceLine(line));

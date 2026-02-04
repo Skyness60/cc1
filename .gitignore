@@ -49,4 +49,4 @@ compile_commands.json
 cc1
 # fcc (driver) is part of the submission
 # fcc
-archives
+archives.tmp/

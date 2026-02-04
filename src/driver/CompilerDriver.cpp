@@ -78,6 +78,7 @@ bool CompilerDriver::runLexing()
     
     
     Lexer lexer(source_, filename);
+    lexer.setDisplaySource(diagnosticSource());
     tokens_ = lexer.tokenize();
 
     if (syntax_only_) {
@@ -100,7 +101,7 @@ bool CompilerDriver::runParsing()
     std::string filename = input_files_.empty() ? "<input>" : input_files_[0];
     
     try {
-        cc1::Parser parser(tokens_, filename, source_);
+        cc1::Parser parser(tokens_, filename, diagnosticSource());
         ast_ = parser.parse();
         
         

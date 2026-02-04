@@ -8,6 +8,9 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
     if (!structType || !initList) return "zeroinitializer";
     if (structType->members.empty()) return "zeroinitializer";
 
+    // Get the computed layout to properly handle union members
+    StructLayout layout = computeStructLayout(structType);
+
     std::string result = "{ ";
     bool first = true;
 
@@ -21,6 +24,13 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
 
         const auto& member = structType->members[i];
         std::string memberType = typeToLLVM(member.type.get());
+        
+        // For union members, use i8 representation from layout
+        if (auto* structMemberType = dynamic_cast<AST::StructType*>(stripQualifiers(member.type.get()))) {
+            if (structMemberType->isUnion) {
+                memberType = "i8";
+            }
+        }
 
         
         if (member.isBitfield()) {
@@ -67,30 +77,36 @@ std::string IRGenerator::generateStructInitializerValue(AST::StructType* structT
                     auto* memberArrayType = dynamic_cast<AST::ArrayType*>(stripQualifiers(member.type.get()));
 
                     if (memberStructType) {
-                        
-                        long long val;
-                        if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
+                        // For unions, use byte array representation
+                        if (memberStructType->isUnion) {
+                            StructLayout layout = computeStructLayout(memberStructType);
+                            result += memberType + " " + getDefaultValue(member.type.get());
+                        } else {
                             
-                            result += memberType + " { ";
-                            if (!memberStructType->members.empty()) {
-                                result += typeToLLVM(memberStructType->members[0].type.get()) + " ";
+                            long long val;
+                            if (evaluateConstantExpr(initList->initializers[initIdx].get(), val)) {
                                 
-                                if (auto* primType = dynamic_cast<AST::PrimitiveType*>(
-                                        stripQualifiers(memberStructType->members[0].type.get()))) {
-                                    if (primType->kind == AST::PrimitiveKind::Float ||
-                                        primType->kind == AST::PrimitiveKind::Double ||
-                                        primType->kind == AST::PrimitiveKind::LongDouble) {
-                                        result += std::to_string(val) + ".0";
+                                result += memberType + " { ";
+                                if (!memberStructType->members.empty()) {
+                                    result += typeToLLVM(memberStructType->members[0].type.get()) + " ";
+                                    
+                                    if (auto* primType = dynamic_cast<AST::PrimitiveType*>(
+                                            stripQualifiers(memberStructType->members[0].type.get()))) {
+                                        if (primType->kind == AST::PrimitiveKind::Float ||
+                                            primType->kind == AST::PrimitiveKind::Double ||
+                                            primType->kind == AST::PrimitiveKind::LongDouble) {
+                                            result += std::to_string(val) + ".0";
+                                        } else {
+                                            result += std::to_string(val);
+                                        }
                                     } else {
                                         result += std::to_string(val);
                                     }
-                                } else {
-                                    result += std::to_string(val);
                                 }
+                                result += " }";
+                            } else {
+                                result += memberType + " " + getDefaultValue(member.type.get());
                             }
-                            result += " }";
-                        } else {
-                            result += memberType + " " + getDefaultValue(member.type.get());
                         }
                     } else if (memberArrayType) {
                         

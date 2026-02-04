@@ -92,11 +92,24 @@ void IRGenerator::visit(AST::UnaryExpr& node) {
             }
             return;
         case AST::UnaryOp::Dereference: {
-            
-            
-            
+            // Dereferencing a pointer makes it addressable (isPointer = true).
+            // However, function pointers are special: dereferencing a function pointer
+            // in C is a no-op (f, *f, **f are all equivalent for functions).
+            // We detect function pointer types by checking if the type contains '('
+            // (function signature) and ends with '*'.
             if (!operandType.empty() && operandType.back() == '*') {
-                lastValue_ = IRValue(operandReg, operandType, true, false);
+                // Check if this is a function pointer type (contains function signature)
+                std::string derefType = operandType.substr(0, operandType.size() - 1);
+                bool isFunctionPointer = (derefType.find('(') != std::string::npos);
+                
+                if (isFunctionPointer) {
+                    // For function pointers, dereferencing is a no-op; the value is already
+                    // the function pointer and should not be marked for another load.
+                    lastValue_ = IRValue(operandReg, operandType, false, false);
+                } else {
+                    // Normal pointer dereference - mark as addressable
+                    lastValue_ = IRValue(operandReg, operandType, true, false);
+                }
             } else {
                 lastValue_ = operandVal;
             }

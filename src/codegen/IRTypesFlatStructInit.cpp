@@ -9,6 +9,9 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
     if (!st || !flatList) return "zeroinitializer";
     if (st->members.empty()) return "zeroinitializer";
 
+    // Get the computed layout for this struct to handle union members correctly
+    StructLayout layout = computeStructLayout(st);
+
     std::string result = "{ ";
     bool first = true;
 
@@ -20,6 +23,14 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
         const auto& member = st->members[i];
         AST::Type* memberType = stripQualifiers(member.type.get());
         std::string memberTypeStr = typeToLLVM(memberType);
+        
+        // For union members in structs with computed layouts, use the byte array type from the layout
+        if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
+            if (structMemberType->isUnion) {
+                // Use the byte array type from the layout instead of the named struct type
+                memberTypeStr = "i8";
+            }
+        }
 
         
         if (member.isBitfield()) {
@@ -58,10 +69,30 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
             i = j;
         } else {
             
-            
             size_t memberInitCount = countFlattedMembers(memberType);
 
-            
+            // For union members, use special handling 
+            if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
+                if (structMemberType->isUnion) {
+                    // For unions, just use a single byte value
+                    result += memberTypeStr + " ";
+                    if (idx < flatList->initializers.size()) {
+                        long long val;
+                        if (evaluateConstantExpr(flatList->initializers[idx].get(), val)) {
+                            result += std::to_string(val & 0xFF);
+                        } else {
+                            result += getDefaultValue(memberType);
+                        }
+                        idx++;
+                    } else {
+                        result += getDefaultValue(memberType);
+                    }
+                    i++;
+                    continue;
+                }
+            }
+
+            // For non-union members, continue with normal logic
             result += memberTypeStr + " ";
 
             if (idx >= flatList->initializers.size()) {
@@ -74,32 +105,33 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
                     
                     if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
                         
-                        if (structMemberType->members.empty()) {
-                            result += getDefaultValue(memberType);
-                        } else {
-                            result += "{ ";
-                            if (!structMemberType->members.empty()) {
-                                const auto& firstMember = structMemberType->members[0];
-                                std::string firstMemberType = typeToLLVM(stripQualifiers(firstMember.type.get()));
-                                result += firstMemberType + " ";
-                                
-                                if (auto* primType =
-                                        dynamic_cast<AST::PrimitiveType*>(stripQualifiers(firstMember.type.get()))) {
-                                    if (primType->kind == AST::PrimitiveKind::Float ||
-                                        primType->kind == AST::PrimitiveKind::Double ||
-                                        primType->kind == AST::PrimitiveKind::LongDouble) {
-                                        result += std::to_string(val) + ".0";
+                            
+                            if (structMemberType->members.empty()) {
+                                result += getDefaultValue(memberType);
+                            } else {
+                                result += "{ ";
+                                if (!structMemberType->members.empty()) {
+                                    const auto& firstMember = structMemberType->members[0];
+                                    std::string firstMemberType = typeToLLVM(stripQualifiers(firstMember.type.get()));
+                                    result += firstMemberType + " ";
+                                    
+                                    if (auto* primType =
+                                            dynamic_cast<AST::PrimitiveType*>(stripQualifiers(firstMember.type.get()))) {
+                                        if (primType->kind == AST::PrimitiveKind::Float ||
+                                            primType->kind == AST::PrimitiveKind::Double ||
+                                            primType->kind == AST::PrimitiveKind::LongDouble) {
+                                            result += std::to_string(val) + ".0";
+                                        } else {
+                                            result += std::to_string(val);
+                                        }
                                     } else {
                                         result += std::to_string(val);
                                     }
-                                } else {
-                                    result += std::to_string(val);
                                 }
+                                result += " }";
                             }
-                            result += " }";
-                        }
                     } else {
-                        
+                        // Non-struct member - value already has type prepended at line 96
                         if (auto* primType = dynamic_cast<AST::PrimitiveType*>(memberType)) {
                             if (primType->kind == AST::PrimitiveKind::Float ||
                                 primType->kind == AST::PrimitiveKind::Double ||
@@ -134,18 +166,27 @@ std::string IRGenerator::generateStructInitializerFromFlatHelper(AST::StructType
             } else {
                 
                 if (auto* structMemberType = dynamic_cast<AST::StructType*>(memberType)) {
-                    
-                    if (idx < flatList->initializers.size()) {
-                        if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
-                            
-                            result += generateInitializerValue(memberType, initListExpr);
+                    // For unions, use zeroinitializer (unions are now byte arrays)
+                    if (structMemberType->isUnion) {
+                        result += memberTypeStr + " " + getDefaultValue(memberType);
+                        // Skip all initializers for this union member
+                        size_t unionInitCount = countFlattedMembers(memberType);
+                        for (size_t k = 0; k < unionInitCount && idx < flatList->initializers.size(); ++k) {
                             idx++;
-                        } else {
-                            
-                            result += generateStructInitializerFromFlatHelper(structMemberType, flatList, idx);
                         }
                     } else {
-                        result += getDefaultValue(memberType);
+                        if (idx < flatList->initializers.size()) {
+                            if (auto* initListExpr = dynamic_cast<AST::InitializerList*>(flatList->initializers[idx].get())) {
+                                
+                                result += generateInitializerValue(memberType, initListExpr);
+                                idx++;
+                            } else {
+                                
+                                result += generateStructInitializerFromFlatHelper(structMemberType, flatList, idx);
+                            }
+                        } else {
+                            result += getDefaultValue(memberType);
+                        }
                     }
                 } else if (auto* arrayMemberType = dynamic_cast<AST::ArrayType*>(memberType)) {
                     

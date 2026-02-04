@@ -96,55 +96,15 @@ AST::Ptr<AST::ParamDecl> Parser::parseParameterDeclaration() {
         advance(); 
 
         if (check(TokenType::Star) || check(TokenType::LeftParen)) {
-            
-            AST::Ptr<AST::Type> innerType = parsePointer(type->clone());
-
-            
-            if (check(TokenType::Identifier)) {
-                name = current().value;
-                line = current().line;
-                col = current().column;
-                advance();
-            }
-
-            
-            while (check(TokenType::LeftParen)) {
-                size_t nestedPos = currentIndex_;
-                advance();
-                if (check(TokenType::Star) || check(TokenType::LeftParen)) {
-                    innerType = parsePointer(std::move(innerType));
-                    
-                    if (check(TokenType::Identifier) && name.empty()) {
-                        name = current().value;
-                        line = current().line;
-                        col = current().column;
-                        advance();
-                    }
-                } else {
-                    currentIndex_ = nestedPos;
-                    break;
-                }
-                consume(TokenType::RightParen, "expected ')' in declarator");
-            }
-
-            consume(TokenType::RightParen, "expected ')' after declarator");
-
-            
-            if (match(TokenType::LeftParen)) {
-                bool isVariadic = false;
-                auto params = parseParameterList(isVariadic);
-                consume(TokenType::RightParen, "expected ')' after parameters");
-
-                std::vector<AST::Ptr<AST::Type>> paramTypes;
-                for (const auto& param : params) {
-                    if (param->type) {
-                        paramTypes.push_back(param->type->clone());
-                    }
-                }
-                type = AST::make<AST::FunctionType>(std::move(innerType), std::move(paramTypes), isVariadic, 0, 0);
-            } else {
-                type = std::move(innerType);
-            }
+            // Function pointer parameter like: char (*f)(int, char)
+            // Delegate to parseDeclarator which handles this correctly via
+            // makeFunctionDerivedForParenPointer.
+            currentIndex_ = savedPos;
+            Declarator decl = parseDeclarator(type);
+            name = decl.name;
+            type = std::move(decl.type);
+            line = decl.line;
+            col = decl.column;
         } else if (check(TokenType::Identifier)) {
             
             

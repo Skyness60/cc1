@@ -7,12 +7,15 @@
 #include <lexer/scanners/CharScanner.hpp>
 #include <lexer/scanners/OperatorScanner.hpp>
 
+#include <utils/Diagnostic.hpp>
+
 // EN: Builds lexer components and scanner set for the given source.
 // FR: Construit les composants du lexer et les scanners pour la source.
 Lexer::Lexer(const std::string& source, const std::string& filename)
     : filename_(filename),
+      extractor_source_(source),
       reader_(new SourceReader(source)),
-      extractor_(new SourceExtractor(source)) {
+      extractor_(new SourceExtractor(extractor_source_)) {
     
     scanners_[IDENTIFIER].reset(new IdentifierScanner());
     scanners_[NUMBER].reset(new NumberScanner(filename_, 
@@ -26,12 +29,31 @@ Lexer::Lexer(const std::string& source, const std::string& filename)
 // EN: Tokenizes the entire input and appends EOF token.
 // FR: Tokenise toute l entree et ajoute le token EOF.
 std::vector<Token> Lexer::tokenize() {
-    std::vector<Token> tokens;
-    while (!reader_->isAtEnd()) {
-        Token tok = scanToken();
-        if (tok.type != TokenType::EndOfFile)
-            tokens.push_back(tok);
+    if (!display_source_override_.empty()) {
+        extractor_.reset(new SourceExtractor(display_source_override_));
     }
+
+    std::vector<Token> tokens;
+
+    // We want clang-like behavior: emit a diagnostic for the bad token,
+    // then continue lexing so the parser can issue follow-up errors.
+    while (!reader_->isAtEnd()) {
+        try {
+            Token tok = scanToken();
+            if (tok.type != TokenType::EndOfFile)
+                tokens.push_back(tok);
+        } catch (const LexerError& e) {
+            // Print the formatted lexer diagnostic (already includes source + caret).
+            std::cerr << e.what() << std::endl;
+
+            // Best-effort recovery: advance at least one character to avoid infinite loops.
+            if (!reader_->isAtEnd()) {
+                reader_->advance();
+            }
+            // Continue scanning.
+        }
+    }
+
     tokens.push_back(Token(TokenType::EndOfFile, "", reader_->line(), reader_->column()));
     return tokens;
 }

@@ -23,6 +23,12 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
     if (auto* ptr = dynamic_cast<AST::PointerType*>(type)) {
         std::string pointeeType = typeToLLVM(ptr->pointee.get());
         
+        // Pointer-to-function: AST wraps the function type in PointerType.
+        // Function types themselves must NOT include a trailing '*'.
+        if (!pointeeType.empty() && pointeeType.back() == ')') {
+            return pointeeType + "*";
+        }
+
         if (pointeeType == "void") {
             return "i8*";
         }
@@ -43,6 +49,9 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
     }
 
     if (auto* func = dynamic_cast<AST::FunctionType*>(type)) {
+        // IMPORTANT:
+        // An AST::FunctionType should map to an LLVM *function type* "ret (args)".
+        // Do NOT append '*' here. The pointer indirection is handled by AST::PointerType.
         std::string result = typeToLLVM(func->returnType.get()) + " (";
         for (size_t i = 0; i < func->parameterTypes.size(); ++i) {
             if (i > 0) result += ", ";
@@ -52,7 +61,7 @@ std::string IRGenerator::typeToLLVM(AST::Type* type) {
             if (!func->parameterTypes.empty()) result += ", ";
             result += "...";
         }
-        result += ")*";
+        result += ")";
         return result;
     }
 

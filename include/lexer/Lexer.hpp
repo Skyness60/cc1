@@ -26,6 +26,14 @@ public:
     // FR: Tokenise toute l entree source.
     std::vector<Token> tokenize();
 
+    // EN: Overrides the source line buffer used for diagnostics.
+    // FR: Surcharge le buffer source utilise pour les diagnostics.
+    void setDisplaySource(const std::string& src) { display_source_override_ = src; }
+
+    // EN: Returns the buffer used for diagnostics (original if no override).
+    // FR: Renvoie le buffer utilise pour les diagnostics (original si pas d override).
+    const std::string& diagnosticSource() const { return display_source_override_.empty() ? extractor_source_ : display_source_override_; }
+
 private:
     enum ScannerType {
         IDENTIFIER = 0,
@@ -36,6 +44,8 @@ private:
     };
     
     std::string filename_;
+    std::string extractor_source_;
+    std::string display_source_override_;
     std::unique_ptr<SourceReader> reader_;
     std::unique_ptr<SourceExtractor> extractor_;
     std::unique_ptr<IScanner> scanners_[SCANNER_COUNT];

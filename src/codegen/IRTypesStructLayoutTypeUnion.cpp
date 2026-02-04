@@ -37,6 +37,8 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutUnion(AST::StructType*
         int memberAlign = getTypeAlign(memberTypeAst);
 
         layout.memberIndices[member.name] = 0;
+        // In unions, all members share the same storage at offset 0.
+        // Store the member's declared type initially, but we'll update after choosing the container type.
         layout.memberTypes[member.name] = memberType;
 
         maxSize = std::max(maxSize, memberSize);
@@ -50,15 +52,23 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutUnion(AST::StructType*
         }
     }
 
+    // For union members, if the declared type doesn't match the chosen container type,
+    // we need to store the proper type. For nested structs in unions that are wrapped,
+    // we should store the base type to use in member access expressions.
     int desiredSize = alignTo(maxSize > 0 ? maxSize : 1, maxAlign);
-    layout.llvmType += chosenType;
-    int pad = desiredSize - chosenSize;
-    if (pad > 0) {
-        layout.llvmType += ", [" + std::to_string(pad) + " x i8]";
+    
+    // For the LLVM representation, use a byte array large enough to hold any member.
+    // This avoids issues with nested structs in unions by representing the union as
+    // a simple byte buffer that all members can overlay.
+    if (desiredSize <= 1) {
+        layout.llvmType += "i8";
+    } else {
+        layout.llvmType += "[" + std::to_string(desiredSize) + " x i8]";
     }
     layout.llvmType += " }";
     layout.totalSize = desiredSize;
     layout.alignment = maxAlign;
+    layout.isUnion = true;
 
     return layout;
 }

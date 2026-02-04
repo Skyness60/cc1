@@ -12,10 +12,16 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
     std::string returnType = typeToLLVM(node.returnType.get());
     std::string funcName = "@" + node.name;
 
-    
+    // Build two strings:
+    // - params: for the function definition/declaration (includes names for definitions)
+    // - paramSig: for the function type signature (types only, used for sym.type)
     std::string params = "(";
+    std::string paramSig = "(";
     for (size_t i = 0; i < node.parameters.size(); ++i) {
-        if (i > 0) params += ", ";
+        if (i > 0) {
+            params += ", ";
+            paramSig += ", ";
+        }
         auto& param = node.parameters[i];
         std::string paramType = typeToLLVM(param->type.get());
 
@@ -24,16 +30,29 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
             paramType = typeToLLVM(arrType->elementType.get()) + "*";
         }
 
+        
+        // C "function parameter adjustment": function-typed parameters are adjusted to
+        // pointers to function.
+        if (auto* fnType = dynamic_cast<AST::FunctionType*>(stripQualifiers(param->type.get()))) {
+            paramType = typeToLLVM(fnType) + "*";
+        }
+
         params += paramType;
+        paramSig += paramType;
         if (node.body) {
             params += " %" + std::to_string(i);
         }
     }
     if (node.isVariadic) {
-        if (!node.parameters.empty()) params += ", ";
+        if (!node.parameters.empty()) {
+            params += ", ";
+            paramSig += ", ";
+        }
         params += "...";
+        paramSig += "...";
     }
     params += ")";
+    paramSig += ")";
 
     if (!node.body) {
         
@@ -44,11 +63,12 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
             declaredFunctions_.insert(node.name);
         }
 
-        
+        // Use paramSig (types only) for the symbol type so that function references
+        // have the proper LLVM function type without parameter names.
         IRSymbol sym;
         sym.name = node.name;
         sym.irName = funcName;
-        sym.type = returnType + params;
+        sym.type = returnType + " " + paramSig;
         sym.isFunction = true;
         defineSymbol(node.name, sym);
         return;
@@ -111,6 +131,13 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
             paramType = typeToLLVM(arrType->elementType.get()) + "*";
         }
 
+        
+        // C "function parameter adjustment": function-typed parameters are adjusted to
+        // pointers to function.
+        if (auto* fnType = dynamic_cast<AST::FunctionType*>(stripQualifiers(param->type.get()))) {
+            paramType = typeToLLVM(fnType) + "*";
+        }
+
         std::string ptrName = "%" + param->name + ".addr";
 
         emit(ptrName + " = alloca " + paramType);
@@ -167,11 +194,12 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
     currentBuffer_ = &globalBuffer_;
     currentSubprogramId_ = savedSubprogram;
 
-    
+    // Use paramSig (types only) for the symbol type so that function references
+    // have the proper LLVM function type without parameter names.
     IRSymbol sym;
     sym.name = node.name;
     sym.irName = funcName;
-    sym.type = returnType + params;
+    sym.type = returnType + " " + paramSig;
     sym.isFunction = true;
     defineSymbol(node.name, sym);
 }

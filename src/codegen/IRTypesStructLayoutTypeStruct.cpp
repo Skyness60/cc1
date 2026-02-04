@@ -145,6 +145,32 @@ IRGenerator::StructLayout IRGenerator::computeStructLayoutStruct(AST::StructType
         flushUnit();
 
         std::string memberType = typeToLLVM(member.type.get());
+        
+        // For union members, use byte array representation from the layout
+        if (auto* unionType = dynamic_cast<AST::StructType*>(stripQualifiers(member.type.get()))) {
+            if (unionType->isUnion) {
+                // Get the union's layout to determine its actual LLVM type
+                StructLayout unionLayout = computeStructLayout(unionType);
+                // Extract the type from the layout (remove the braces)
+                // The layout.llvmType is "{ i8 }" or "{ [N x i8] }", we need just the inner type
+                std::string innerType = unionLayout.llvmType;
+                if (innerType.size() >= 3 && innerType[0] == '{' && innerType[innerType.size()-1] == '}') {
+                    // Remove braces and trim spaces
+                    innerType = innerType.substr(1, innerType.size()-2);
+                    // Trim leading/trailing spaces
+                    size_t start = innerType.find_first_not_of(" ");
+                    size_t end = innerType.find_last_not_of(" ");
+                    if (start != std::string::npos && end != std::string::npos) {
+                        memberType = innerType.substr(start, end - start + 1);
+                    } else {
+                        memberType = "i8";
+                    }
+                } else {
+                    memberType = "i8";
+                }
+            }
+        }
+        
         int memberSize = getTypeSize(member.type.get());
         int memberAlign = getTypeAlign(member.type.get());
 
