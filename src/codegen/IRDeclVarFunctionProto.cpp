@@ -47,6 +47,14 @@ void IRGenerator::emitVarDeclFunctionPrototype(AST::VarDecl& node, AST::Function
     params += ")";
 
     
+    // EN: In LLVM IR declare statements, if the return type is a function pointer,
+    // we must NOT include the parameter signature in the declare statement.
+    // The declare statement should have the form: declare <returnType> @funcName(<params>)
+    // where <returnType> is just the return type (e.g., "i32 (i32)*" for a function pointer),
+    // NOT "i32 (i32)* (params...)" which is invalid.
+    // FR: Dans les declarations LLVM IR, si le type de retour est un pointeur de fonction,
+    // on ne doit pas inclure la signature des parametres. Le type de retour doit etre
+    // juste le type de retour (e.g., "i32 (i32)*"), pas "i32 (i32)* (params...)".
     std::string declLine = "declare " + returnType + " " + funcName + params + "\n";
     functionDeclarations_[node.name] = declLine;
     declaredFunctions_.insert(node.name);

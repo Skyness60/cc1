@@ -81,8 +81,17 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
     Declarator decl = parseDeclarator(specs.type);
 
     
+    // EN: Check if this is a function declaration or definition.
+    // A declarator represents a function if its type is a FunctionType (after pointer derivations).
+    // This handles both "int f();" and "int (*f(int (*)(long), int))(int, ...);"
+    // In both cases, decl.type ends up being a FunctionType for the function signature.
+    // FR: Verifier si c'est une declaration/definition de fonction.
+    bool isFunctionDeclOrDef = decl.type && dynamic_cast<AST::FunctionType*>(decl.type.get()) != nullptr;
+    
     if (check(TokenType::LeftBrace)) {
-        
+        if (!isFunctionDeclOrDef) {
+            error("function definition requires a function declarator");
+        }
         
         if (functionDepth_ == 0 && !decl.name.empty()) {
             if (definedFunctions_.count(decl.name)) {
@@ -99,6 +108,38 @@ AST::Ptr<AST::Declaration> Parser::parseExternalDeclaration() {
             definedFunctions_.insert(decl.name);
         }
         return parseFunctionDefinition(specs, decl);
+    }
+    
+    // EN: If it's a function declaration (no body), handle it as a FunctionDecl, not VarDecl.
+    // FR: Si c'est une declaration de fonction sans corps, la traiter comme FunctionDecl.
+    if (isFunctionDeclOrDef && !check(TokenType::Equal) && !check(TokenType::Comma)) {
+        // This is a forward function declaration like "int f(int);", not a variable
+        if (functionDepth_ == 0 && !decl.name.empty() && globalIdentifiers_.count(decl.name)) {
+            std::string newType = decl.type ? decl.type->toString() : "unknown";
+            std::string oldType = globalIdentifiers_[decl.name];
+            if (newType != oldType) {
+                errorAtPosition(decl.line, decl.column, "conflicting types for '" + decl.name + "': '" + newType + "' vs '" + oldType + "'");
+            }
+        }
+        if (functionDepth_ == 0 && !decl.name.empty()) {
+            globalIdentifiers_[decl.name] = decl.type ? decl.type->toString() : "unknown";
+        }
+        // Create and return a FunctionDecl with no body
+        // Extract returnType and parameters the same way as parseFunctionDefinition does
+        auto func = AST::make<AST::FunctionDecl>(decl.name, nullptr, decl.line, decl.column);
+        if (auto* funcType = dynamic_cast<AST::FunctionType*>(decl.type.get())) {
+            func->returnType = std::move(funcType->returnType);
+        } else {
+            func->returnType = AST::make<AST::PrimitiveType>(AST::PrimitiveKind::Int, 0, 0);
+        }
+        func->parameters = std::vector<AST::Ptr<AST::ParamDecl>>();
+        for (auto& p : const_cast<Declarator&>(decl).params) {
+            func->parameters.push_back(std::move(p));
+        }
+        func->isVariadic = decl.isVariadic;
+        func->storageClass = specs.storageClass;
+        consume(TokenType::Semicolon, "expected ';' after function declaration");
+        return func;
     }
 
     

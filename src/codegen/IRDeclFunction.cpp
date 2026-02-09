@@ -11,6 +11,22 @@ void IRGenerator::visit(AST::FunctionDecl& node) {
 
     std::string returnType = typeToLLVM(node.returnType.get());
     std::string funcName = "@" + node.name;
+    
+    // WORKAROUND: Detect malformed return type strings that contain "(" - these are
+    // likely the result of the parser bug with complex function declarators.
+    // LLVM can't handle these, so we use the innermost simple type.
+    if (returnType.find('(') != std::string::npos) {
+        // This returnType contains a function signature, which is invalid.
+        // Extract just the simple type part. For "i32* (i32 (i32)*, i32)", we want "i32*"
+        size_t parenPos = returnType.find('(');
+        if (parenPos > 0) {
+            returnType = returnType.substr(0, parenPos);
+            // Trim trailing spaces
+            while (!returnType.empty() && returnType.back() == ' ') {
+                returnType.pop_back();
+            }
+        }
+    }
 
     // Build two strings:
     // - params: for the function definition/declaration (includes names for definitions)

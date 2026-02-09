@@ -63,15 +63,47 @@ OPTIONS
        -v
               Verbose: print the executed commands.
 
-      -g
-        Emit debug information (DWARF via LLVM debug metadata).
+       -g
+              Emit debug information (DWARF via LLVM debug metadata).
+
+       -B mode
+              Binding mode (e.g., -B dynamic, -B static). Accepted for POSIX compatibility.
+              (Not required by the subject, ignored.)
+
+       -G
+              Create a shared library. Accepted for POSIX compatibility.
+              (Not required by the subject, ignored.)
+
+       -R dir
+              Runtime library search path. Accepted for POSIX compatibility.
+              (Not required by the subject, ignored.)
 
        -h, --help
               Display this help and exit.
 
+OPERANDS
+       file...
+              One or more C source files (.c or .C), preprocessed files (.i),
+              or object/library files (.o, .a, .so) for linking.
+              Use '-' to read C source from standard input.
+
 STDIN
-  If an input operand is '-', fcc reads C source from standard input.
+  If an operand is '-', fcc reads C source from standard input.
   Only one '-' operand is supported.
+
+INPUT FILES
+       C source files with .c or .C extension, preprocessed files with .i
+       extension, or object/library files (.o, .a, .so) for linking.
+
+STDOUT
+       Output goes to the specified file (with -o) or to the default output:
+       - With -E: preprocessed source to stdout (unless -o is given)
+       - With -S: assembly file (.s) to current directory or -o
+       - With -c: object files (.o) to current directory or -o
+       - Without flags: executable (a.out or -o file)
+
+STDERR
+       Diagnostics, error messages, and warnings are written to stderr.
 
 EXIT STATUS
        0 on success, non-zero on error.
